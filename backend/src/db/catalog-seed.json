@@ -1,0 +1,891 @@
+{
+ "categories": [
+  {
+   "key": "iphone",
+   "label": "iPhone"
+  },
+  {
+   "key": "ipad",
+   "label": "iPad"
+  },
+  {
+   "key": "mac",
+   "label": "Mac"
+  },
+  {
+   "key": "watch",
+   "label": "Apple Watch"
+  },
+  {
+   "key": "airpods",
+   "label": "AirPods"
+  },
+  {
+   "key": "apple-accessory",
+   "label": "Apple Accessories"
+  },
+  {
+   "key": "other-accessory",
+   "label": "Other Accessories"
+  }
+ ],
+ "products": [
+  {
+   "id": "iphone-13-pro-max",
+   "category": "iphone",
+   "name": "iPhone 13 Pro Max",
+   "tagline": "Certified pre-owned · multiple units in stock",
+   "hasUnits": true,
+   "status": "in-stock",
+   "featured": false,
+   "bestSeller": false,
+   "newArrival": false,
+   "screenSize": 6.7,
+   "specs": {
+    "display": "6.7\" Super Retina XDR, ProMotion",
+    "chip": "A15 Bionic",
+    "mainCamera": "12MP Triple, ×3 optical zoom",
+    "frontCamera": "12MP TrueDepth",
+    "battery": "Up to 28h video",
+    "size": "160.8 × 78.1 × 7.65 mm",
+    "weight": "238 g",
+    "materials": "Surgical-grade stainless steel, glass",
+    "connectivity": "5G, Wi-Fi 6, Bluetooth 5.0"
+   },
+   "rec": {
+    "battery": 7,
+    "camera": 8,
+    "performance": 7,
+    "gaming": 6,
+    "value": 9,
+    "portability": 5,
+    "display": 7
+   }
+  },
+  {
+   "id": "iphone-14-pro",
+   "category": "iphone",
+   "name": "iPhone 14 Pro",
+   "tagline": "Certified pre-owned · multiple units in stock",
+   "hasUnits": true,
+   "status": "in-stock",
+   "featured": false,
+   "bestSeller": false,
+   "newArrival": false,
+   "screenSize": 6.1,
+   "specs": {
+    "display": "6.1\" Super Retina XDR, Dynamic Island",
+    "chip": "A16 Bionic",
+    "mainCamera": "48MP Triple, ×3 optical zoom",
+    "frontCamera": "12MP TrueDepth",
+    "battery": "Up to 23h video",
+    "size": "147.5 × 71.5 × 7.85 mm",
+    "weight": "206 g",
+    "materials": "Surgical-grade stainless steel, glass",
+    "connectivity": "5G, Wi-Fi 6, Bluetooth 5.3"
+   },
+   "rec": {
+    "battery": 8,
+    "camera": 9,
+    "performance": 8,
+    "gaming": 7,
+    "value": 6,
+    "portability": 6,
+    "display": 8
+   }
+  },
+  {
+   "id": "iphone-14",
+   "category": "iphone",
+   "name": "iPhone 14",
+   "tagline": "New, sealed",
+   "status": "in-stock",
+   "featured": false,
+   "bestSeller": false,
+   "newArrival": false,
+   "screenSize": 6.1,
+   "storageOptions": [
+    "128GB",
+    "256GB",
+    "512GB"
+   ],
+   "colors": [
+    "Midnight",
+    "Starlight",
+    "Product RED",
+    "Purple",
+    "Blue"
+   ],
+   "variantPricing": {
+    "128GB": 28000,
+    "256GB": 32000,
+    "512GB": 39000
+   },
+   "specs": {
+    "display": "6.1\" Super Retina XDR",
+    "chip": "A15 Bionic",
+    "mainCamera": "12MP Dual",
+    "frontCamera": "12MP TrueDepth",
+    "battery": "Up to 20h video",
+    "size": "146.7 × 71.5 × 7.80 mm",
+    "weight": "172 g",
+    "materials": "Aerospace-grade aluminum, glass",
+    "connectivity": "5G, Wi-Fi 6, Bluetooth 5.3"
+   },
+   "rec": {
+    "battery": 7,
+    "camera": 7,
+    "performance": 7,
+    "gaming": 6,
+    "value": 7,
+    "portability": 7,
+    "display": 6
+   }
+  },
+  {
+   "id": "iphone-15",
+   "category": "iphone",
+   "name": "iPhone 15",
+   "tagline": "New, sealed",
+   "status": "in-stock",
+   "featured": false,
+   "bestSeller": false,
+   "newArrival": false,
+   "screenSize": 6.1,
+   "storageOptions": [
+    "128GB",
+    "256GB",
+    "512GB"
+   ],
+   "colors": [
+    "Pink",
+    "Green",
+    "Blue",
+    "Black",
+    "Product RED"
+   ],
+   "variantPricing": {
+    "128GB": 32000,
+    "256GB": 36500,
+    "512GB": 44000
+   },
+   "specs": {
+    "display": "6.1\" Super Retina XDR, Dynamic Island",
+    "chip": "A16 Bionic",
+    "mainCamera": "48MP Dual",
+    "frontCamera": "12MP TrueDepth",
+    "battery": "Up to 20h video",
+    "size": "147.6 × 71.6 × 7.80 mm",
+    "weight": "171 g",
+    "materials": "Color-infused glass, aluminum",
+    "connectivity": "5G, Wi-Fi 6, Bluetooth 5.3, USB‑C"
+   },
+   "rec": {
+    "battery": 8,
+    "camera": 8,
+    "performance": 8,
+    "gaming": 7,
+    "value": 7,
+    "portability": 7,
+    "display": 7
+   }
+  },
+  {
+   "id": "iphone-15-pro-max",
+   "category": "iphone",
+   "name": "iPhone 15 Pro Max",
+   "tagline": "New, sealed",
+   "status": "in-stock",
+   "featured": true,
+   "bestSeller": true,
+   "newArrival": false,
+   "screenSize": 6.7,
+   "storageOptions": [
+    "256GB",
+    "512GB",
+    "1TB"
+   ],
+   "colors": [
+    "Natural Titanium",
+    "Blue Titanium",
+    "Black Titanium",
+    "White Titanium"
+   ],
+   "variantPricing": {
+    "256GB": 52000,
+    "512GB": 60000,
+    "1TB": 68000
+   },
+   "specs": {
+    "display": "6.7\" Super Retina XDR, ProMotion 120Hz",
+    "chip": "A17 Pro",
+    "mainCamera": "48MP Triple, ×5 optical zoom",
+    "frontCamera": "12MP TrueDepth",
+    "battery": "Up to 29h video",
+    "size": "159.9 × 76.7 × 8.25 mm",
+    "weight": "221 g",
+    "materials": "Grade 5 titanium, textured glass",
+    "connectivity": "5G, Wi-Fi 6E, Bluetooth 5.3, USB‑C"
+   },
+   "rec": {
+    "battery": 9,
+    "camera": 9,
+    "performance": 9,
+    "gaming": 8,
+    "value": 5,
+    "portability": 4,
+    "display": 9
+   }
+  },
+  {
+   "id": "iphone-16",
+   "category": "iphone",
+   "name": "iPhone 16",
+   "tagline": "New, sealed",
+   "status": "in-stock",
+   "featured": false,
+   "bestSeller": false,
+   "newArrival": true,
+   "screenSize": 6.1,
+   "storageOptions": [
+    "128GB",
+    "256GB",
+    "512GB"
+   ],
+   "colors": [
+    "Ultramarine",
+    "Teal",
+    "Pink",
+    "White",
+    "Black"
+   ],
+   "variantPricing": {
+    "128GB": 42000,
+    "256GB": 47000,
+    "512GB": 55000
+   },
+   "specs": {
+    "display": "6.1\" Super Retina XDR, Dynamic Island",
+    "chip": "A18",
+    "mainCamera": "48MP Dual",
+    "frontCamera": "12MP TrueDepth",
+    "battery": "Up to 22h video",
+    "size": "147.6 × 71.6 × 7.80 mm",
+    "weight": "170 g",
+    "materials": "Color-infused glass, aluminum",
+    "connectivity": "5G, Wi-Fi 7, Bluetooth 5.3, USB‑C"
+   },
+   "rec": {
+    "battery": 8,
+    "camera": 8,
+    "performance": 9,
+    "gaming": 8,
+    "value": 7,
+    "portability": 7,
+    "display": 7
+   }
+  },
+  {
+   "id": "iphone-16-pro-max",
+   "category": "iphone",
+   "name": "iPhone 16 Pro Max",
+   "tagline": "New, sealed",
+   "status": "in-stock",
+   "featured": true,
+   "bestSeller": false,
+   "newArrival": true,
+   "screenSize": 6.9,
+   "storageOptions": [
+    "256GB",
+    "512GB",
+    "1TB"
+   ],
+   "colors": [
+    "Desert Titanium",
+    "Natural Titanium",
+    "White Titanium",
+    "Black Titanium"
+   ],
+   "variantPricing": {
+    "256GB": 62000,
+    "512GB": 71000,
+    "1TB": 80000
+   },
+   "specs": {
+    "display": "6.9\" Super Retina XDR, ProMotion 120Hz",
+    "chip": "A18 Pro",
+    "mainCamera": "48MP Triple, ×5 optical zoom",
+    "frontCamera": "12MP TrueDepth",
+    "battery": "Up to 33h video",
+    "size": "163.0 × 77.6 × 8.25 mm",
+    "weight": "227 g",
+    "materials": "Grade 5 titanium, textured glass",
+    "connectivity": "5G, Wi-Fi 7, Bluetooth 5.3, USB‑C"
+   },
+   "rec": {
+    "battery": 9,
+    "camera": 10,
+    "performance": 10,
+    "gaming": 9,
+    "value": 4,
+    "portability": 4,
+    "display": 10
+   }
+  },
+  {
+   "id": "iphone-17-pro",
+   "category": "iphone",
+   "name": "iPhone 17 Pro",
+   "tagline": "Available for reservation",
+   "status": "preorder",
+   "launchDate": "October 2026",
+   "featured": false,
+   "bestSeller": false,
+   "newArrival": true,
+   "screenSize": 6.3,
+   "storageOptions": [
+    "256GB",
+    "512GB",
+    "1TB"
+   ],
+   "colors": [
+    "Deep Purple",
+    "Silver",
+    "Black Titanium"
+   ],
+   "variantPricing": {
+    "256GB": 68000,
+    "512GB": 77000,
+    "1TB": 86000
+   },
+   "specs": {
+    "display": "6.3\" Super Retina XDR, ProMotion 120Hz",
+    "chip": "A19 Pro",
+    "mainCamera": "48MP Triple",
+    "frontCamera": "18MP TrueDepth",
+    "battery": "All-day, up to 35h video",
+    "size": "TBC at launch",
+    "weight": "TBC at launch",
+    "materials": "Grade 5 titanium, textured glass",
+    "connectivity": "5G, Wi-Fi 7, Bluetooth 6, USB‑C"
+   },
+   "rec": {
+    "battery": 9,
+    "camera": 10,
+    "performance": 10,
+    "gaming": 9,
+    "value": 4,
+    "portability": 5,
+    "display": 9
+   }
+  },
+  {
+   "id": "ipad-10",
+   "category": "ipad",
+   "name": "iPad (10th generation)",
+   "tagline": "New, sealed",
+   "status": "in-stock",
+   "newArrival": false,
+   "storageOptions": [
+    "64GB",
+    "256GB"
+   ],
+   "colors": [
+    "Silver",
+    "Pink",
+    "Blue",
+    "Starlight"
+   ],
+   "variantPricing": {
+    "64GB": 14000,
+    "256GB": 18500
+   },
+   "specs": {
+    "display": "10.9\" Liquid Retina",
+    "chip": "A14 Bionic",
+    "mainCamera": "12MP",
+    "frontCamera": "12MP Ultra Wide",
+    "battery": "Up to 10h",
+    "size": "248.6 × 179.5 × 7.0 mm",
+    "weight": "477 g",
+    "materials": "Aluminum unibody",
+    "connectivity": "Wi‑Fi 6, Bluetooth 5.2, USB‑C"
+   }
+  },
+  {
+   "id": "ipad-air",
+   "category": "ipad",
+   "name": "iPad Air",
+   "tagline": "New, sealed",
+   "status": "in-stock",
+   "bestSeller": true,
+   "storageOptions": [
+    "128GB",
+    "256GB",
+    "512GB"
+   ],
+   "colors": [
+    "Space Gray",
+    "Blue",
+    "Purple",
+    "Starlight"
+   ],
+   "variantPricing": {
+    "128GB": 24000,
+    "256GB": 29000,
+    "512GB": 36500
+   },
+   "specs": {
+    "display": "11\" Liquid Retina",
+    "chip": "M2",
+    "mainCamera": "12MP",
+    "frontCamera": "12MP Ultra Wide",
+    "battery": "Up to 10h",
+    "size": "247.6 × 178.5 × 6.1 mm",
+    "weight": "462 g",
+    "materials": "Aluminum unibody",
+    "connectivity": "Wi‑Fi 6E, Bluetooth 5.3, USB‑C"
+   }
+  },
+  {
+   "id": "ipad-pro-13",
+   "category": "ipad",
+   "name": "iPad Pro 13\"",
+   "tagline": "New, sealed",
+   "status": "in-stock",
+   "featured": true,
+   "storageOptions": [
+    "256GB",
+    "512GB",
+    "1TB"
+   ],
+   "colors": [
+    "Space Black",
+    "Silver"
+   ],
+   "variantPricing": {
+    "256GB": 45000,
+    "512GB": 54000,
+    "1TB": 66000
+   },
+   "specs": {
+    "display": "13\" Ultra Retina XDR, tandem OLED",
+    "chip": "M4",
+    "mainCamera": "12MP",
+    "frontCamera": "12MP landscape",
+    "battery": "Up to 10h",
+    "size": "281.6 × 215.5 × 5.1 mm",
+    "weight": "579 g",
+    "materials": "Aluminum unibody",
+    "connectivity": "Wi‑Fi 6E, Bluetooth 5.3, Thunderbolt"
+   }
+  },
+  {
+   "id": "macbook-air-m3",
+   "category": "mac",
+   "name": "MacBook Air 13\" M3",
+   "tagline": "New, sealed",
+   "status": "in-stock",
+   "bestSeller": true,
+   "storageOptions": [
+    "256GB",
+    "512GB"
+   ],
+   "colors": [
+    "Midnight",
+    "Starlight",
+    "Space Gray",
+    "Silver"
+   ],
+   "variantPricing": {
+    "256GB": 42000,
+    "512GB": 50000
+   },
+   "specs": {
+    "display": "13.6\" Liquid Retina",
+    "chip": "Apple M3, 8-core CPU",
+    "mainCamera": "1080p FaceTime HD",
+    "frontCamera": "—",
+    "battery": "Up to 18h",
+    "size": "304.1 × 215.0 × 11.3 mm",
+    "weight": "1.24 kg",
+    "materials": "Aluminum unibody",
+    "connectivity": "Wi‑Fi 6E, Bluetooth 5.3, 2× Thunderbolt"
+   }
+  },
+  {
+   "id": "macbook-pro-14-m4",
+   "category": "mac",
+   "name": "MacBook Pro 14\" M4",
+   "tagline": "New, sealed",
+   "status": "in-stock",
+   "featured": true,
+   "newArrival": true,
+   "storageOptions": [
+    "512GB",
+    "1TB"
+   ],
+   "colors": [
+    "Space Black",
+    "Silver"
+   ],
+   "variantPricing": {
+    "512GB": 78000,
+    "1TB": 92000
+   },
+   "specs": {
+    "display": "14.2\" Liquid Retina XDR",
+    "chip": "Apple M4, 10-core CPU",
+    "mainCamera": "1080p FaceTime HD",
+    "frontCamera": "—",
+    "battery": "Up to 24h",
+    "size": "312.6 × 221.2 × 15.5 mm",
+    "weight": "1.55 kg",
+    "materials": "Aluminum unibody",
+    "connectivity": "Wi‑Fi 6E, Bluetooth 5.3, 3× Thunderbolt 4"
+   }
+  },
+  {
+   "id": "mac-mini-m4",
+   "category": "mac",
+   "name": "Mac mini M4",
+   "tagline": "New, sealed",
+   "status": "in-stock",
+   "storageOptions": [
+    "256GB",
+    "512GB"
+   ],
+   "colors": [
+    "Silver"
+   ],
+   "variantPricing": {
+    "256GB": 26000,
+    "512GB": 32000
+   },
+   "specs": {
+    "display": "External display required",
+    "chip": "Apple M4, 10-core CPU",
+    "mainCamera": "—",
+    "frontCamera": "—",
+    "battery": "—",
+    "size": "127 × 127 × 50 mm",
+    "weight": "0.67 kg",
+    "materials": "Aluminum unibody",
+    "connectivity": "Wi‑Fi 6E, Bluetooth 5.3, Thunderbolt 4"
+   }
+  },
+  {
+   "id": "watch-series-10",
+   "category": "watch",
+   "name": "Apple Watch Series 10",
+   "tagline": "New, sealed",
+   "status": "in-stock",
+   "bestSeller": true,
+   "storageOptions": [
+    "42mm",
+    "46mm"
+   ],
+   "colors": [
+    "Jet Black",
+    "Rose Gold",
+    "Silver"
+   ],
+   "variantPricing": {
+    "42mm": 19000,
+    "46mm": 21500
+   },
+   "specs": {
+    "display": "LTPO OLED, always-on",
+    "chip": "S10 SiP",
+    "mainCamera": "—",
+    "frontCamera": "—",
+    "battery": "Up to 18h",
+    "size": "Case 42 or 46 mm",
+    "weight": "≈ 30–38 g",
+    "materials": "Aluminum case",
+    "connectivity": "Wi‑Fi, Bluetooth 5.3, GPS"
+   }
+  },
+  {
+   "id": "watch-ultra-2",
+   "category": "watch",
+   "name": "Apple Watch Ultra 2",
+   "tagline": "New, sealed",
+   "status": "in-stock",
+   "storageOptions": [
+    "49mm"
+   ],
+   "colors": [
+    "Natural Titanium",
+    "Black Titanium"
+   ],
+   "variantPricing": {
+    "49mm": 38000
+   },
+   "specs": {
+    "display": "LTPO OLED, always-on, 3000 nits",
+    "chip": "S10 SiP",
+    "mainCamera": "—",
+    "frontCamera": "—",
+    "battery": "Up to 36h",
+    "size": "Case 49 mm",
+    "weight": "61.4 g",
+    "materials": "Titanium case",
+    "connectivity": "Wi‑Fi, Bluetooth 5.3, GPS + Cellular"
+   }
+  },
+  {
+   "id": "airpods-pro-2",
+   "category": "airpods",
+   "name": "AirPods Pro 2",
+   "tagline": "New, sealed",
+   "status": "in-stock",
+   "bestSeller": true,
+   "colors": [
+    "White"
+   ],
+   "variantPricing": {
+    "Standard": 9500
+   },
+   "specs": {
+    "display": "—",
+    "chip": "Apple H2",
+    "mainCamera": "—",
+    "frontCamera": "—",
+    "battery": "Up to 6h, 30h with case",
+    "size": "30.9 × 21.8 × 24.0 mm (case)",
+    "weight": "5.3 g (each bud)",
+    "materials": "Polymer",
+    "connectivity": "Bluetooth 5.3, active noise cancellation"
+   }
+  },
+  {
+   "id": "airpods-max",
+   "category": "airpods",
+   "name": "AirPods Max",
+   "tagline": "New, sealed",
+   "status": "in-stock",
+   "colors": [
+    "Sky Blue",
+    "Starlight",
+    "Midnight",
+    "Purple",
+    "Product RED"
+   ],
+   "variantPricing": {
+    "Standard": 21000
+   },
+   "specs": {
+    "display": "—",
+    "chip": "Apple H1 ×2",
+    "mainCamera": "—",
+    "frontCamera": "—",
+    "battery": "Up to 20h",
+    "size": "Adjustable headband",
+    "weight": "384.8 g",
+    "materials": "Aluminum, stainless steel, mesh",
+    "connectivity": "Bluetooth 5.0, active noise cancellation"
+   }
+  },
+  {
+   "id": "apple-pencil-pro",
+   "category": "apple-accessory",
+   "name": "Apple Pencil Pro",
+   "tagline": "New, sealed",
+   "status": "in-stock",
+   "colors": [
+    "White"
+   ],
+   "variantPricing": {
+    "Standard": 4200
+   },
+   "specs": {
+    "display": "—",
+    "chip": "—",
+    "mainCamera": "—",
+    "frontCamera": "—",
+    "battery": "Up to 12h",
+    "size": "≈ 4.2 mm dia.",
+    "weight": "18.4 g",
+    "materials": "Aluminum, polymer",
+    "connectivity": "Bluetooth, magnetic attach"
+   }
+  },
+  {
+   "id": "magsafe-charger",
+   "category": "apple-accessory",
+   "name": "MagSafe Charger",
+   "tagline": "New, sealed",
+   "status": "in-stock",
+   "colors": [
+    "White"
+   ],
+   "variantPricing": {
+    "Standard": 1400
+   },
+   "specs": {
+    "display": "—",
+    "chip": "—",
+    "mainCamera": "—",
+    "frontCamera": "—",
+    "battery": "—",
+    "size": "1 m cable",
+    "weight": "45 g",
+    "materials": "Polymer",
+    "connectivity": "Magnetic, USB‑C"
+   }
+  },
+  {
+   "id": "usbc-cable",
+   "category": "other-accessory",
+   "name": "Braided USB-C Cable, 1.5m",
+   "tagline": "New, sealed",
+   "status": "in-stock",
+   "colors": [
+    "Black",
+    "White"
+   ],
+   "variantPricing": {
+    "Standard": 450
+   },
+   "specs": {
+    "display": "—",
+    "chip": "—",
+    "mainCamera": "—",
+    "frontCamera": "—",
+    "battery": "—",
+    "size": "1.5 m",
+    "weight": "40 g",
+    "materials": "Braided nylon",
+    "connectivity": "USB‑C to USB‑C"
+   }
+  },
+  {
+   "id": "screen-protector",
+   "category": "other-accessory",
+   "name": "Tempered Glass Screen Protector",
+   "tagline": "New, sealed",
+   "status": "in-stock",
+   "colors": [
+    "Clear"
+   ],
+   "variantPricing": {
+    "Standard": 350
+   },
+   "specs": {
+    "display": "—",
+    "chip": "—",
+    "mainCamera": "—",
+    "frontCamera": "—",
+    "battery": "—",
+    "size": "Model-specific fit",
+    "weight": "3 g",
+    "materials": "9H tempered glass",
+    "connectivity": "—"
+   }
+  }
+ ],
+ "units": [
+  {
+   "id": "u-13pm-1",
+   "productId": "iphone-13-pro-max",
+   "storage": "256GB",
+   "color": "Sierra Blue",
+   "battery": 91,
+   "condition": "Excellent",
+   "price": 36000,
+   "sku": "GI-13PM-256-SB-01",
+   "warranty": "3-month Go iPhone warranty",
+   "availability": "available"
+  },
+  {
+   "id": "u-13pm-2",
+   "productId": "iphone-13-pro-max",
+   "storage": "256GB",
+   "color": "Graphite",
+   "battery": 84,
+   "condition": "Very Good",
+   "price": 33500,
+   "sku": "GI-13PM-256-GR-02",
+   "warranty": "3-month Go iPhone warranty",
+   "availability": "available"
+  },
+  {
+   "id": "u-13pm-3",
+   "productId": "iphone-13-pro-max",
+   "storage": "512GB",
+   "color": "Gold",
+   "battery": 89,
+   "condition": "Excellent",
+   "price": 39000,
+   "sku": "GI-13PM-512-GD-03",
+   "warranty": "3-month Go iPhone warranty",
+   "availability": "available"
+  },
+  {
+   "id": "u-14p-1",
+   "productId": "iphone-14-pro",
+   "storage": "128GB",
+   "color": "Deep Purple",
+   "battery": 93,
+   "condition": "Excellent",
+   "price": 38500,
+   "sku": "GI-14P-128-DP-01",
+   "warranty": "3-month Go iPhone warranty",
+   "availability": "available"
+  },
+  {
+   "id": "u-14p-2",
+   "productId": "iphone-14-pro",
+   "storage": "256GB",
+   "color": "Space Black",
+   "battery": 88,
+   "condition": "Very Good",
+   "price": 41000,
+   "sku": "GI-14P-256-SB-02",
+   "warranty": "3-month Go iPhone warranty",
+   "availability": "available"
+  }
+ ],
+ "hero": [
+  {
+   "id": 1,
+   "eyebrow": "iPhone 16 Pro Max",
+   "title": "Powerful. Precise. Pro.",
+   "sub": "The most capable iPhone yet, in titanium.",
+   "cta": "Explore iPhone",
+   "target": {
+    "view": "catalog",
+    "params": {
+     "category": "iphone"
+    }
+   }
+  },
+  {
+   "id": 2,
+   "eyebrow": "iPhone 17 Pro",
+   "title": "Reserve the next generation.",
+   "sub": "Available for pre-order ahead of launch.",
+   "cta": "Reserve now",
+   "target": {
+    "view": "product",
+    "params": {
+     "id": "iphone-17-pro"
+    }
+   }
+  },
+  {
+   "id": 3,
+   "eyebrow": "Certified pre-owned",
+   "title": "Great devices, honestly priced.",
+   "sub": "Every unit checked, graded, and warrantied.",
+   "cta": "Shop pre-owned",
+   "target": {
+    "view": "product",
+    "params": {
+     "id": "iphone-13-pro-max"
+    }
+   }
+  }
+ ]
+}
