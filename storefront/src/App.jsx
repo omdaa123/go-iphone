@@ -747,9 +747,9 @@ function Hero({ go }) {
 
   const slide = HERO_SLIDES[Math.min(index, HERO_SLIDES.length - 1)];
   const secondary = HERO_SLIDES[(index + 1) % HERO_SLIDES.length];
-  const heroProduct = heroProductFor(products, slide || {});
-
   if (!slide) return null;
+
+const heroProduct = heroProductFor(products, slide);
   const customImage = slide.image || null;
   const customMobileImage = slide.mobileImage || slide.image || null;
 
