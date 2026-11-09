@@ -506,28 +506,34 @@ function ProductCard({ product, onOpen, onToggleCompare, isComparing, compareDis
 function ProductRail({ title, action, products, onOpen, onToggleCompare, compareIds, onNavAction }) {
   const ref = useRef(null);
   const scroll = (dir) => ref.current?.scrollBy({ left: dir * 300, behavior: "smooth" });
-  if (!products.length) return null;
   return (
     <section className="max-w-7xl mx-auto px-6 md:px-10 py-16 md:py-32">
       <SectionHeading title={title} action={action} onAction={onNavAction} />
-      <div className="relative">
-        <div ref={ref} className="flex gap-6 md:gap-8 overflow-x-auto pb-2 scroll-smooth" style={{ scrollbarWidth: "none" }}>
-          {products.map((p) => (
-            <div key={p.id} className="w-56 md:w-64 shrink-0">
-              <ProductCard
-                product={p} onOpen={onOpen}
-                onToggleCompare={onToggleCompare}
-                isComparing={compareIds.includes(p.id)}
-                compareDisabled={compareIds.length >= 3}
-              />
-            </div>
-          ))}
+      {products.length ? (
+        <div className="relative">
+          <div ref={ref} className="flex gap-6 md:gap-8 overflow-x-auto pb-2 scroll-smooth" style={{ scrollbarWidth: "none" }}>
+            {products.map((p) => (
+              <div key={p.id} className="w-56 md:w-64 shrink-0">
+                <ProductCard
+                  product={p} onOpen={onOpen}
+                  onToggleCompare={onToggleCompare}
+                  isComparing={compareIds.includes(p.id)}
+                  compareDisabled={compareIds.length >= 3}
+                />
+              </div>
+            ))}
+          </div>
+          <div className="hidden md:flex justify-end gap-2 mt-6">
+            <button onClick={() => scroll(-1)} style={{ borderColor: T.line, color: T.ink }} className="w-9 h-9 rounded-full border flex items-center justify-center hover:border-black transition-colors"><ChevronLeft size={16} /></button>
+            <button onClick={() => scroll(1)} style={{ borderColor: T.line, color: T.ink }} className="w-9 h-9 rounded-full border flex items-center justify-center hover:border-black transition-colors"><ChevronRight size={16} /></button>
+          </div>
         </div>
-        <div className="hidden md:flex justify-end gap-2 mt-6">
-          <button onClick={() => scroll(-1)} style={{ borderColor: T.line, color: T.ink }} className="w-9 h-9 rounded-full border flex items-center justify-center hover:border-black transition-colors"><ChevronLeft size={16} /></button>
-          <button onClick={() => scroll(1)} style={{ borderColor: T.line, color: T.ink }} className="w-9 h-9 rounded-full border flex items-center justify-center hover:border-black transition-colors"><ChevronRight size={16} /></button>
+      ) : (
+        <div style={{ borderColor: T.line, backgroundColor: T.stone }} className="border px-6 py-12 text-center">
+          <p style={{ color: T.ink }} className="text-base font-medium">New arrivals coming soon</p>
+          <p style={{ color: T.graphite }} className="text-sm mt-2">We're getting something special ready for you.</p>
         </div>
-      </div>
+      )}
     </section>
   );
 }
@@ -1056,27 +1062,31 @@ function CompareTray({ compareIds, onClear, go }) {
    component twice.
    ============================================================ */
 function ProductGrid({ title, action, products, onOpen, onToggleCompare, compareIds, onNavAction }) {
-  if (!products.length) return null;
   return (
     <section className="max-w-7xl mx-auto px-6 md:px-10 py-20 md:py-28">
       <SectionHeading title={title} action={action} onAction={onNavAction} />
-      <div className="grid grid-cols-2 md:grid-cols-3 gap-x-6 gap-y-12 md:gap-x-8 md:gap-y-16">
-        {products.map((p) => (
-          <ProductCard key={p.id} product={p} onOpen={onOpen} onToggleCompare={onToggleCompare}
-            isComparing={compareIds.includes(p.id)} compareDisabled={compareIds.length >= 3} />
-        ))}
-      </div>
+      {products.length ? (
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-x-6 gap-y-12 md:gap-x-8 md:gap-y-16">
+          {products.map((p) => (
+            <ProductCard key={p.id} product={p} onOpen={onOpen} onToggleCompare={onToggleCompare}
+              isComparing={compareIds.includes(p.id)} compareDisabled={compareIds.length >= 3} />
+          ))}
+        </div>
+      ) : (
+        <div style={{ borderColor: T.line, backgroundColor: T.stone }} className="border px-6 py-12 text-center">
+          <p style={{ color: T.ink }} className="text-base font-medium">Our best sellers will be here soon</p>
+          <p style={{ color: T.graphite }} className="text-sm mt-2">Check back soon to discover our most-loved devices.</p>
+        </div>
+      )}
     </section>
   );
 }
-
 /* ============================================================
    CERTIFIED PRE-OWNED — an intro column + product grid, so this
    reads as its own trust-building composition rather than a third
    copy of the best-seller / latest-arrivals pattern.
    ============================================================ */
 function CertifiedPreownedSection({ products, go, onOpen, onToggleCompare, compareIds }) {
-  if (!products.length) return null;
   return (
     <section style={{ backgroundColor: T.stone }} className="py-20 md:py-28">
       <div className="max-w-7xl mx-auto px-6 md:px-10 grid md:grid-cols-[0.85fr_1.4fr] gap-10 md:gap-16">
@@ -1093,12 +1103,21 @@ function CertifiedPreownedSection({ products, go, onOpen, onToggleCompare, compa
             Browse certified pre-owned
           </button>
         </div>
-        <div className="grid grid-cols-2 gap-5 md:gap-6">
-          {products.map((p) => (
-            <ProductCard key={p.id} product={p} onOpen={onOpen} onToggleCompare={onToggleCompare}
-              isComparing={compareIds.includes(p.id)} compareDisabled={compareIds.length >= 3} />
-          ))}
-        </div>
+        {products.length ? (
+          <div className="grid grid-cols-2 gap-5 md:gap-6">
+            {products.map((p) => (
+              <ProductCard key={p.id} product={p} onOpen={onOpen} onToggleCompare={onToggleCompare}
+                isComparing={compareIds.includes(p.id)} compareDisabled={compareIds.length >= 3} />
+            ))}
+          </div>
+        ) : (
+          <div className="flex items-center justify-center border border-dashed px-6 py-12 text-center" style={{ borderColor: T.line }}>
+            <div>
+              <p style={{ color: T.ink }} className="text-base font-medium">Certified pre-owned devices coming soon</p>
+              <p style={{ color: T.graphite }} className="text-sm mt-2">Quality-checked devices will be listed here soon.</p>
+            </div>
+          </div>
+        )}
       </div>
     </section>
   );
