@@ -53,6 +53,25 @@ const navGroups = [
   ]},
 ];
 
+
+async function compressImage(file) {
+  const bitmap = await createImageBitmap(file);
+  const scale = Math.min(1, 1800 / Math.max(bitmap.width, bitmap.height));
+  const canvas = document.createElement("canvas");
+  canvas.width = Math.max(1, Math.round(bitmap.width * scale));
+  canvas.height = Math.max(1, Math.round(bitmap.height * scale));
+  canvas.getContext("2d").drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+  bitmap.close();
+  const blob = await new Promise((resolve, reject) => canvas.toBlob(b => b ? resolve(b) : reject(new Error("Could not process this image.")), "image/webp", 0.82));
+  if (blob.size > 8 * 1024 * 1024) throw new Error("Image is too large after compression (8MB maximum).");
+  return await new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = () => reject(new Error("Could not read image."));
+    reader.readAsDataURL(blob);
+  });
+}
+
 function Brand() {
   return <div className="brand"><div className="brand-mark">G</div><div><b>GO iPhone</b><span>COMMERCE CONTROL</span></div></div>;
 }
@@ -182,6 +201,11 @@ function Products({ onError }) {
   const [editing, setEditing] = useState(null);
   const [saving, setSaving] = useState(false);
   const [deleteId, setDeleteId] = useState("");
+  const [media, setMedia] = useState([]);
+  const [mediaOpen, setMediaOpen] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [primaryImageMediaId, setPrimaryImageMediaId] = useState("");
+  const [galleryMediaIds, setGalleryMediaIds] = useState([]);
   const empty = { name: "", categoryKey: "iphone", productType: "smartphone", tagline: "", visibility: "draft", salesMode: "for_sale", availability: "in_stock", variants: [{ storage: "", color: "", price: "", stockQty: "" }] };
   const [form, setForm] = useState(empty);
   useEffect(() => {
@@ -193,14 +217,17 @@ function Products({ onError }) {
       .catch(e => onError(e.message)).finally(() => { if (active) setLoading(false); });
     return () => { active = false; };
   }, [query, visibility, refresh, onError]);
-  function startNew() { setEditing("new"); setForm(empty); }
+  function startNew() { setEditing("new"); setForm(empty); setPrimaryImageMediaId(""); setGalleryMediaIds([]); }
   async function startEdit(id) {
     try {
       const d = await request(`/products/${id}`), p = d.product;
+      setPrimaryImageMediaId(d.primaryImage?.id || ""); setGalleryMediaIds(d.gallery.map(x => x.id));
       setForm({ name: p.name || "", slug: p.slug || "", categoryKey: p.category_key, productType: p.product_type, tagline: p.tagline || "", visibility: p.visibility, salesMode: p.sales_mode, availability: p.availability, variants: d.variants.length ? d.variants.map(v => ({ storage: v.storage || "", color: v.color || "", price: String(Number(v.price_cents) / 100), stockQty: v.stock_qty == null ? "" : String(v.stock_qty) })) : [{ storage: "", color: "", price: "", stockQty: "" }] });
       setEditing(id);
     } catch (e) { onError(e.message); }
   }
+  async function loadMedia() { try { const d = await request("/media"); setMedia(d.media || []); } catch (e) { onError(e.message); } }
+  async function uploadMedia(file) { if (!file) return; setUploading(true); try { const dataUrl = await compressImage(file); const d = await request("/media", { method: "POST", body: JSON.stringify({ dataUrl, fileName: file.name, usageTag: "product" }) }); setMedia(current => [d.media, ...current]); setPrimaryImageMediaId(d.media.id); } catch (e) { onError(e.message); } finally { setUploading(false); } }
   function addVariant() { setForm(f => ({ ...f, variants: [...f.variants, { storage: "", color: "", price: "", stockQty: "" }] })); }
   function changeVariant(index, key, value) { setForm(f => ({ ...f, variants: f.variants.map((v, i) => i === index ? { ...v, [key]: value } : v) })); }
   async function removeProduct() {
@@ -210,7 +237,7 @@ function Products({ onError }) {
   async function save(event) {
     event.preventDefault(); setSaving(true);
     const variants = form.variants.filter(v => v.price !== "").map(v => ({ storage: v.storage || null, color: v.color || null, priceCents: Math.round(Number(v.price) * 100), stockQty: v.stockQty === "" ? null : Number(v.stockQty) }));
-    const payload = { name: form.name.trim(), categoryKey: form.categoryKey, productType: form.productType.trim(), tagline: form.tagline || null, visibility: form.visibility, salesMode: form.salesMode, availability: form.availability, variants };
+    const payload = { primaryImageMediaId: primaryImageMediaId || null, galleryMediaIds, name: form.name.trim(), categoryKey: form.categoryKey, productType: form.productType.trim(), tagline: form.tagline || null, visibility: form.visibility, salesMode: form.salesMode, availability: form.availability, variants };
     if (form.slug) payload.slug = form.slug;
     try {
       await request(editing === "new" ? "/products" : `/products/${editing}`, { method: editing === "new" ? "POST" : "PATCH", body: JSON.stringify(payload) });
@@ -234,6 +261,8 @@ function Products({ onError }) {
         <label>Availability<select value={form.availability} onChange={e => setForm(f => ({ ...f, availability: e.target.value }))}><option value="in_stock">In stock</option><option value="out_of_stock">Out of stock</option><option value="coming_soon">Coming soon</option><option value="preorder">Pre-order</option></select></label>
         <label>Visibility<select value={form.visibility} onChange={e => setForm(f => ({ ...f, visibility: e.target.value }))}><option value="draft">Draft</option><option value="published">Published</option><option value="hidden">Hidden</option></select></label>
       </div>
+      <div className="image-manager"><div><h3>Product images</h3><p>Choose the main product photo and optional gallery images.</p></div><div className="image-manager-actions"><button type="button" className="btn secondary small" onClick={() => { loadMedia(); setMediaOpen(true); }}><Image size={14}/> Choose from library</button><label className="btn secondary small upload-label">{uploading ? "Uploading…" : "Upload image"}<input type="file" accept="image/jpeg,image/png,image/webp,image/gif" disabled={uploading} onChange={e => uploadMedia(e.target.files?.[0])}/></label></div>{primaryImageMediaId && <div className="selected-image"><img src={media.find(m => m.id === primaryImageMediaId)?.url || ""} alt="Selected primary product"/> <span>Main image selected</span><button type="button" className="text-btn" onClick={() => setPrimaryImageMediaId("")}>Remove</button></div>}</div>
+      {mediaOpen && <div className="media-picker-backdrop"><div className="media-picker"><div className="modal-head"><div><div className="eyebrow">MEDIA LIBRARY</div><h2>Choose product images</h2></div><button type="button" className="icon-btn" onClick={() => setMediaOpen(false)}><X size={18}/></button></div>{media.length ? <div className="media-picker-grid">{media.map(m => <button type="button" key={m.id} className={primaryImageMediaId === m.id || galleryMediaIds.includes(m.id) ? "media-choice selected" : "media-choice"} onClick={() => { if (!primaryImageMediaId) setPrimaryImageMediaId(m.id); else setGalleryMediaIds(ids => ids.includes(m.id) ? ids.filter(id => id !== m.id) : [...ids, m.id]); }}><img src={m.url} alt={m.file_name || "Store media"}/><span>{primaryImageMediaId === m.id ? "Main image" : galleryMediaIds.includes(m.id) ? "Gallery image" : "Select"}</span></button>)}</div> : <p className="muted">No images uploaded yet. Upload an image to get started.</p>}<div className="modal-foot"><button type="button" className="btn secondary" onClick={() => setMediaOpen(false)}>Done</button></div></div></div>}
       <div className="variant-heading"><div><h3>Pricing & variants</h3><p>Enter prices in Egyptian pounds. Add every storage and color option.</p></div><button type="button" className="btn secondary small" onClick={addVariant}><Plus size={13}/> Add variant</button></div>
       {form.variants.map((v, i) => <div className="variant-row" key={i}>
         <label>Storage<input value={v.storage} onChange={e => changeVariant(i, "storage", e.target.value)}/></label>
@@ -273,6 +302,32 @@ function Orders({ onError }) {
     <section className="panel"><div className="toolbar"><div className="filter-tabs">{["all","New","Confirmed","Preparing","Ready","Completed","Cancelled"].map(s => <button key={s} className={filter === s ? "selected" : ""} onClick={() => setFilter(s)}>{s === "all" ? "All orders" : s}</button>)}</div><span className="results-count">{visible.length} orders</span></div>
       {loading ? <div className="loading-panel"><span className="spinner"/> Loading orders…</div> : visible.length ? <div className="table-wrap"><table><thead><tr><th>ORDER</th><th>CUSTOMER</th><th>ITEMS</th><th>DATE</th><th>PAYMENT</th><th>STATUS</th><th className="right">TOTAL</th></tr></thead><tbody>{visible.map(o => <tr key={o.id}><td className="mono">#{String(o.id).slice(-7).toUpperCase()}</td><td><b>{o.customer_name || "Guest"}</b><span className="subline">{o.customer_phone || ""}</span></td><td>{(o.items || []).length || 0}</td><td>{date(o.created_at)}</td><td><span className={`status ${String(o.payment_status || "pending").toLowerCase()}`}>{o.payment_status || "pending"}</span></td><td><select className="status-select" disabled={busyId === o.id} value={o.status} onChange={e => updateStatus(o, e.target.value)}>{["New","Confirmed","Preparing","Ready","Completed","Cancelled"].map(s => <option key={s}>{s}</option>)}</select></td><td className="right">{money(o.total_cents)}</td></tr>)}</tbody></table></div> : <EmptyState icon={ShoppingCart} title="No orders here" detail="Orders will appear here as customers check out."/>}
     </section>
+  </>;
+}
+
+
+function MediaLibrary({ onError }) {
+  const [items, setItems] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [uploading, setUploading] = useState(false);
+  const [refresh, setRefresh] = useState(0);
+  const [deleting, setDeleting] = useState("");
+  useEffect(() => { let active = true; request("/media").then(d => { if(active) setItems(d.media || []); }).catch(e => onError(e.message)).finally(() => { if(active) setLoading(false); }); return () => { active = false; }; }, [refresh, onError]);
+  async function upload(file) {
+    if (!file) return; setUploading(true);
+    try { const dataUrl = await compressImage(file); await request("/media", { method: "POST", body: JSON.stringify({ dataUrl, fileName: file.name, usageTag: "store" }) }); setRefresh(v => v + 1); }
+    catch (e) { onError(e.message); } finally { setUploading(false); }
+  }
+  async function remove(id) {
+    try { await request(`/media/${id}`, { method: "DELETE" }); setItems(list => list.filter(x => x.id !== id)); setDeleting(""); }
+    catch (e) { onError(e.message); }
+  }
+  return <>
+    <div className="page-heading"><div><div className="eyebrow">STORE EXPERIENCE</div><h1>Media Library</h1><p>Upload and organize product photography and store assets.</p></div><label className="btn primary upload-label">{uploading ? "Uploading…" : <><Plus size={15}/> Upload image</>}<input type="file" accept="image/jpeg,image/png,image/webp,image/gif" disabled={uploading} onChange={e => upload(e.target.files?.[0])}/></label></div>
+    <section className="panel"><div className="panel-head"><div><h2>All media</h2><p>Images are compressed before upload. Maximum 8MB per file.</p></div><button className="btn secondary" onClick={() => setRefresh(v => v + 1)}><RefreshCw size={14}/> Refresh</button></div>
+      {loading ? <div className="loading-panel"><span className="spinner"/> Loading media…</div> : items.length ? <div className="media-library-grid">{items.map(m => <article className="media-card" key={m.id}><img src={m.url} alt={m.file_name || "Store asset"}/><div><b title={m.file_name}>{m.file_name || "Image asset"}</b><span>{m.usage_tag || "Uncategorized"} · {Math.max(1, Math.round((m.bytes || 0) / 1024))} KB</span><button className="text-btn danger-text" onClick={() => setDeleting(m.id)}>Delete asset</button></div></article>)}</div> : <div className="empty-state"><div className="empty-icon"><Image size={22}/></div><b>Your media library is empty</b><p>Upload your first product image to get started.</p></div>}
+    </section>
+    {deleting && <div className="modal-backdrop"><div className="confirm-modal"><h2>Delete this image?</h2><p>If this image is used by a product or category, the database may prevent deletion or clear its reference.</p><div className="modal-foot"><button className="btn secondary" onClick={() => setDeleting("")}>Cancel</button><button className="btn danger" onClick={() => remove(deleting)}>Delete image</button></div></div></div>}
   </>;
 }
 
@@ -362,7 +417,8 @@ export default function App() {
         {page === "dashboard" && <Dashboard stats={stats} loading={statsLoading} onRefresh={loadStats} onNavigate={navigate}/>}
         {page === "products" && <Products onError={showError}/>}
         {page === "orders" && <Orders onError={showError}/>}
-        {!["dashboard","products","orders"].includes(page) && <Placeholder id={page} onNavigate={navigate}/>}
+        {page === "media" && <MediaLibrary onError={showError}/>}
+        {!["dashboard","products","orders","media"].includes(page) && <Placeholder id={page} onNavigate={navigate}/>}
         <footer className="app-footer"><span>© {new Date().getFullYear()} GO iPhone</span><span>Admin workspace <i/> Built for your store</span></footer>
       </div>
     </main>
