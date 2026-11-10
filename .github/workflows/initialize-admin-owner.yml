@@ -1,0 +1,51 @@
+name: Initialize GO iPhone admin owner
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: go-iphone-owner-seed
+  cancel-in-progress: false
+
+jobs:
+  seed-owner:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: backend
+    env:
+      DATABASE_URL: ${{ secrets.GO_IPHONE_DATABASE_URL }}
+      SEED_OWNER_EMAIL: ${{ secrets.SEED_OWNER_EMAIL }}
+      SEED_OWNER_PASSWORD: ${{ secrets.SEED_OWNER_PASSWORD }}
+    steps:
+      - name: Validate required secrets
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "$DATABASE_URL" || { echo "Missing GO_IPHONE_DATABASE_URL repository secret."; exit 1; }
+          test -n "$SEED_OWNER_EMAIL" || { echo "Missing SEED_OWNER_EMAIL repository secret."; exit 1; }
+          test -n "$SEED_OWNER_PASSWORD" || { echo "Missing SEED_OWNER_PASSWORD repository secret."; exit 1; }
+          test "${#SEED_OWNER_PASSWORD}" -ge 12 || { echo "SEED_OWNER_PASSWORD must be at least 12 characters."; exit 1; }
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+
+      - name: Install backend dependencies
+        run: npm ci
+
+      - name: Apply database schema
+        run: npm run migrate
+
+      - name: Create or update OWNER account
+        run: npm run seed
