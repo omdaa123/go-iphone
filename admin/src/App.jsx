@@ -269,10 +269,10 @@ export default function App() {
 
   useEffect(() => {
     let active = true;
-    request("/auth/me").then(d => { if (active) setUser(d.user); })
+    request("/auth/me").then(d => { if (active) { setUser(d.user); setSecurityReady(!d.user.twoFactorRequired); } })
       .catch(async e => {
         if (e.status === 401) {
-          try { await request("/auth/refresh", { method: "POST" }); const d = await request("/auth/me"); if (active) setUser(d.user); }
+          try { await request("/auth/refresh", { method: "POST" }); const d = await request("/auth/me"); if (active) { setUser(d.user); setSecurityReady(!d.user.twoFactorRequired); } }
           catch { /* Login screen is the expected signed-out state. */ }
         } else if (active) showError(e.message);
       }).finally(() => { if (active) setChecking(false); });
