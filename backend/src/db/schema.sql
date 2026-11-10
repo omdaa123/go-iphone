@@ -46,6 +46,17 @@ CREATE TABLE IF NOT EXISTS sessions (
 );
 CREATE INDEX IF NOT EXISTS idx_sessions_user ON sessions(admin_user_id) WHERE revoked_at IS NULL;
 
+-- Short-lived, single-use proof that the password step succeeded before TOTP.
+-- Only a SHA-256 hash is stored; the raw random token exists only in an HttpOnly cookie.
+CREATE TABLE IF NOT EXISTS totp_login_challenges (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  admin_user_id UUID NOT NULL REFERENCES admin_users(id) ON DELETE CASCADE,
+  token_hash TEXT UNIQUE NOT NULL,
+  expires_at TIMESTAMPTZ NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS idx_totp_login_challenges_user ON totp_login_challenges(admin_user_id);
+
 CREATE TABLE IF NOT EXISTS audit_logs (
   id BIGSERIAL PRIMARY KEY,
   admin_user_id UUID REFERENCES admin_users(id),
