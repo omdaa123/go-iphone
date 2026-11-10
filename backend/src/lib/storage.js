@@ -14,7 +14,7 @@ const cloudinaryPartiallyConfigured = () =>
 
 const s3Enabled = () => !!process.env.S3_BUCKET;
 const publicBase = () => (process.env.S3_PUBLIC_BASE_URL || "").replace(/\/$/, "");
-const keyPrefix = () => (process.env.S3_KEY_PREFIX || "uploads").replace(/^\/$|\/$/g, "");
+const keyPrefix = () => (process.env.S3_KEY_PREFIX || "uploads").replace(/^\/|\/$/g, "");
 
 let client;
 function s3() {
