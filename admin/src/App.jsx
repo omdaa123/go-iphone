@@ -181,6 +181,7 @@ function Products({ onError }) {
   const [refresh, setRefresh] = useState(0);
   const [editing, setEditing] = useState(null);
   const [saving, setSaving] = useState(false);
+  const [deleteId, setDeleteId] = useState("");
   const empty = { name: "", categoryKey: "iphone", productType: "smartphone", tagline: "", visibility: "draft", salesMode: "for_sale", availability: "in_stock", variants: [{ storage: "", color: "", price: "", stockQty: "" }] };
   const [form, setForm] = useState(empty);
   useEffect(() => {
@@ -200,6 +201,12 @@ function Products({ onError }) {
       setEditing(id);
     } catch (e) { onError(e.message); }
   }
+  function addVariant() { setForm(f => ({ ...f, variants: [...f.variants, { storage: "", color: "", price: "", stockQty: "" }] })); }
+  function changeVariant(index, key, value) { setForm(f => ({ ...f, variants: f.variants.map((v, i) => i === index ? { ...v, [key]: value } : v) })); }
+  async function removeProduct() {
+    try { await request(`/products/${deleteId}`, { method: "DELETE" }); setDeleteId(""); setRefresh(v => v + 1); }
+    catch (e) { onError(e.message); }
+  }
   async function save(event) {
     event.preventDefault(); setSaving(true);
     const variants = form.variants.filter(v => v.price !== "").map(v => ({ storage: v.storage || null, color: v.color || null, priceCents: Math.round(Number(v.price) * 100), stockQty: v.stockQty === "" ? null : Number(v.stockQty) }));
@@ -214,7 +221,7 @@ function Products({ onError }) {
     <div className="page-heading"><div><div className="eyebrow">CATALOGUE</div><h1>Products</h1><p>Manage your product catalogue and visibility.</p></div><div className="heading-actions"><button className="btn secondary" onClick={() => setRefresh(v => v + 1)}><RefreshCw size={15}/> Refresh</button><button className="btn primary" onClick={startNew}><Plus size={15}/> Add product</button></div></div>
     <section className="panel">
       <div className="toolbar"><div className="search-box"><Search size={16}/><input value={query} onChange={e => setQuery(e.target.value)} placeholder="Search products…"/></div><select value={visibility} onChange={e => setVisibility(e.target.value)}><option value="all">All visibility</option><option value="published">Published</option><option value="draft">Draft</option><option value="hidden">Hidden</option></select><span className="results-count">{items.length} products</span></div>
-      {loading ? <div className="loading-panel"><span className="spinner"/> Loading products…</div> : items.length ? <div className="table-wrap"><table><thead><tr><th>PRODUCT</th><th>CATEGORY</th><th>TYPE</th><th>PRICE FROM</th><th>VISIBILITY</th><th>UPDATED</th><th>ACTION</th></tr></thead><tbody>{items.map(p => <tr key={p.id}><td><div className="product-cell">{p.image_url ? <img src={p.image_url} alt="" /> : <div className="product-avatar"><Smartphone size={17}/></div>}<div><b>{p.name}</b><span className="subline">{p.slug || p.id}</span></div></div></td><td>{titleCase(p.category_key)}</td><td>{titleCase(p.product_type)}</td><td>{p.from_price_cents == null ? "—" : money(p.from_price_cents)}</td><td><span className={`status ${p.visibility}`}>{p.visibility}</span></td><td>{date(p.updated_at)}</td><td><button className="btn secondary small" onClick={() => startEdit(p.id)}>Edit</button></td></tr>)}</tbody></table></div> : <EmptyState icon={Package} title="No products found" detail="Add your first product to start building the catalogue."/>}
+      {loading ? <div className="loading-panel"><span className="spinner"/> Loading products…</div> : items.length ? <div className="table-wrap"><table><thead><tr><th>PRODUCT</th><th>CATEGORY</th><th>TYPE</th><th>PRICE FROM</th><th>VISIBILITY</th><th>UPDATED</th><th>ACTIONS</th></tr></thead><tbody>{items.map(p => <tr key={p.id}><td><div className="product-cell">{p.image_url ? <img src={p.image_url} alt="" /> : <div className="product-avatar"><Smartphone size={17}/></div>}<div><b>{p.name}</b><span className="subline">{p.slug || p.id}</span></div></div></td><td>{titleCase(p.category_key)}</td><td>{titleCase(p.product_type)}</td><td>{p.from_price_cents == null ? "—" : money(p.from_price_cents)}</td><td><span className={`status ${p.visibility}`}>{p.visibility}</span></td><td>{date(p.updated_at)}</td><td><div className="row-actions"><button className="btn secondary small" onClick={() => startEdit(p.id)}>Edit</button><button className="btn danger small" onClick={() => setDeleteId(p.id)}>Delete</button></div></td></tr>)}</tbody></table></div> : <EmptyState icon={Package} title="No products found" detail="Add your first product to start building the catalogue."/>}
     </section>
     {editing && <div className="modal-backdrop"><form className="editor-modal" onSubmit={save}>
       <div className="modal-head"><div><div className="eyebrow">CATALOGUE</div><h2>{editing === "new" ? "Add product" : "Edit product"}</h2></div><button type="button" className="icon-btn" onClick={() => setEditing(null)}><X size={19}/></button></div>
@@ -227,15 +234,17 @@ function Products({ onError }) {
         <label>Availability<select value={form.availability} onChange={e => setForm(f => ({ ...f, availability: e.target.value }))}><option value="in_stock">In stock</option><option value="out_of_stock">Out of stock</option><option value="coming_soon">Coming soon</option><option value="preorder">Pre-order</option></select></label>
         <label>Visibility<select value={form.visibility} onChange={e => setForm(f => ({ ...f, visibility: e.target.value }))}><option value="draft">Draft</option><option value="published">Published</option><option value="hidden">Hidden</option></select></label>
       </div>
-      <div className="variant-heading"><div><h3>Price & variant</h3><p>Enter the price in Egyptian pounds.</p></div></div>
+      <div className="variant-heading"><div><h3>Pricing & variants</h3><p>Enter prices in Egyptian pounds. Add every storage and color option.</p></div><button type="button" className="btn secondary small" onClick={addVariant}><Plus size={13}/> Add variant</button></div>
       {form.variants.map((v, i) => <div className="variant-row" key={i}>
-        <label>Storage<input value={v.storage} onChange={e => setForm(f => ({ ...f, variants: f.variants.map((x,j) => j === i ? { ...x, storage: e.target.value } : x) }))}/></label>
-        <label>Color<input value={v.color} onChange={e => setForm(f => ({ ...f, variants: f.variants.map((x,j) => j === i ? { ...x, color: e.target.value } : x) }))}/></label>
-        <label>Price (EGP)<input type="number" min="0" step="0.01" required value={v.price} onChange={e => setForm(f => ({ ...f, variants: f.variants.map((x,j) => j === i ? { ...x, price: e.target.value } : x) }))}/></label>
-        <label>Stock qty<input type="number" min="0" step="1" value={v.stockQty} onChange={e => setForm(f => ({ ...f, variants: f.variants.map((x,j) => j === i ? { ...x, stockQty: e.target.value } : x) }))}/></label>
+        <label>Storage<input value={v.storage} onChange={e => changeVariant(i, "storage", e.target.value)}/></label>
+        <label>Color<input value={v.color} onChange={e => changeVariant(i, "color", e.target.value)}/></label>
+        <label>Price (EGP)<input type="number" min="0" step="0.01" required value={v.price} onChange={e => changeVariant(i, "price", e.target.value)}/></label>
+        <label>Stock qty<input type="number" min="0" step="1" value={v.stockQty} onChange={e => changeVariant(i, "stockQty", e.target.value)}/></label>
+        <button type="button" className="icon-btn danger-icon" title="Remove variant" disabled={form.variants.length === 1} onClick={() => setForm(f => ({ ...f, variants: f.variants.filter((_, j) => j !== i) }))}><X size={15}/></button>
       </div>)}
       <div className="modal-foot"><button type="button" className="btn secondary" onClick={() => setEditing(null)}>Cancel</button><button className="btn primary" disabled={saving}>{saving ? "Saving…" : "Save product"}</button></div>
     </form></div>}
+    {deleteId && <div className="modal-backdrop"><div className="confirm-modal"><div className="eyebrow">CONFIRM ACTION</div><h2>Delete this product?</h2><p>This permanently removes the product and its linked variants and inventory units.</p><div className="modal-foot"><button className="btn secondary" onClick={() => setDeleteId("")}>Cancel</button><button className="btn danger" onClick={removeProduct}>Delete product</button></div></div></div>}
   </>;
 }
 
