@@ -1,0 +1,8 @@
+{
+  "rewrites": [
+    {
+      "source": "/admin/:path*",
+      "destination": "https://go-iphone-api.vercel.app/admin/:path*"
+    }
+  ]
+}
