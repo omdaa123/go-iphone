@@ -14,9 +14,6 @@ jobs:
   seed-owner:
     runs-on: ubuntu-latest
     timeout-minutes: 10
-    defaults:
-      run:
-        working-directory: backend
     env:
       DATABASE_URL: ${{ secrets.GO_IPHONE_DATABASE_URL }}
       SEED_OWNER_EMAIL: ${{ secrets.SEED_OWNER_EMAIL }}
@@ -42,10 +39,13 @@ jobs:
           cache-dependency-path: backend/package-lock.json
 
       - name: Install backend dependencies
+        working-directory: backend
         run: npm ci
 
       - name: Apply database schema
+        working-directory: backend
         run: npm run migrate
 
       - name: Create or update OWNER account
+        working-directory: backend
         run: npm run seed
