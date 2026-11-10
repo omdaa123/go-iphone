@@ -102,6 +102,41 @@ function Login({ onLogin }) {
   </main>;
 }
 
+
+function TwoFactorSetup({ onComplete, onError }) {
+  const [setup, setSetup] = useState(null);
+  const [code, setCode] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [loading, setLoading] = useState(true);
+  useEffect(() => {
+    request("/auth/totp-setup", { method: "POST" })
+      .then(setSetup)
+      .catch(e => onError(e.message))
+      .finally(() => setLoading(false));
+  }, [onError]);
+  async function confirm(event) {
+    event.preventDefault(); setBusy(true);
+    try {
+      await request("/auth/totp-confirm", { method: "POST", body: JSON.stringify({ code }) });
+      onComplete();
+    } catch (e) { onError(e.message); }
+    finally { setBusy(false); }
+  }
+  return <main className="login-shell"><div className="login-glow"/>
+    <div className="login-card"><Brand/><div className="login-kicker">ACCOUNT SECURITY</div>
+      <h1>Secure your account.</h1>
+      <p className="muted">Two-factor authentication is required for this role. Scan the QR code with an authenticator app, then enter the current 6-digit code.</p>
+      {loading ? <div className="loading-panel"><span className="spinner"/>Preparing secure setup…</div> : setup ? <form className="login-form" onSubmit={confirm}>
+        <div className="qr-wrap"><img src={setup.qrDataUrl} alt="Authenticator setup QR code"/><span>Scan with Google Authenticator, 1Password, or another TOTP app.</span></div>
+        <div className="secret-box"><span>MANUAL SETUP KEY</span><code>{setup.secret}</code></div>
+        <label>6-digit verification code<input inputMode="numeric" autoComplete="one-time-code" maxLength={6} required value={code} onChange={e => setCode(e.target.value.replace(/\D/g, "").slice(0, 6))} placeholder="000000"/></label>
+        <button className="btn primary full" disabled={busy || code.length !== 6}>{busy ? "Verifying…" : "Enable two-factor authentication"}</button>
+      </form> : <div className="alert error">Could not start two-factor setup. Refresh and sign in again.</div>}
+      <div className="login-foot"><ShieldCheck size={15}/> Your account cannot access store data until setup is complete.</div>
+    </div><div className="login-bottom">GO IPHONE <span>·</span> ACCOUNT SECURITY</div>
+  </main>;
+}
+
 function StatCard({ label, value, detail, icon: Icon, tone = "blue" }) {
   return <div className="stat-card"><div className="stat-top"><span>{label}</span><span className={`stat-icon ${tone}`}><Icon size={18}/></span></div><strong>{value}</strong><div className="stat-detail">{detail}</div></div>;
 }
@@ -214,7 +249,23 @@ export default function App() {
   const [statsLoading, setStatsLoading] = useState(false);
   const [error, setError] = useState("");
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [securityReady, setSecurityReady] = useState(false);
   const showError = useCallback(message => { setError(message); window.setTimeout(() => setError(""), 5000); }, []);
+
+  const handleLogin = useCallback(async () => {
+    try {
+      const data = await request("/auth/me");
+      setUser(data.user);
+      setSecurityReady(!data.user.twoFactorRequired);
+    } catch (e) { showError(e.message); }
+  }, [showError]);
+  const finishSecuritySetup = useCallback(async () => {
+    try {
+      const data = await request("/auth/me");
+      setUser(data.user);
+      setSecurityReady(true);
+    } catch (e) { showError(e.message); }
+  }, [showError]);
 
   useEffect(() => {
     let active = true;
@@ -241,7 +292,8 @@ export default function App() {
   function navigate(id) { setPage(id); setSidebarOpen(false); setError(""); }
 
   if (checking) return <div className="boot-screen"><div className="brand-mark">G</div><span className="spinner"/>Preparing your workspace…</div>;
-  if (!user) return <Login onLogin={setUser}/>;
+  if (!user) return <Login onLogin={handleLogin}/>;
+  if (!securityReady || user.twoFactorRequired) return <TwoFactorSetup onComplete={finishSecuritySetup} onError={showError}/>;
 
   const pageTitle = [...navGroups.flatMap(g => g.items)].find(i => i.id === page)?.label || "Dashboard";
   return <div className="app-shell">
