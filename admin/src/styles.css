@@ -34,3 +34,29 @@
 .btn.danger:hover{background:#572b33;border-color:#a14c58}
 .danger-icon{color:#e88d94}
 .danger-icon:disabled{opacity:.35;cursor:not-allowed}
+
+.image-manager{margin-top:19px;padding:15px;background:#0e131b;border:1px solid #29313d;border-radius:10px}
+.image-manager h3{font:700 13px Manrope;margin:0}
+.image-manager p{font-size:10px;color:#8e98a8;margin:5px 0 12px}
+.image-manager-actions{display:flex;gap:8px;flex-wrap:wrap}
+.upload-label{position:relative;display:inline-flex;align-items:center;gap:7px;overflow:hidden;cursor:pointer}
+.upload-label input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+.selected-image{display:flex;align-items:center;gap:10px;margin-top:13px;color:#aeb8c6;font-size:10px}
+.selected-image img{width:58px;height:58px;object-fit:cover;border-radius:7px;border:1px solid #424b5a}
+.media-picker-backdrop{position:fixed;inset:0;z-index:100;background:#05070be8;display:grid;place-items:center;padding:18px}
+.media-picker{width:min(100%,760px);max-height:85vh;overflow:auto;background:#121720;border:1px solid #343b48;border-radius:15px;padding:20px}
+.media-picker-grid,.media-library-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(135px,1fr));gap:13px}
+.media-choice{min-width:0;text-align:left;padding:8px;border:1px solid #303846;background:#0d1219;color:#dce2eb;border-radius:9px}
+.media-choice.selected{border-color:#c5a36a;box-shadow:0 0 0 1px #c5a36a55}
+.media-choice>img{width:100%;aspect-ratio:1;object-fit:cover;border-radius:6px;background:#080b10}
+.media-choice>span{display:block;font-size:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin:7px 0}
+.media-choice-actions{display:grid;gap:5px}
+.media-choice-actions button{background:#202936;border:1px solid #364253;color:#d5dce7;border-radius:5px;padding:6px;font-size:9px;cursor:pointer}
+.media-library-grid{grid-template-columns:repeat(auto-fill,minmax(170px,1fr));padding-top:17px}
+.media-card{min-width:0;overflow:hidden;background:#0e131b;border:1px solid #29313d;border-radius:10px}
+.media-card>img{width:100%;aspect-ratio:1.2;object-fit:cover;background:#080b10}
+.media-card>div{padding:10px;display:grid;gap:5px}
+.media-card b{font-size:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.media-card span{font-size:9px;color:#8e98a8}
+.danger-text{color:#ed969c;text-align:left;justify-self:start}
+@media(max-width:600px){.media-picker{padding:14px}.media-library-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.image-manager-actions{flex-direction:column;align-items:stretch}}
