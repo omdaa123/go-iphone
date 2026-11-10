@@ -73,7 +73,13 @@ authRouter.post("/login", loginLimiter, validateBody(loginSchema), async (req, r
       // Don't issue a real session yet — only a short-lived "pending 2FA"
       // cookie identifying who's mid-login, scoped to nothing else.
       const pendingToken = newOpaqueToken();
-      res.cookie(PENDING_2FA_COOKIE, `${user.id}:${pendingToken}`, {
+      await pool.query(`DELETE FROM totp_login_challenges WHERE admin_user_id = $1`, [user.id]);
+      await pool.query(
+        `INSERT INTO totp_login_challenges (admin_user_id, token_hash, expires_at)
+         VALUES ($1, $2, $3)`,
+        [user.id, hashToken(pendingToken), minutesFromNow(5)]
+      );
+      res.cookie(PENDING_2FA_COOKIE, pendingToken, {
         ...SESSION_COOKIE_OPTS,
         maxAge: 5 * 60 * 1000,
       });
@@ -96,11 +102,13 @@ authRouter.post("/totp-verify", totpLimiter, validateBody(totpSchema), async (re
   try {
     const pending = req.cookies?.[PENDING_2FA_COOKIE];
     if (!pending) return res.status(401).json({ error: "No pending login." });
-    const [userId] = pending.split(":");
 
     const { rows } = await pool.query(
-      `SELECT id, email, role, totp_secret FROM admin_users WHERE id = $1 AND totp_enabled = true`,
-      [userId]
+      `SELECT u.id, u.email, u.role, u.totp_secret
+       FROM totp_login_challenges c
+       JOIN admin_users u ON u.id = c.admin_user_id
+       WHERE c.token_hash = $1 AND c.expires_at > now() AND u.totp_enabled = true AND u.is_active = true`,
+      [hashToken(pending)]
     );
     const user = rows[0];
     if (!user) return res.status(401).json({ error: "No pending login." });
@@ -111,7 +119,15 @@ authRouter.post("/totp-verify", totpLimiter, validateBody(totpSchema), async (re
       return res.status(401).json({ error: "Invalid code." });
     }
 
-    res.clearCookie(PENDING_2FA_COOKIE);
+    // Consume the one-time challenge atomically so it cannot be replayed or
+    // used by two concurrent verification requests.
+    const consumed = await pool.query(
+      `DELETE FROM totp_login_challenges WHERE token_hash = $1 RETURNING admin_user_id`,
+      [hashToken(pending)]
+    );
+    if (!consumed.rows[0]) return res.status(401).json({ error: "No pending login." });
+
+    res.clearCookie(PENDING_2FA_COOKIE, SESSION_COOKIE_OPTS);
     await issueSession(res, user, req);
     await logLoginEvent({ email: user.email, success: true, reason: "ok", ip: req.ip });
     res.json({ user: { email: user.email, role: user.role } });
