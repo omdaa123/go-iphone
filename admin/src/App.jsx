@@ -708,19 +708,31 @@ const DESIGN_DEFAULTS = {
   preset: "signature",
   colors: { ink: "#111110", paper: "#FAFAF8", stone: "#F0EEE9", line: "#E3E0D9", graphite: "#706C64", mist: "#9C978D", brass: "#AD8642", brassSoft: "#D2B060", brassDeep: "#8E6F34" },
   fontFamily: "Inter",
+  radius: "12",
 };
 const DESIGN_PRESETS = {
-  signature: { label: "Signature", colors: DESIGN_DEFAULTS.colors, fontFamily: "Inter" },
-  midnight: { label: "Midnight", colors: { ink: "#F5F4F0", paper: "#111318", stone: "#1B1F27", line: "#303642", graphite: "#B8BECA", mist: "#858D9B", brass: "#D6AD62", brassSoft: "#E8CB91", brassDeep: "#B68B43" }, fontFamily: "Inter" },
-  titanium: { label: "Titanium", colors: { ink: "#20252B", paper: "#F4F6F7", stone: "#E8ECEF", line: "#D5DCE1", graphite: "#65717C", mist: "#9AA5AE", brass: "#647D91", brassSoft: "#A8BAC7", brassDeep: "#496174" }, fontFamily: "Inter" },
-  editorial: { label: "Editorial", colors: { ink: "#25221E", paper: "#FBF8F2", stone: "#F0E9DE", line: "#E3D8C8", graphite: "#74695C", mist: "#A99B89", brass: "#9A6945", brassSoft: "#C69A72", brassDeep: "#795034" }, fontFamily: "Georgia" },
+  signature: { label: "Signature", description: "Warm premium minimal", colors: DESIGN_DEFAULTS.colors, fontFamily: "Inter", radius: "12" },
+  midnight: { label: "Midnight", description: "Dark flagship aesthetic", colors: { ink: "#F5F4F0", paper: "#111318", stone: "#1B1F27", line: "#303642", graphite: "#B8BECA", mist: "#858D9B", brass: "#D6AD62", brassSoft: "#E8CB91", brassDeep: "#B68B43" }, fontFamily: "Inter", radius: "12" },
+  titanium: { label: "Titanium", description: "Cool modern technology", colors: { ink: "#20252B", paper: "#F4F6F7", stone: "#E8ECEF", line: "#D5DCE1", graphite: "#65717C", mist: "#9AA5AE", brass: "#647D91", brassSoft: "#A8BAC7", brassDeep: "#496174" }, fontFamily: "Inter", radius: "10" },
+  editorial: { label: "Editorial", description: "Refined editorial luxury", colors: { ink: "#25221E", paper: "#FBF8F2", stone: "#F0E9DE", line: "#E3D8C8", graphite: "#74695C", mist: "#A99B89", brass: "#9A6945", brassSoft: "#C69A72", brassDeep: "#795034" }, fontFamily: "Georgia", radius: "6" },
 };
-const DESIGN_FIELDS = [["ink","Primary text"],["paper","Page background"],["stone","Section surface"],["line","Borders"],["graphite","Secondary text"],["brass","Brand accent"]];
+const DESIGN_FIELDS = [
+  ["ink","Primary text","Main headings and important labels"],
+  ["paper","Page background","Main storefront canvas"],
+  ["stone","Section surface","Cards and highlighted sections"],
+  ["line","Borders","Dividers and subtle outlines"],
+  ["graphite","Secondary text","Descriptions and supporting copy"],
+  ["mist","Muted details","Captions and low-emphasis labels"],
+  ["brass","Brand accent","Links, highlights and small details"],
+  ["brassSoft","Soft accent","Subtle accent surfaces"],
+  ["brassDeep","Deep accent","Hover and emphasis states"],
+];
 function DesignStudio({ onError }) {
   const [design, setDesign] = useState(DESIGN_DEFAULTS);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const localPreview = import.meta.env.DEV;
   useEffect(() => {
     request("/site-content").then(({ siteContent = {} }) => {
       const current = siteContent.designSystem || {};
@@ -729,61 +741,79 @@ function DesignStudio({ onError }) {
   }, [onError]);
   function applyPreset(key) {
     const preset = DESIGN_PRESETS[key];
-    if (preset) { setDesign({ preset: key, colors: { ...preset.colors }, fontFamily: preset.fontFamily }); setSaved(false); }
+    if (preset) { setDesign({ preset: key, colors: { ...preset.colors }, fontFamily: preset.fontFamily, radius: preset.radius }); setSaved(false); }
   }
   function updateColor(key, value) {
     setDesign(current => ({ ...current, preset: "custom", colors: { ...current.colors, [key]: value } }));
     setSaved(false);
   }
   async function save() {
+    if (localPreview) return;
     setSaving(true); setSaved(false);
     try { await request("/site-content/designSystem", { method: "PUT", body: JSON.stringify(design) }); setSaved(true); }
     catch (e) { onError(e.message); }
     finally { setSaving(false); }
   }
-  function reset() { setDesign(DESIGN_DEFAULTS); setSaved(false); }
+  function reset() { setDesign({ ...DESIGN_DEFAULTS, colors: { ...DESIGN_DEFAULTS.colors } }); setSaved(false); }
+  const c = design.colors;
+  const radius = (design.radius || "12") + "px";
   return <>
-    <div className="page-heading"><div><div className="eyebrow">STORE EXPERIENCE / VISUAL IDENTITY</div><h1>Design Studio</h1><p>Shape the storefront’s visual language with a consistent, live theme system.</p></div><div className="heading-actions"><button className="btn secondary" onClick={reset}>Reset defaults</button><button className="btn primary" onClick={save} disabled={loading || saving}>{saving ? "Publishing…" : saved ? "Published" : "Publish design"}</button></div></div>
+    <div className="page-heading design-heading">
+      <div><div className="eyebrow">STORE EXPERIENCE / VISUAL IDENTITY</div><h1>Design Studio</h1><p>Build a consistent visual identity for every part of your storefront.</p></div>
+      <div className="heading-actions"><button className="btn secondary" onClick={reset}><RefreshCw size={15}/> Reset</button><button className="btn primary" onClick={save} disabled={loading || saving || localPreview}>{localPreview ? <><Eye size={15}/> Preview mode</> : saving ? "Saving…" : saved ? <><CheckCircle2 size={15}/> Saved</> : "Save design system"}</button></div>
+    </div>
+    {localPreview && <div className="design-safety-note"><ShieldCheck size={17}/><div><b>Safe local preview</b><span>Your local workspace can read the current theme, but saving is disabled so test changes cannot overwrite live store settings.</span></div></div>}
     {loading ? <div className="loading-panel"><span className="spinner"/> Loading your design system…</div> : <>
-      <section className="panel" style={{ marginBottom:18 }}>
-        <div className="panel-head"><div><h2>Start with a visual direction</h2><p>Choose a professionally balanced palette, then fine-tune every color.</p></div><span className="count-pill">THEME PRESETS</span></div>
-        <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(175px,1fr))", gap:12 }}>
-          {Object.entries(DESIGN_PRESETS).map(([key,preset]) => <button key={key} type="button" onClick={() => applyPreset(key)} style={{ textAlign:"left", padding:14, borderRadius:12, border:design.preset===key ? "2px solid #20252B" : "1px solid #E4E7EB", background:"#fff" }}>
-            <div style={{ display:"flex", gap:5, marginBottom:12 }}>{[preset.colors.ink,preset.colors.paper,preset.colors.stone,preset.colors.brass].map((color,i)=><span key={i} style={{ height:34, flex:1, borderRadius:6, background:color, border:"1px solid #00000012" }}/>)}</div>
-            <b style={{ display:"block", color:"#20252B", fontSize:14 }}>{preset.label}</b><span style={{ color:"#7A8490", fontSize:12 }}>{key==="signature"?"Warm premium minimal":key==="midnight"?"Dark flagship aesthetic":key==="titanium"?"Cool modern technology":"Refined editorial luxury"}</span>
-          </button>)}
-        </div>
-      </section>
-      <div style={{ display:"grid", gridTemplateColumns:"minmax(0,1.15fr) minmax(280px,.85fr)", gap:18, alignItems:"start" }}>
-        <section className="panel">
-          <div className="panel-head"><div><h2>Color system</h2><p>These tokens are shared across storefront surfaces.</p></div><span className="count-pill">{design.preset==="custom"?"CUSTOM":"PALETTE"}</span></div>
-          <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(220px,1fr))", gap:14 }}>
-            {DESIGN_FIELDS.map(([key,label])=><label key={key} style={{ display:"flex", alignItems:"center", justifyContent:"space-between", gap:12, border:"1px solid #E8EAED", borderRadius:10, padding:12, color:"#27313A", fontSize:13, fontWeight:600 }}>
-              <span>{label}<small style={{ display:"block", color:"#89929B", fontWeight:400, marginTop:3 }}>{design.colors[key]}</small></span>
-              <input aria-label={label} type="color" value={design.colors[key]} onChange={e=>updateColor(key,e.target.value)} style={{ width:48, height:38, padding:3, border:"1px solid #DDE2E7", borderRadius:8, background:"#fff", cursor:"pointer" }}/>
-            </label>)}
-          </div>
-          <div style={{ marginTop:22, borderTop:"1px solid #EDF0F2", paddingTop:18 }}>
-            <h3 style={{ margin:"0 0 10px", fontSize:14, color:"#27313A" }}>Typography</h3>
-            <select value={design.fontFamily} onChange={e=>{setDesign(d=>({...d,fontFamily:e.target.value}));setSaved(false);}} style={{ width:"100%", maxWidth:360, padding:"11px 12px", border:"1px solid #DDE2E7", borderRadius:9, background:"#fff", color:"#27313A" }}>
-              <option value="Inter">Inter — Modern technology</option><option value="Arial">Arial — Clean universal</option><option value="Georgia">Georgia — Editorial luxury</option>
-            </select>
-          </div>
-        </section>
-        <section className="panel">
-          <div className="panel-head"><div><h2>Live preview</h2><p>A quick preview of your selected design tokens.</p></div><span className="live-dot"/></div>
-          <div style={{ background:design.colors.paper, color:design.colors.ink, border:"1px solid "+design.colors.line, borderRadius:14, overflow:"hidden", fontFamily:design.fontFamily }}>
-            <div style={{ padding:"13px 16px", borderBottom:"1px solid "+design.colors.line, display:"flex", justifyContent:"space-between", alignItems:"center" }}><b style={{ letterSpacing:"-.04em" }}>GO iPhone</b><span style={{ fontSize:10, color:design.colors.graphite }}>STORE PREVIEW</span></div>
-            <div style={{ padding:"24px 18px", background:design.colors.stone }}>
-              <div style={{ color:design.colors.brass, fontSize:10, letterSpacing:".16em", fontWeight:700 }}>DESIGNED TO MOVE YOU</div>
-              <div style={{ fontSize:27, fontWeight:700, lineHeight:1.1, margin:"9px 0" }}>Technology,<br/>beautifully chosen.</div>
-              <p style={{ color:design.colors.graphite, fontSize:12, lineHeight:1.6 }}>A considered shopping experience, built around the details.</p>
-              <button type="button" style={{ background:design.colors.ink, color:design.colors.paper, border:0, padding:"11px 17px", borderRadius:5, marginTop:8, fontSize:11 }}>Explore collection</button>
+      <div className="design-workspace">
+        <div className="design-controls">
+          <section className="panel design-panel">
+            <div className="design-section-heading"><div><span className="design-step">01 / DIRECTION</span><h2>Choose your visual direction</h2><p>Start with a curated foundation. Every preset can be customized.</p></div><span className="count-pill">4 PRESETS</span></div>
+            <div className="design-presets">
+              {Object.entries(DESIGN_PRESETS).map(([key,preset]) => <button key={key} type="button" className={"design-preset "+(design.preset===key?"selected":"")} onClick={() => applyPreset(key)}>
+                <span className="design-preset-swatches">{[preset.colors.ink,preset.colors.paper,preset.colors.stone,preset.colors.brass].map((color,i)=><i key={i} style={{background:color}}/>)}</span>
+                <span className="design-preset-copy"><b>{preset.label}</b><small>{preset.description}</small></span>
+                {design.preset===key && <CheckCircle2 size={17}/>}
+              </button>)}
             </div>
-            <div style={{ padding:14, display:"flex", gap:8 }}><div style={{ flex:1, height:52, border:"1px solid "+design.colors.line, borderRadius:8, background:design.colors.paper }}/><div style={{ flex:1, height:52, border:"1px solid "+design.colors.line, borderRadius:8, background:design.colors.stone }}/><div style={{ flex:1, height:52, borderRadius:8, background:design.colors.brass }}/></div>
-          </div>
-          <p style={{ color:"#7A8490", fontSize:12, lineHeight:1.6, marginTop:12 }}>Your changes are saved to the store’s shared content database. They appear on the live storefront after its deployment is updated and the page reloads.</p>
-        </section>
+          </section>
+          <section className="panel design-panel">
+            <div className="design-section-heading"><div><span className="design-step">02 / COLOR</span><h2>Color system</h2><p>Fine-tune the complete palette with precise color values.</p></div><span className="count-pill">{design.preset==="custom"?"CUSTOM":"TOKENS"}</span></div>
+            <div className="design-color-grid">
+              {DESIGN_FIELDS.map(([key,label,hint])=><label className="design-color-field" key={key}>
+                <span className="design-color-chip" style={{background:c[key]}}/>
+                <span className="design-color-copy"><b>{label}</b><small>{hint}</small><code>{c[key]}</code></span>
+                <input aria-label={label} type="color" value={c[key]} onChange={e=>updateColor(key,e.target.value)}/>
+              </label>)}
+            </div>
+          </section>
+          <section className="panel design-panel">
+            <div className="design-section-heading"><div><span className="design-step">03 / DETAILS</span><h2>Typography & shape</h2><p>Set the tone of the storefront’s text and components.</p></div></div>
+            <div className="design-detail-grid">
+              <label className="design-setting"><span>Typography family</span><select value={design.fontFamily} onChange={e=>{setDesign(d=>({...d,fontFamily:e.target.value,preset:"custom"}));setSaved(false);}}><option value="Inter">Inter — Modern and clean</option><option value="Arial">Arial — Universal clarity</option><option value="Georgia">Georgia — Editorial character</option></select></label>
+              <label className="design-setting"><span>Corner style</span><select value={design.radius || "12"} onChange={e=>{setDesign(d=>({...d,radius:e.target.value,preset:"custom"}));setSaved(false);}}><option value="6">Sharp — 6px</option><option value="10">Balanced — 10px</option><option value="12">Soft — 12px</option><option value="18">Rounded — 18px</option></select></label>
+            </div>
+            <div className="design-type-sample" style={{fontFamily:design.fontFamily}}><span>THE GO IPHONE TYPE SYSTEM</span><strong>Technology, beautifully chosen.</strong><p>Clear information. Thoughtful details. A premium shopping experience.</p></div>
+          </section>
+        </div>
+        <aside className="design-preview-column">
+          <section className="panel design-preview-panel">
+            <div className="design-section-heading"><div><span className="design-step">LIVE CANVAS</span><h2>Storefront preview</h2><p>Updates instantly as you edit.</p></div><span className="design-live-label"><i/> LIVE</span></div>
+            <div className="design-browser" style={{background:c.paper,color:c.ink,fontFamily:design.fontFamily}}>
+              <div className="design-browser-top"><span/><span/><span/><small>goiphone.store</small></div>
+              <div className="design-store-header" style={{borderColor:c.line}}><b>GO<span style={{color:c.brass}}>.</span>IPHONE</b><div><i/> <i/> <i/></div></div>
+              <div className="design-hero" style={{background:c.stone,borderRadius:radius}}>
+                <span style={{color:c.brass}}>THE NEW STANDARD</span><h3>Find your next<br/>favorite device.</h3><p style={{color:c.graphite}}>Carefully selected technology, made simple.</p><button style={{background:c.ink,color:c.paper,borderRadius:radius}}>Explore products <span>↗</span></button>
+              </div>
+              <div className="design-featured"><div><span style={{color:c.brass}}>CURATED FOR YOU</span><b>Featured collection</b></div><small style={{color:c.graphite}}>VIEW ALL ↗</small></div>
+              <div className="design-product-grid">
+                {[0,1].map(i=><div className="design-product-card" key={i} style={{borderColor:c.line,borderRadius:radius}}><div className="design-product-image" style={{background:c.stone,color:c.mist}}><Smartphone size={i?39:46}/></div><div><span style={{color:c.graphite}}>IPHONE · 256 GB</span><b>{i?"iPhone Pro":"iPhone Pro Max"}</b><strong>From EGP 00,000</strong></div></div>)}
+              </div>
+              <div className="design-preview-footer" style={{borderColor:c.line,color:c.graphite}}>GO IPHONE <span style={{color:c.brass}}>●</span> PREMIUM TECHNOLOGY</div>
+            </div>
+            <div className="design-preview-legend"><span><i style={{background:c.ink}}/> Text</span><span><i style={{background:c.paper,border:"1px solid "+c.line}}/> Background</span><span><i style={{background:c.brass}}/> Accent</span></div>
+          </section>
+          <section className="design-tip-card"><Sparkles size={18}/><div><b>One identity, every touchpoint</b><p>Use the same palette and typography across banners, product cards, buttons and content sections to keep the store recognizable.</p></div></section>
+        </aside>
       </div>
     </>}
   </>;
