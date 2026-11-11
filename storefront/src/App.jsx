@@ -1142,7 +1142,6 @@ function HomePage({ go, compareIds, onToggleCompare }) {
   const collectionSettings = siteContent.collections || [];
   const preowned = PRODUCTS.filter((p) => p.hasUnits);
   const featured = PRODUCTS.find((p) => hasCollection(p, "featured") && p.category === "iphone");
-  const SYSTEM_COLLECTIONS = new Set(["featured", "best-sellers", "new-arrivals", "certified-refurbished"]);
   const merchandisingSections = collectionSettings
     .filter((c) => c.visible !== false)
     .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
