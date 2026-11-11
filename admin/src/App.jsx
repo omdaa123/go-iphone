@@ -393,6 +393,17 @@ function HomepageBuilder({ onError }) {
   function updateTrustPoint(index, key, value) {
     setSiteContent(current => ({ ...current, trustSection: { ...current.trustSection, points: current.trustSection.points.map((point, i) => i === index ? { ...point, [key]: value } : point) } }));
   }
+  async function uploadTrustImage(file, index) {
+    if (!file) return;
+    setUploading(true);
+    try {
+      const dataUrl = await compressImage(file);
+      const d = await request("/media", { method: "POST", body: JSON.stringify({ dataUrl, fileName: file.name, usageTag: "trust" }) });
+      setMedia(list => [d.media, ...list]);
+      updateTrustPoint(index, "image", d.media.url);
+    } catch (e) { onError(e.message); }
+    finally { setUploading(false); }
+  }
   function startNew() { setForm({ ...blank }); setEditing("new"); }
   function startEdit(slide) {
     setForm({
@@ -489,8 +500,11 @@ function HomepageBuilder({ onError }) {
               <label className="homepage-toggle"><input type="checkbox" checked={point.visible !== false} onChange={e => updateTrustPoint(index, "visible", e.target.checked)}/> Show this item</label>
               <label>Title<input value={point.title || ""} onChange={e => updateTrustPoint(index, "title", e.target.value)}/></label>
               <label>Description<textarea rows="2" value={point.desc || ""} onChange={e => updateTrustPoint(index, "desc", e.target.value)}/></label>
-              <label>Image URL (optional)<input type="url" value={point.image || ""} onChange={e => updateTrustPoint(index, "image", e.target.value)} placeholder="https://example.com/your-image.png"/></label>
-              {point.image && <div style={{ display: "flex", alignItems: "center", gap: 12, marginTop: 8 }}><img src={point.image} alt="" style={{ width: 54, height: 54, objectFit: "contain", borderRadius: 8, background: "#f3f4f6", padding: 5 }}/><button type="button" className="text-btn danger-text" onClick={() => updateTrustPoint(index, "image", "")}>Remove image</button></div>}
+              <div className="field-wide">
+                <span className="field-label">Image (optional)</span>
+                <label className="btn secondary small upload-label">{uploading ? "Uploading…" : "Upload image"}<input type="file" accept="image/jpeg,image/png,image/webp,image/gif" disabled={uploading} onChange={e => { uploadTrustImage(e.target.files?.[0], index); e.target.value = ""; }}/></label>
+                {point.image && <div style={{ display: "flex", alignItems: "center", gap: 12, marginTop: 10 }}><img src={point.image} alt="" style={{ width: 64, height: 64, objectFit: "contain", borderRadius: 8, background: "#f3f4f6", padding: 5 }}/><button type="button" className="text-btn danger-text" onClick={() => updateTrustPoint(index, "image", "")}>Remove image</button></div>}
+              </div>
             </div>)}
           </div>
           <div className="modal-foot"><button className="btn primary" disabled={saving} onClick={() => saveSiteSection("trustSection", siteContent.trustSection)}>{saving ? "Saving…" : "Save Trust section"}</button></div>
