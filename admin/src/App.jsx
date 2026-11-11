@@ -546,49 +546,8 @@ function HomepageBuilder({ onError }) {
             ))}
           </div>
         </div>
-        <div>
-          <div className="row-actions" style={{ justifyContent: "space-between", marginBottom: 14 }}><h3>Tools section</h3><label className="homepage-toggle"><input type="checkbox" checked={siteContent.toolsSection.visible !== false} onChange={e => setSiteContent(c => ({ ...c, toolsSection: { ...c.toolsSection, visible: e.target.checked } }))}/> Show section</label></div>
-          <div className="editor-grid">
-            <label>Small heading<input value={siteContent.toolsSection.eyebrow || ""} onChange={e => setSiteContent(c => ({ ...c, toolsSection: { ...c.toolsSection, eyebrow: e.target.value } }))}/></label>
-            <label>Main heading<input value={siteContent.toolsSection.title || ""} onChange={e => setSiteContent(c => ({ ...c, toolsSection: { ...c.toolsSection, title: e.target.value } }))}/></label>
-          </div>
-          <div className="editor-grid" style={{ marginTop: 16 }}>
-            {[
-              { key: "recommendationImage", title: "Find your perfect device" },
-              { key: "comparisonImage", title: "Compare devices" },
-            ].map(item => (
-              <div className="field-wide" key={item.key} style={{ border: "1px solid #e5e7eb", padding: 14, borderRadius: 10 }}>
-                <b>{item.title}</b>
-                <div style={{ marginTop: 10 }}>
-                  <label className="btn secondary small upload-label">{uploading ? "Uploading…" : "Upload image"}<input type="file" accept="image/jpeg,image/png,image/webp,image/gif" disabled={uploading} onChange={e => { uploadToolsImage(e.target.files?.[0], item.key); e.target.value = ""; }}/></label>
-                </div>
-                {(siteContent.toolsSection[item.key] || (item.key === "recommendationImage" ? siteContent.recommendationSection?.image : siteContent.comparisonSection?.image)) && <div style={{ display: "flex", alignItems: "center", gap: 12, marginTop: 10 }}>
-                  <img src={siteContent.toolsSection[item.key] || (item.key === "recommendationImage" ? siteContent.recommendationSection?.image : siteContent.comparisonSection?.image)} alt="" style={{ width: 120, height: 76, objectFit: "cover", borderRadius: 8, background: "#f3f4f6" }}/>
-                  <button type="button" className="text-btn danger-text" onClick={() => setSiteContent(c => ({ ...c, toolsSection: { ...c.toolsSection, [item.key]: "" } }))}>Remove image</button>
-                </div>}
-              </div>
-            ))}
-          </div>
-          <div className="modal-foot"><button className="btn primary" disabled={saving} onClick={() => saveSiteSection("toolsSection", siteContent.toolsSection)}>{saving ? "Saving…" : "Save Tools section"}</button></div>
-        </div>
-        <div style={{ borderTop: "1px solid var(--line, #e5e7eb)", paddingTop: 20 }}>
-          <div className="row-actions" style={{ justifyContent: "space-between", marginBottom: 14 }}><h3>Trust section</h3><label className="homepage-toggle"><input type="checkbox" checked={siteContent.trustSection.visible !== false} onChange={e => setSiteContent(c => ({ ...c, trustSection: { ...c.trustSection, visible: e.target.checked } }))}/> Show section</label></div>
-          <div className="editor-grid">
-            {siteContent.trustSection.points.map((point, index) => <div className="field-wide" key={point.id || index} style={{ border: "1px solid #e5e7eb", padding: 14, borderRadius: 10 }}>
-              <label className="homepage-toggle"><input type="checkbox" checked={point.visible !== false} onChange={e => updateTrustPoint(index, "visible", e.target.checked)}/> Show this item</label>
-              <label>Title<input value={point.title || ""} onChange={e => updateTrustPoint(index, "title", e.target.value)}/></label>
-              <label>Description<textarea rows="2" value={point.desc || ""} onChange={e => updateTrustPoint(index, "desc", e.target.value)}/></label>
-              <div className="field-wide">
-                <span className="field-label">Image (optional)</span>
-                <label className="btn secondary small upload-label">{uploading ? "Uploading…" : "Upload image"}<input type="file" accept="image/jpeg,image/png,image/webp,image/gif" disabled={uploading} onChange={e => { uploadTrustImage(e.target.files?.[0], index); e.target.value = ""; }}/></label>
-                {point.image && <div style={{ display: "flex", alignItems: "center", gap: 12, marginTop: 10 }}><img src={point.image} alt="" style={{ width: 64, height: 64, objectFit: "contain", borderRadius: 8, background: "#f3f4f6", padding: 5 }}/><button type="button" className="text-btn danger-text" onClick={() => updateTrustPoint(index, "image", "")}>Remove image</button></div>}
-              </div>
-            </div>)}
-          </div>
-          <div className="modal-foot"><button className="btn primary" disabled={saving} onClick={() => saveSiteSection("trustSection", siteContent.trustSection)}>{saving ? "Saving…" : "Save Trust section"}</button></div>
-        </div>
       </div>
-    </section>
+    </section>}
     {activeTab === "categories" && <section className="category-image-manager">
       <div className="panel-head"><div><h2>Category images <span className="count-pill">{categories.length}</span></h2><p>Choose the image shown for each shopping category across the storefront.</p></div></div>
       {loading ? <div className="loading-panel"><span className="spinner"/> Loading categories…</div> : <div className="category-image-grid">
