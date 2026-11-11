@@ -734,25 +734,38 @@ function heroProductFor(products, slide) {
 function Hero({ go }) {
   const { products, heroSlides: ALL_SLIDES } = useStoreData();
   const HERO_SLIDES = ALL_SLIDES.filter((s) => s.active !== false);
+  const SLIDES = HERO_SLIDES.length ? HERO_SLIDES : [{
+    id: "default-hero",
+    eyebrow: "GO IPHONE",
+    title: "Discover your next favorite.",
+    sub: "Explore the latest Apple devices and find the right one for you.",
+    cta: "Explore iPhone",
+    badge: "",
+    active: true,
+    duration: 6500,
+    image: "",
+    mobileImage: "",
+    target: { view: "catalog", params: { category: "iphone" } },
+  }];
   const [index, setIndex] = useState(0);
   const timerRef = useRef(null);
 
   useEffect(() => {
-    if (HERO_SLIDES.length < 2) return;
-    const current = HERO_SLIDES[Math.min(index, HERO_SLIDES.length - 1)];
+    if (SLIDES.length < 2) return;
+    const current = SLIDES[Math.min(index, SLIDES.length - 1)];
     timerRef.current = setTimeout(() => {
-      setIndex((i) => (i + 1) % HERO_SLIDES.length);
+      setIndex((i) => (i + 1) % SLIDES.length);
     }, current?.duration || 6500);
     return () => clearTimeout(timerRef.current);
-  }, [index, HERO_SLIDES.length]);
+  }, [index, SLIDES.length]);
 
   function goTo(i) {
     setIndex(i);
     clearTimeout(timerRef.current);
   }
 
-  const slide = HERO_SLIDES[Math.min(index, HERO_SLIDES.length - 1)];
-  const secondary = HERO_SLIDES[(index + 1) % HERO_SLIDES.length];
+  const slide = SLIDES[Math.min(index, SLIDES.length - 1)];
+  const secondary = SLIDES[(index + 1) % SLIDES.length];
   if (!slide) return null;
 
 const heroProduct = heroProductFor(products, slide);
@@ -796,7 +809,7 @@ const heroProduct = heroProductFor(products, slide);
                 className="bg-white text-black text-sm font-medium px-7 py-3.5 hover:bg-white/90 transition-colors">
                 {slide.cta}
               </button>
-              {HERO_SLIDES.length > 1 && (
+              {SLIDES.length > 1 && (
                 <button onClick={() => go(secondary.target.view, secondary.target.params)}
                   className="text-white text-sm font-medium hover:text-white/80 transition-colors border-b border-white/40 hover:border-white/70 pb-0.5">
                   {secondary.cta}
@@ -805,9 +818,9 @@ const heroProduct = heroProductFor(products, slide);
             </div>
           </div>
 
-          {HERO_SLIDES.length > 1 && (
+          {SLIDES.length > 1 && (
             <div className="flex items-center gap-2 mt-10">
-              {HERO_SLIDES.map((s, i) => (
+              {SLIDES.map((s, i) => (
                 <button key={s.id} onClick={() => goTo(i)} aria-label={`Go to slide ${i + 1}`}
                   className="h-[3px] transition-all duration-300"
                   style={{ width: i === index ? "26px" : "10px", backgroundColor: i === index ? "#fff" : "rgba(255,255,255,0.4)" }} />
