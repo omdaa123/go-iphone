@@ -9,7 +9,7 @@ import { logAudit } from "../lib/audit.js";
 export const siteContentRouter = Router();
 siteContentRouter.use(requireAuth);
 
-const KNOWN_SECTIONS = ["comparisonSection", "recommendationSection", "announcement", "toolsSection", "trustSection"];
+const KNOWN_SECTIONS = ["comparisonSection", "recommendationSection", "announcement", "toolsSection", "trustSection", "homepageLayout"];
 
 // ---------- GET /admin/site-content ----------
 siteContentRouter.get("/", async (req, res, next) => {
