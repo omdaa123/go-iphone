@@ -1140,42 +1140,36 @@ function HomePage({ go, compareIds, onToggleCompare }) {
   const { products: allProducts, siteContent } = useStoreData();
   const PRODUCTS = allProducts.filter(isPublished);
   const collectionSettings = siteContent.collections || [];
-  const collectionSetting = (id) => collectionSettings.find((item) => item.id === id) || {};
-  const collectionVisible = (id) => collectionSetting(id).visible !== false;
-  const collectionTitle = (id, fallback) => collectionSetting(id).name || fallback;
-  const featured = collectionVisible("featured") ? PRODUCTS.find((p) => hasCollection(p, "featured") && p.category === "iphone") : null;
-  const bestSellers = collectionVisible("best-sellers") ? PRODUCTS.filter((p) => hasCollection(p, "best-sellers")) : [];
-  const latest = collectionVisible("new-arrivals") ? PRODUCTS.filter((p) => hasCollection(p, "new-arrivals")) : [];
   const preowned = PRODUCTS.filter((p) => p.hasUnits);
-
-  // Any collection beyond the built-in ones above renders automatically
-  // as its own homepage rail — no code changes needed to add a new
-  // merchandising section, just create the collection in Admin and tag
-  // products into it.
+  const featured = PRODUCTS.find((p) => hasCollection(p, "featured") && p.category === "iphone");
   const SYSTEM_COLLECTIONS = new Set(["featured", "best-sellers", "new-arrivals", "certified-refurbished"]);
-  const customCollections = (siteContent.collections || [])
-    .filter((c) => !SYSTEM_COLLECTIONS.has(c.id) && c.visible !== false)
+  const merchandisingSections = collectionSettings
+    .filter((c) => c.visible !== false)
     .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
-    .map((c) => ({ ...c, products: PRODUCTS.filter((p) => hasCollection(p, c.id)) }))
+    .map((c) => ({
+      ...c,
+      products: c.id === "featured"
+        ? (featured ? [featured] : [])
+        : c.id === "certified-refurbished"
+          ? preowned
+          : PRODUCTS.filter((p) => hasCollection(p, c.id)),
+    }))
     .filter((c) => c.products.length > 0);
 
   return (
     <div>
       <Hero go={go} />
       <CategoryGrid go={go} />
-      {featured && <EditorialFeature product={featured} go={go} />}
-      {bestSellers.length > 0 && <ProductGrid title={collectionTitle("best-sellers", "Best sellers")} action="See all iPhone" onNavAction={() => go("catalog", { category: "iphone" })}
-        products={bestSellers} onOpen={(id) => go("product", { id })} onToggleCompare={onToggleCompare} compareIds={compareIds} />}
-      {latest.length > 0 && <ProductRail title={collectionTitle("new-arrivals", "Latest arrivals")} action="See what's new" onNavAction={() => go("catalog", { category: "iphone" })}
-        products={latest} onOpen={(id) => go("product", { id })} onToggleCompare={onToggleCompare} compareIds={compareIds} />}
-      {customCollections.map((c, i) => {
-        const RailOrGrid = i % 2 === 0 ? ProductRail : ProductGrid;
-        return (
-          <RailOrGrid key={c.id} title={c.name} action="View all" onNavAction={() => go("catalog", { category: c.products[0]?.category || "iphone" })}
-            products={c.products} onOpen={(id) => go("product", { id })} onToggleCompare={onToggleCompare} compareIds={compareIds} />
-        );
+      {merchandisingSections.map((section, index) => {
+        if (section.id === "featured") return <EditorialFeature key={section.id} product={section.products[0]} go={go} />;
+        if (section.id === "certified-refurbished") return <CertifiedPreownedSection key={section.id} products={section.products} go={go} onOpen={(id) => go("product", { id })} onToggleCompare={onToggleCompare} compareIds={compareIds} />;
+        const onNavAction = () => go("catalog", { category: section.products[0]?.category || "iphone" });
+        const props = { title: section.name, action: "View all", onNavAction, products: section.products, onOpen: (id) => go("product", { id }), onToggleCompare, compareIds };
+        if (section.id === "best-sellers") return <ProductGrid key={section.id} {...props} />;
+        if (section.id === "new-arrivals") return <ProductRail key={section.id} {...props} />;
+        const RailOrGrid = index % 2 === 0 ? ProductRail : ProductGrid;
+        return <RailOrGrid key={section.id} {...props} />;
       })}
-      <CertifiedPreownedSection products={preowned} go={go} onOpen={(id) => go("product", { id })} onToggleCompare={onToggleCompare} compareIds={compareIds} />
       <ToolsSection onRecommend={() => go("recommend")} onCompare={() => go("compare")} />
       <TrustSection />
     </div>
