@@ -346,6 +346,15 @@ function HomepageBuilder({ onError }) {
   const blank = { eyebrow: "GO IPHONE", title: "", subtitle: "", badge: "", ctaText: "Shop now", linkCategoryKey: "iphone", linkProductId: "", imageMediaId: "", mobileImageMediaId: "", active: true, durationMs: 6500 };
   const [slides, setSlides] = useState([]);
   const [categories, setCategories] = useState([]);
+  const [siteContent, setSiteContent] = useState({
+    toolsSection: { visible: true, eyebrow: "Tools", title: "Not sure which to choose?" },
+    trustSection: { visible: true, points: [
+      { id: "warranty", title: "Every device warrantied", desc: "New and certified pre-owned devices each ship with a Go iPhone warranty.", visible: true },
+      { id: "battery", title: "Battery health disclosed", desc: "Pre-owned battery health and condition are graded and shown before you buy.", visible: true },
+      { id: "grading", title: "Individually graded", desc: "Each pre-owned unit is inspected on its own, not sold by a generic condition tier.", visible: true },
+      { id: "delivery", title: "Cash on delivery", desc: "Pay when your order arrives, anywhere we deliver.", visible: true },
+    ] },
+  });
   const [categoryMediaTarget, setCategoryMediaTarget] = useState("");
   const [media, setMedia] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -358,14 +367,32 @@ function HomepageBuilder({ onError }) {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const results = await Promise.all([request("/hero-slides"), request("/media"), request("/categories")]);
+      const results = await Promise.all([request("/hero-slides"), request("/media"), request("/categories"), request("/site-content")]);
       setSlides(results[0].heroSlides || []);
       setMedia(results[1].media || []);
       setCategories(results[2].categories || []);
+      const saved = results[3].siteContent || {};
+      setSiteContent(current => ({
+        ...current,
+        ...saved,
+        toolsSection: { ...current.toolsSection, ...(saved.toolsSection || {}) },
+        trustSection: { ...current.trustSection, ...(saved.trustSection || {}), points: Array.isArray(saved.trustSection?.points) ? saved.trustSection.points : current.trustSection.points },
+      }));
     } catch (e) { onError(e.message); }
     finally { setLoading(false); }
   }, [onError]);
   useEffect(() => { load(); }, [load, refresh]);
+  async function saveSiteSection(section, data) {
+    setSaving(true);
+    try {
+      await request("/site-content/" + section, { method: "PUT", body: JSON.stringify(data) });
+      setSiteContent(current => ({ ...current, [section]: data }));
+    } catch (e) { onError(e.message); }
+    finally { setSaving(false); }
+  }
+  function updateTrustPoint(index, key, value) {
+    setSiteContent(current => ({ ...current, trustSection: { ...current.trustSection, points: current.trustSection.points.map((point, i) => i === index ? { ...point, [key]: value } : point) } }));
+  }
   function startNew() { setForm({ ...blank }); setEditing("new"); }
   function startEdit(slide) {
     setForm({
@@ -444,6 +471,30 @@ function HomepageBuilder({ onError }) {
   return <>
     <div className="page-heading"><div><div className="eyebrow">STORE EXPERIENCE</div><h1>Homepage Builder</h1><p>Manage the images and banners customers see across your storefront.</p></div><div className="heading-actions"><button className="btn secondary" onClick={() => setRefresh(v => v + 1)}><RefreshCw size={15}/> Refresh</button><button className="btn primary" onClick={startNew}><Plus size={15}/> Add hero slide</button></div></div>
     <div className="homepage-intro"><div className="homepage-intro-icon"><Sparkles size={23}/></div><div><b>Your storefront hero section</b><p>Slides appear in the order shown below. If you have not added a banner yet, the storefront displays its built-in default hero design.</p></div><span className="homepage-live"><i/> Connected to storefront</span></div>
+    <section className="panel" style={{ marginBottom: 24 }}>
+      <div className="panel-head"><div><h2>Homepage sections</h2><p>Edit the Tools and Trust content shown below your product collections.</p></div></div>
+      <div style={{ padding: 22, display: "grid", gap: 24 }}>
+        <div>
+          <div className="row-actions" style={{ justifyContent: "space-between", marginBottom: 14 }}><h3>Tools section</h3><label className="homepage-toggle"><input type="checkbox" checked={siteContent.toolsSection.visible !== false} onChange={e => setSiteContent(c => ({ ...c, toolsSection: { ...c.toolsSection, visible: e.target.checked } }))}/> Show section</label></div>
+          <div className="editor-grid">
+            <label>Small heading<input value={siteContent.toolsSection.eyebrow || ""} onChange={e => setSiteContent(c => ({ ...c, toolsSection: { ...c.toolsSection, eyebrow: e.target.value } }))}/></label>
+            <label>Main heading<input value={siteContent.toolsSection.title || ""} onChange={e => setSiteContent(c => ({ ...c, toolsSection: { ...c.toolsSection, title: e.target.value } }))}/></label>
+          </div>
+          <div className="modal-foot"><button className="btn primary" disabled={saving} onClick={() => saveSiteSection("toolsSection", siteContent.toolsSection)}>{saving ? "Saving…" : "Save Tools section"}</button></div>
+        </div>
+        <div style={{ borderTop: "1px solid var(--line, #e5e7eb)", paddingTop: 20 }}>
+          <div className="row-actions" style={{ justifyContent: "space-between", marginBottom: 14 }}><h3>Trust section</h3><label className="homepage-toggle"><input type="checkbox" checked={siteContent.trustSection.visible !== false} onChange={e => setSiteContent(c => ({ ...c, trustSection: { ...c.trustSection, visible: e.target.checked } }))}/> Show section</label></div>
+          <div className="editor-grid">
+            {siteContent.trustSection.points.map((point, index) => <div className="field-wide" key={point.id || index} style={{ border: "1px solid #e5e7eb", padding: 14, borderRadius: 10 }}>
+              <label className="homepage-toggle"><input type="checkbox" checked={point.visible !== false} onChange={e => updateTrustPoint(index, "visible", e.target.checked)}/> Show this item</label>
+              <label>Title<input value={point.title || ""} onChange={e => updateTrustPoint(index, "title", e.target.value)}/></label>
+              <label>Description<textarea rows="2" value={point.desc || ""} onChange={e => updateTrustPoint(index, "desc", e.target.value)}/></label>
+            </div>)}
+          </div>
+          <div className="modal-foot"><button className="btn primary" disabled={saving} onClick={() => saveSiteSection("trustSection", siteContent.trustSection)}>{saving ? "Saving…" : "Save Trust section"}</button></div>
+        </div>
+      </div>
+    </section>
     <section className="category-image-manager">
       <div className="panel-head"><div><h2>Category images <span className="count-pill">{categories.length}</span></h2><p>Choose the image shown for each shopping category across the storefront.</p></div></div>
       {loading ? <div className="loading-panel"><span className="spinner"/> Loading categories…</div> : <div className="category-image-grid">
