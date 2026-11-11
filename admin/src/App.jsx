@@ -235,6 +235,28 @@ function Products({ onError }) {
     try { await request(`/products/${deleteId}`, { method: "DELETE" }); setDeleteId(""); setRefresh(v => v + 1); }
     catch (e) { onError(e.message); }
   }
+  async function assignCategoryImage(key, imageMediaId) {
+    try {
+      const d = await request(`/categories/${encodeURIComponent(key)}/image`, {
+        method: "PATCH", body: JSON.stringify({ imageMediaId: imageMediaId || null }),
+      });
+      setCategories(list => list.map(category => category.key === key
+        ? { ...category, image_media_id: imageMediaId || null, image_url: media.find(m => m.id === imageMediaId)?.url || null }
+        : category));
+      setCategoryMediaTarget("");
+    } catch (e) { onError(e.message); }
+  }
+  async function uploadCategoryImage(file, key) {
+    if (!file) return;
+    setUploading(true);
+    try {
+      const dataUrl = await compressImage(file);
+      const d = await request("/media", { method: "POST", body: JSON.stringify({ dataUrl, fileName: file.name, usageTag: "category" }) });
+      setMedia(list => [d.media, ...list]);
+      await assignCategoryImage(key, d.media.id);
+    } catch (e) { onError(e.message); }
+    finally { setUploading(false); }
+  }
   async function save(event) {
     event.preventDefault(); setSaving(true);
     const variants = form.variants.filter(v => v.price !== "").map(v => ({ storage: v.storage || null, color: v.color || null, priceCents: Math.round(Number(v.price) * 100), stockQty: v.stockQty === "" ? null : Number(v.stockQty) }));
@@ -336,6 +358,8 @@ function MediaLibrary({ onError }) {
 function HomepageBuilder({ onError }) {
   const blank = { eyebrow: "GO IPHONE", title: "", subtitle: "", badge: "", ctaText: "Shop now", linkCategoryKey: "iphone", linkProductId: "", imageMediaId: "", mobileImageMediaId: "", active: true, durationMs: 6500 };
   const [slides, setSlides] = useState([]);
+  const [categories, setCategories] = useState([]);
+  const [categoryMediaTarget, setCategoryMediaTarget] = useState("");
   const [media, setMedia] = useState([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -347,9 +371,10 @@ function HomepageBuilder({ onError }) {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const results = await Promise.all([request("/hero-slides"), request("/media")]);
+      const results = await Promise.all([request("/hero-slides"), request("/media"), request("/categories")]);
       setSlides(results[0].heroSlides || []);
       setMedia(results[1].media || []);
+      setCategories(results[2].categories || []);
     } catch (e) { onError(e.message); }
     finally { setLoading(false); }
   }, [onError]);
@@ -408,8 +433,25 @@ function HomepageBuilder({ onError }) {
   }
   const selectedImage = id => media.find(m => m.id === id)?.url || "";
   return <>
-    <div className="page-heading"><div><div className="eyebrow">STORE EXPERIENCE</div><h1>Homepage Builder</h1><p>Build the first impression of your store. Manage hero banners, images and calls to action.</p></div><div className="heading-actions"><button className="btn secondary" onClick={() => setRefresh(v => v + 1)}><RefreshCw size={15}/> Refresh</button><button className="btn primary" onClick={startNew}><Plus size={15}/> Add hero slide</button></div></div>
+    <div className="page-heading"><div><div className="eyebrow">STORE EXPERIENCE</div><h1>Homepage Builder</h1><p>Manage the images and banners customers see across your storefront.</p></div><div className="heading-actions"><button className="btn secondary" onClick={() => setRefresh(v => v + 1)}><RefreshCw size={15}/> Refresh</button><button className="btn primary" onClick={startNew}><Plus size={15}/> Add hero slide</button></div></div>
     <div className="homepage-intro"><div className="homepage-intro-icon"><Sparkles size={23}/></div><div><b>Your storefront hero section</b><p>Slides appear in the order shown below. If you have not added a banner yet, the storefront displays its built-in default hero design.</p></div><span className="homepage-live"><i/> Connected to storefront</span></div>
+    <section className="category-image-manager">
+      <div className="panel-head"><div><h2>Category images <span className="count-pill">{categories.length}</span></h2><p>Choose the image shown for each shopping category across the storefront.</p></div></div>
+      {loading ? <div className="loading-panel"><span className="spinner"/> Loading categories…</div> : <div className="category-image-grid">
+        {categories.map(category => <article className="category-image-card" key={category.key}>
+          <div className="category-image-preview">{category.image_url ? <img src={category.image_url} alt={category.label}/> : <div><Image size={24}/><span>No category image</span></div>}</div>
+          <div className="category-image-details"><b>{category.label}</b><span>{category.key}</span></div>
+          <div className="category-image-actions">
+            <label className="btn secondary small upload-label">{uploading ? "Uploading…" : "Upload image"}<input type="file" accept="image/jpeg,image/png,image/webp,image/gif" disabled={uploading} onChange={e => uploadCategoryImage(e.target.files?.[0], category.key)}/></label>
+            <button type="button" className="btn secondary small" onClick={() => setCategoryMediaTarget(categoryMediaTarget === category.key ? "" : category.key)}>Choose from library</button>
+            {category.image_url && <button type="button" className="text-btn danger-text" onClick={() => assignCategoryImage(category.key, null)}>Remove</button>}
+          </div>
+          {categoryMediaTarget === category.key && <div className="category-media-picker">
+            {media.length ? media.map(item => <button type="button" key={item.id} className={category.image_media_id === item.id ? "selected" : ""} onClick={() => assignCategoryImage(category.key, item.id)}><img src={item.url} alt={item.file_name || "Store image"}/><span>{item.file_name || "Image"}</span></button>) : <span className="muted">Upload an image to the media library first.</span>}
+          </div>}
+        </article>)}
+      </div>}
+    </section>
     <section className="homepage-slides">
       <div className="panel-head"><div><h2>Hero slides <span className="count-pill">{slides.length}</span></h2><p>Desktop and mobile imagery, headline, CTA and visibility.</p></div></div>
       {loading ? <div className="loading-panel"><span className="spinner"/> Loading homepage content…</div> : slides.length ? <div className="hero-slide-list">{slides.map((slide, index) => <article className="hero-slide-card" key={slide.id}>
