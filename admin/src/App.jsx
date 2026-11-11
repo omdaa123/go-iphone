@@ -489,6 +489,8 @@ function HomepageBuilder({ onError }) {
               <label className="homepage-toggle"><input type="checkbox" checked={point.visible !== false} onChange={e => updateTrustPoint(index, "visible", e.target.checked)}/> Show this item</label>
               <label>Title<input value={point.title || ""} onChange={e => updateTrustPoint(index, "title", e.target.value)}/></label>
               <label>Description<textarea rows="2" value={point.desc || ""} onChange={e => updateTrustPoint(index, "desc", e.target.value)}/></label>
+              <label>Image URL (optional)<input type="url" value={point.image || ""} onChange={e => updateTrustPoint(index, "image", e.target.value)} placeholder="https://example.com/your-image.png"/></label>
+              {point.image && <div style={{ display: "flex", alignItems: "center", gap: 12, marginTop: 8 }}><img src={point.image} alt="" style={{ width: 54, height: 54, objectFit: "contain", borderRadius: 8, background: "#f3f4f6", padding: 5 }}/><button type="button" className="text-btn danger-text" onClick={() => updateTrustPoint(index, "image", "")}>Remove image</button></div>}
             </div>)}
           </div>
           <div className="modal-foot"><button className="btn primary" disabled={saving} onClick={() => saveSiteSection("trustSection", siteContent.trustSection)}>{saving ? "Saving…" : "Save Trust section"}</button></div>
