@@ -347,6 +347,13 @@ function HomepageBuilder({ onError }) {
   const [slides, setSlides] = useState([]);
   const [categories, setCategories] = useState([]);
   const [siteContent, setSiteContent] = useState({
+    homepageLayout: [
+      { id: "hero", label: "Hero banner", visible: true, order: 0 },
+      { id: "categories", label: "Categories", visible: true, order: 1 },
+      { id: "collections", label: "Product collections", visible: true, order: 2 },
+      { id: "tools", label: "Tools", visible: true, order: 3 },
+      { id: "trust", label: "Trust", visible: true, order: 4 },
+    ],
     toolsSection: { visible: true, eyebrow: "Tools", title: "Not sure which to choose?" },
     trustSection: { visible: true, points: [
       { id: "warranty", title: "Every device warrantied", desc: "New and certified pre-owned devices each ship with a Go iPhone warranty.", visible: true },
@@ -375,6 +382,7 @@ function HomepageBuilder({ onError }) {
       setSiteContent(current => ({
         ...current,
         ...saved,
+        homepageLayout: Array.isArray(saved.homepageLayout) ? saved.homepageLayout : current.homepageLayout,
         toolsSection: { ...current.toolsSection, ...(saved.toolsSection || {}) },
         trustSection: { ...current.trustSection, ...(saved.trustSection || {}), points: Array.isArray(saved.trustSection?.points) ? saved.trustSection.points : current.trustSection.points },
       }));
@@ -382,6 +390,18 @@ function HomepageBuilder({ onError }) {
     finally { setLoading(false); }
   }, [onError]);
   useEffect(() => { load(); }, [load, refresh]);
+  function updateHomepageLayout(index, patch) {
+    setSiteContent(current => ({ ...current, homepageLayout: current.homepageLayout.map((item, i) => i === index ? { ...item, ...patch } : item) }));
+  }
+  function moveHomepageSection(index, direction) {
+    setSiteContent(current => {
+      const items = [...current.homepageLayout].sort((a, b) => a.order - b.order);
+      const target = index + direction;
+      if (target < 0 || target >= items.length) return current;
+      [items[index], items[target]] = [items[target], items[index]];
+      return { ...current, homepageLayout: items.map((item, i) => ({ ...item, order: i })) };
+    });
+  }
   async function saveSiteSection(section, data) {
     setSaving(true);
     try {
@@ -496,6 +516,23 @@ function HomepageBuilder({ onError }) {
     <section className="panel" style={{ marginBottom: 24 }}>
       <div className="panel-head"><div><h2>Homepage sections</h2><p>Edit the Tools and Trust content shown below your product collections.</p></div></div>
       <div style={{ padding: 22, display: "grid", gap: 24 }}>
+        <div>
+          <div className="row-actions" style={{ justifyContent: "space-between", marginBottom: 14 }}>
+            <div><h3>Homepage section order</h3><p className="muted">Show, hide, and reorder the main homepage blocks.</p></div>
+            <button className="btn primary" disabled={saving} onClick={() => saveSiteSection("homepageLayout", siteContent.homepageLayout)}>{saving ? "Saving…" : "Save layout"}</button>
+          </div>
+          <div style={{ display: "grid", gap: 8 }}>
+            {[...siteContent.homepageLayout].sort((a, b) => a.order - b.order).map((item, index) => (
+              <div key={item.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, border: "1px solid #e5e7eb", borderRadius: 10, padding: "12px 14px" }}>
+                <label className="homepage-toggle"><input type="checkbox" checked={item.visible !== false} onChange={e => updateHomepageLayout(index, { visible: e.target.checked })}/><b>{item.label}</b></label>
+                <div className="row-actions">
+                  <button type="button" className="btn secondary small" disabled={index === 0} onClick={() => moveHomepageSection(index, -1)}>↑</button>
+                  <button type="button" className="btn secondary small" disabled={index === siteContent.homepageLayout.length - 1} onClick={() => moveHomepageSection(index, 1)}>↓</button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
         <div>
           <div className="row-actions" style={{ justifyContent: "space-between", marginBottom: 14 }}><h3>Tools section</h3><label className="homepage-toggle"><input type="checkbox" checked={siteContent.toolsSection.visible !== false} onChange={e => setSiteContent(c => ({ ...c, toolsSection: { ...c.toolsSection, visible: e.target.checked } }))}/> Show section</label></div>
           <div className="editor-grid">
