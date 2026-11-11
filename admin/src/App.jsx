@@ -235,28 +235,6 @@ function Products({ onError }) {
     try { await request(`/products/${deleteId}`, { method: "DELETE" }); setDeleteId(""); setRefresh(v => v + 1); }
     catch (e) { onError(e.message); }
   }
-  async function assignCategoryImage(key, imageMediaId) {
-    try {
-      const d = await request(`/categories/${encodeURIComponent(key)}/image`, {
-        method: "PATCH", body: JSON.stringify({ imageMediaId: imageMediaId || null }),
-      });
-      setCategories(list => list.map(category => category.key === key
-        ? { ...category, image_media_id: imageMediaId || null, image_url: media.find(m => m.id === imageMediaId)?.url || null }
-        : category));
-      setCategoryMediaTarget("");
-    } catch (e) { onError(e.message); }
-  }
-  async function uploadCategoryImage(file, key) {
-    if (!file) return;
-    setUploading(true);
-    try {
-      const dataUrl = await compressImage(file);
-      const d = await request("/media", { method: "POST", body: JSON.stringify({ dataUrl, fileName: file.name, usageTag: "category" }) });
-      setMedia(list => [d.media, ...list]);
-      await assignCategoryImage(key, d.media.id);
-    } catch (e) { onError(e.message); }
-    finally { setUploading(false); }
-  }
   async function save(event) {
     event.preventDefault(); setSaving(true);
     const variants = form.variants.filter(v => v.price !== "").map(v => ({ storage: v.storage || null, color: v.color || null, priceCents: Math.round(Number(v.price) * 100), stockQty: v.stockQty === "" ? null : Number(v.stockQty) }));
@@ -398,6 +376,28 @@ function HomepageBuilder({ onError }) {
       const d = await request("/media", { method: "POST", body: JSON.stringify({ dataUrl, fileName: file.name, usageTag: "hero" }) });
       setMedia(list => [d.media, ...list]);
       setForm(f => ({ ...f, [target]: d.media.id }));
+    } catch (e) { onError(e.message); }
+    finally { setUploading(false); }
+  }
+  async function assignCategoryImage(key, imageMediaId) {
+    try {
+      const d = await request(`/categories/${encodeURIComponent(key)}/image`, {
+        method: "PATCH", body: JSON.stringify({ imageMediaId: imageMediaId || null }),
+      });
+      setCategories(list => list.map(category => category.key === key
+        ? { ...category, image_media_id: imageMediaId || null, image_url: media.find(m => m.id === imageMediaId)?.url || null }
+        : category));
+      setCategoryMediaTarget("");
+    } catch (e) { onError(e.message); }
+  }
+  async function uploadCategoryImage(file, key) {
+    if (!file) return;
+    setUploading(true);
+    try {
+      const dataUrl = await compressImage(file);
+      const d = await request("/media", { method: "POST", body: JSON.stringify({ dataUrl, fileName: file.name, usageTag: "category" }) });
+      setMedia(list => [d.media, ...list]);
+      await assignCategoryImage(key, d.media.id);
     } catch (e) { onError(e.message); }
     finally { setUploading(false); }
   }
