@@ -219,3 +219,41 @@ td{font-size:12px;font-weight:500;color:#343c48}
  th{font-size:9px}
  td{font-size:11px}
 }
+
+
+/* Larger admin typography — second readability pass */
+body{font-size:15px}
+.nav-item{font-size:15px;padding:12px 11px;gap:13px}
+.nav-label{font-size:11px;padding-bottom:11px}
+.brand b{font-size:17px}.brand span{font-size:9px}
+.store-switch b{font-size:13px}.store-switch span{font-size:11px}
+.user-info b{font-size:12px}.user-info span{font-size:10px}
+.breadcrumb{font-size:13px}
+.environment{font-size:11px}
+.page-heading h1{font-size:33px}.page-heading p{font-size:14px}
+.page-heading .eyebrow,.eyebrow,.login-kicker{font-size:11px}
+.stat-top{font-size:13px}.stat-card>strong{font-size:29px}.stat-detail{font-size:12px}
+.panel-head h2,.quick-actions h2{font-size:16px}.panel-head p{font-size:12px}
+th{font-size:11px;padding:14px 16px}td{font-size:13px;padding:15px 16px}
+.status{font-size:11px;padding:5px 9px}
+.stock-name b,.product-cell b{font-size:13px}.stock-name span,.subline{font-size:11px}.stock-qty{font-size:12px}
+.empty-state b{font-size:14px}.empty-state p,.placeholder-panel>p{font-size:13px}
+.quick-actions button{font-size:12px;padding:11px 13px}
+.btn{font-size:13px;padding:11px 15px}.btn.small{font-size:11px}
+.toolbar input,.toolbar select{font-size:13px;padding:11px 13px}
+.filter-tabs button{font-size:12px;padding:9px 12px}.results-count{font-size:12px}
+.editor-grid label,.variant-row label{font-size:12px}.editor-grid input,.editor-grid select,.variant-row input{font-size:13px;padding:12px}
+.variant-heading h3{font-size:15px}.variant-heading p,.confirm-modal p{font-size:13px}
+.modal-head h2,.confirm-modal h2{font-size:24px}
+.qr-wrap span{font-size:12px}.secret-box span{font-size:10px}.secret-box code{font-size:13px}
+.media-choice>span,.media-card b{font-size:12px}.media-card span{font-size:11px}
+.app-footer{font-size:11px}.login-form label{font-size:13px}.login-form input{font-size:14px;padding:14px}
+.login-card>p{font-size:14px}.login-foot{font-size:11px}
+@media(max-width:760px){
+ .nav-item{font-size:15px;padding:13px 11px}
+ .page-heading h1{font-size:29px}
+ .page-heading p{font-size:13px}
+ .stat-top{font-size:12px}.stat-card>strong{font-size:25px}
+ th{font-size:10px}td{font-size:12px;padding:13px 12px}
+ .panel-head h2{font-size:15px}
+}
