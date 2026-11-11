@@ -944,10 +944,11 @@ function ToolsSection({ onRecommend, onCompare }) {
   const { siteContent } = useStoreData();
   const rec = siteContent.recommendationSection;
   const cmp = siteContent.comparisonSection;
-  if (rec.visible === false && cmp.visible === false) return null;
+  const settings = siteContent.toolsSection || {};
+  if (settings.visible === false || (rec.visible === false && cmp.visible === false)) return null;
   return (
     <section className="max-w-7xl mx-auto px-6 md:px-10 py-16 md:py-32">
-      <SectionHeading eyebrow="Tools" title="Not sure which to choose?" />
+      <SectionHeading eyebrow={settings.eyebrow || "Tools"} title={settings.title || "Not sure which to choose?"} />
       <div className="grid md:grid-cols-2 gap-10 md:gap-14">
         {rec.visible !== false && (
           <ToolCard
@@ -983,12 +984,20 @@ function ToolsSection({ onRecommend, onCompare }) {
    footer as a quiet close to the homepage.
    ============================================================ */
 function TrustSection() {
-  const points = [
-    { icon: ShieldCheck, title: "Every device warrantied", desc: "New and certified pre-owned devices each ship with a Go iPhone warranty." },
-    { icon: BatteryMedium, title: "Battery health disclosed", desc: "Pre-owned battery health and condition are graded and shown before you buy." },
-    { icon: Check, title: "Individually graded", desc: "Each pre-owned unit is inspected on its own, not sold by a generic condition tier." },
-    { icon: CircleCheck, title: "Cash on delivery", desc: "Pay when your order arrives, anywhere we deliver." },
+  const { siteContent } = useStoreData();
+  const settings = siteContent.trustSection || {};
+  const defaults = [
+    { id: "warranty", icon: ShieldCheck, title: "Every device warrantied", desc: "New and certified pre-owned devices each ship with a Go iPhone warranty." },
+    { id: "battery", icon: BatteryMedium, title: "Battery health disclosed", desc: "Pre-owned battery health and condition are graded and shown before you buy." },
+    { id: "grading", icon: Check, title: "Individually graded", desc: "Each pre-owned unit is inspected on its own, not sold by a generic condition tier." },
+    { id: "delivery", icon: CircleCheck, title: "Cash on delivery", desc: "Pay when your order arrives, anywhere we deliver." },
   ];
+  const icons = { warranty: ShieldCheck, battery: BatteryMedium, grading: Check, delivery: CircleCheck };
+  const points = defaults.map(base => {
+    const saved = (settings.points || []).find(point => point.id === base.id) || {};
+    return { ...base, ...saved, icon: icons[base.id] };
+  }).filter(point => point.visible !== false);
+  if (settings.visible === false || !points.length) return null;
   return (
     <section style={{ borderColor: T.line }} className="max-w-7xl mx-auto px-6 md:px-10 py-20 md:py-24 border-t">
       <div className="grid grid-cols-2 md:grid-cols-4 gap-x-8 gap-y-10">
@@ -2129,6 +2138,13 @@ function defaultSiteContent() {
       image: "", title: "Which iPhone is right for you?", description: "Answer a few questions and we'll match you with the best device for your budget and needs.",
       cta: "Find your perfect device", visible: true,
     },
+    toolsSection: { visible: true, eyebrow: "Tools", title: "Not sure which to choose?" },
+    trustSection: { visible: true, points: [
+      { id: "warranty", title: "Every device warrantied", desc: "New and certified pre-owned devices each ship with a Go iPhone warranty.", visible: true },
+      { id: "battery", title: "Battery health disclosed", desc: "Pre-owned battery health and condition are graded and shown before you buy.", visible: true },
+      { id: "grading", title: "Individually graded", desc: "Each pre-owned unit is inspected on its own, not sold by a generic condition tier.", visible: true },
+      { id: "delivery", title: "Cash on delivery", desc: "Pay when your order arrives, anywhere we deliver.", visible: true },
+    ] },
     collections: [],
     settings: {},
   };
@@ -2159,6 +2175,8 @@ function StoreDataProvider({ children }) {
           announcement: { ...d.announcement, ...(sc.announcement || {}) },
           comparisonSection: { ...d.comparisonSection, ...(sc.comparisonSection || {}) },
           recommendationSection: { ...d.recommendationSection, ...(sc.recommendationSection || {}) },
+          toolsSection: { ...d.toolsSection, ...(sc.toolsSection || {}) },
+          trustSection: { ...d.trustSection, ...(sc.trustSection || {}), points: Array.isArray(sc.trustSection?.points) ? sc.trustSection.points : d.trustSection.points },
         },
       });
       setStatus("ready");
