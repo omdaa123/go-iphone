@@ -703,6 +703,92 @@ function CollectionsManager({ onError }) {
   </>;
 }
 
+
+const DESIGN_DEFAULTS = {
+  preset: "signature",
+  colors: { ink: "#111110", paper: "#FAFAF8", stone: "#F0EEE9", line: "#E3E0D9", graphite: "#706C64", mist: "#9C978D", brass: "#AD8642", brassSoft: "#D2B060", brassDeep: "#8E6F34" },
+  fontFamily: "Inter",
+};
+const DESIGN_PRESETS = {
+  signature: { label: "Signature", colors: DESIGN_DEFAULTS.colors, fontFamily: "Inter" },
+  midnight: { label: "Midnight", colors: { ink: "#F5F4F0", paper: "#111318", stone: "#1B1F27", line: "#303642", graphite: "#B8BECA", mist: "#858D9B", brass: "#D6AD62", brassSoft: "#E8CB91", brassDeep: "#B68B43" }, fontFamily: "Inter" },
+  titanium: { label: "Titanium", colors: { ink: "#20252B", paper: "#F4F6F7", stone: "#E8ECEF", line: "#D5DCE1", graphite: "#65717C", mist: "#9AA5AE", brass: "#647D91", brassSoft: "#A8BAC7", brassDeep: "#496174" }, fontFamily: "Inter" },
+  editorial: { label: "Editorial", colors: { ink: "#25221E", paper: "#FBF8F2", stone: "#F0E9DE", line: "#E3D8C8", graphite: "#74695C", mist: "#A99B89", brass: "#9A6945", brassSoft: "#C69A72", brassDeep: "#795034" }, fontFamily: "Georgia" },
+};
+const DESIGN_FIELDS = [["ink","Primary text"],["paper","Page background"],["stone","Section surface"],["line","Borders"],["graphite","Secondary text"],["brass","Brand accent"]];
+function DesignStudio({ onError }) {
+  const [design, setDesign] = useState(DESIGN_DEFAULTS);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+  useEffect(() => {
+    request("/site-content").then(({ siteContent = {} }) => {
+      const current = siteContent.designSystem || {};
+      setDesign({ ...DESIGN_DEFAULTS, ...current, colors: { ...DESIGN_DEFAULTS.colors, ...(current.colors || {}) } });
+    }).catch(e => onError(e.message)).finally(() => setLoading(false));
+  }, [onError]);
+  function applyPreset(key) {
+    const preset = DESIGN_PRESETS[key];
+    if (preset) { setDesign({ preset: key, colors: { ...preset.colors }, fontFamily: preset.fontFamily }); setSaved(false); }
+  }
+  function updateColor(key, value) {
+    setDesign(current => ({ ...current, preset: "custom", colors: { ...current.colors, [key]: value } }));
+    setSaved(false);
+  }
+  async function save() {
+    setSaving(true); setSaved(false);
+    try { await request("/site-content/designSystem", { method: "PUT", body: JSON.stringify(design) }); setSaved(true); }
+    catch (e) { onError(e.message); }
+    finally { setSaving(false); }
+  }
+  function reset() { setDesign(DESIGN_DEFAULTS); setSaved(false); }
+  return <>
+    <div className="page-heading"><div><div className="eyebrow">STORE EXPERIENCE / VISUAL IDENTITY</div><h1>Design Studio</h1><p>Shape the storefront’s visual language with a consistent, live theme system.</p></div><div className="heading-actions"><button className="btn secondary" onClick={reset}>Reset defaults</button><button className="btn primary" onClick={save} disabled={loading || saving}>{saving ? "Publishing…" : saved ? "Published" : "Publish design"}</button></div></div>
+    {loading ? <div className="loading-panel"><span className="spinner"/> Loading your design system…</div> : <>
+      <section className="panel" style={{ marginBottom:18 }}>
+        <div className="panel-head"><div><h2>Start with a visual direction</h2><p>Choose a professionally balanced palette, then fine-tune every color.</p></div><span className="count-pill">THEME PRESETS</span></div>
+        <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(175px,1fr))", gap:12 }}>
+          {Object.entries(DESIGN_PRESETS).map(([key,preset]) => <button key={key} type="button" onClick={() => applyPreset(key)} style={{ textAlign:"left", padding:14, borderRadius:12, border:design.preset===key ? "2px solid #20252B" : "1px solid #E4E7EB", background:"#fff" }}>
+            <div style={{ display:"flex", gap:5, marginBottom:12 }}>{[preset.colors.ink,preset.colors.paper,preset.colors.stone,preset.colors.brass].map((color,i)=><span key={i} style={{ height:34, flex:1, borderRadius:6, background:color, border:"1px solid #00000012" }}/>)}</div>
+            <b style={{ display:"block", color:"#20252B", fontSize:14 }}>{preset.label}</b><span style={{ color:"#7A8490", fontSize:12 }}>{key==="signature"?"Warm premium minimal":key==="midnight"?"Dark flagship aesthetic":key==="titanium"?"Cool modern technology":"Refined editorial luxury"}</span>
+          </button>)}
+        </div>
+      </section>
+      <div style={{ display:"grid", gridTemplateColumns:"minmax(0,1.15fr) minmax(280px,.85fr)", gap:18, alignItems:"start" }}>
+        <section className="panel">
+          <div className="panel-head"><div><h2>Color system</h2><p>These tokens are shared across storefront surfaces.</p></div><span className="count-pill">{design.preset==="custom"?"CUSTOM":"PALETTE"}</span></div>
+          <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(220px,1fr))", gap:14 }}>
+            {DESIGN_FIELDS.map(([key,label])=><label key={key} style={{ display:"flex", alignItems:"center", justifyContent:"space-between", gap:12, border:"1px solid #E8EAED", borderRadius:10, padding:12, color:"#27313A", fontSize:13, fontWeight:600 }}>
+              <span>{label}<small style={{ display:"block", color:"#89929B", fontWeight:400, marginTop:3 }}>{design.colors[key]}</small></span>
+              <input aria-label={label} type="color" value={design.colors[key]} onChange={e=>updateColor(key,e.target.value)} style={{ width:48, height:38, padding:3, border:"1px solid #DDE2E7", borderRadius:8, background:"#fff", cursor:"pointer" }}/>
+            </label>)}
+          </div>
+          <div style={{ marginTop:22, borderTop:"1px solid #EDF0F2", paddingTop:18 }}>
+            <h3 style={{ margin:"0 0 10px", fontSize:14, color:"#27313A" }}>Typography</h3>
+            <select value={design.fontFamily} onChange={e=>{setDesign(d=>({...d,fontFamily:e.target.value}));setSaved(false);}} style={{ width:"100%", maxWidth:360, padding:"11px 12px", border:"1px solid #DDE2E7", borderRadius:9, background:"#fff", color:"#27313A" }}>
+              <option value="Inter">Inter — Modern technology</option><option value="Arial">Arial — Clean universal</option><option value="Georgia">Georgia — Editorial luxury</option>
+            </select>
+          </div>
+        </section>
+        <section className="panel">
+          <div className="panel-head"><div><h2>Live preview</h2><p>A quick preview of your selected design tokens.</p></div><span className="live-dot"/></div>
+          <div style={{ background:design.colors.paper, color:design.colors.ink, border:"1px solid "+design.colors.line, borderRadius:14, overflow:"hidden", fontFamily:design.fontFamily }}>
+            <div style={{ padding:"13px 16px", borderBottom:"1px solid "+design.colors.line, display:"flex", justifyContent:"space-between", alignItems:"center" }}><b style={{ letterSpacing:"-.04em" }}>GO iPhone</b><span style={{ fontSize:10, color:design.colors.graphite }}>STORE PREVIEW</span></div>
+            <div style={{ padding:"24px 18px", background:design.colors.stone }}>
+              <div style={{ color:design.colors.brass, fontSize:10, letterSpacing:".16em", fontWeight:700 }}>DESIGNED TO MOVE YOU</div>
+              <div style={{ fontSize:27, fontWeight:700, lineHeight:1.1, margin:"9px 0" }}>Technology,<br/>beautifully chosen.</div>
+              <p style={{ color:design.colors.graphite, fontSize:12, lineHeight:1.6 }}>A considered shopping experience, built around the details.</p>
+              <button type="button" style={{ background:design.colors.ink, color:design.colors.paper, border:0, padding:"11px 17px", borderRadius:5, marginTop:8, fontSize:11 }}>Explore collection</button>
+            </div>
+            <div style={{ padding:14, display:"flex", gap:8 }}><div style={{ flex:1, height:52, border:"1px solid "+design.colors.line, borderRadius:8, background:design.colors.paper }}/><div style={{ flex:1, height:52, border:"1px solid "+design.colors.line, borderRadius:8, background:design.colors.stone }}/><div style={{ flex:1, height:52, borderRadius:8, background:design.colors.brass }}/></div>
+          </div>
+          <p style={{ color:"#7A8490", fontSize:12, lineHeight:1.6, marginTop:12 }}>Your changes are saved to the store’s shared content database. They appear on the live storefront after its deployment is updated and the page reloads.</p>
+        </section>
+      </div>
+    </>}
+  </>;
+}
+
 function Placeholder({ id, onNavigate }) {
   const content = {
     inventory: ["Inventory", "Track individual devices, stock levels and availability.", Boxes, "Inventory workspace is next in the build."],
@@ -792,7 +878,8 @@ export default function App() {
         {page === "media" && <MediaLibrary onError={showError}/>}
         {page === "homepage" && <HomepageBuilder onError={showError}/>}
         {page === "collections" && <CollectionsManager onError={showError}/>}
-        {!["dashboard","products","orders","media","homepage","collections"].includes(page) && <Placeholder id={page} onNavigate={navigate}/>}
+        {page === "design" && <DesignStudio onError={showError}/>}
+        {!["dashboard","products","orders","media","homepage","collections","design"].includes(page) && <Placeholder id={page} onNavigate={navigate}/>}
         <footer className="app-footer"><span>© {new Date().getFullYear()} GO iPhone</span><span>Admin workspace <i/> Built for your store</span></footer>
       </div>
     </main>
