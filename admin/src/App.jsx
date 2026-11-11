@@ -390,8 +390,8 @@ function HomepageBuilder({ onError }) {
     finally { setLoading(false); }
   }, [onError]);
   useEffect(() => { load(); }, [load, refresh]);
-  function updateHomepageLayout(index, patch) {
-    setSiteContent(current => ({ ...current, homepageLayout: current.homepageLayout.map((item, i) => i === index ? { ...item, ...patch } : item) }));
+  function updateHomepageLayout(id, patch) {
+    setSiteContent(current => ({ ...current, homepageLayout: current.homepageLayout.map(item => item.id === id ? { ...item, ...patch } : item) }));
   }
   function moveHomepageSection(index, direction) {
     setSiteContent(current => {
@@ -524,7 +524,7 @@ function HomepageBuilder({ onError }) {
           <div style={{ display: "grid", gap: 8 }}>
             {[...siteContent.homepageLayout].sort((a, b) => a.order - b.order).map((item, index) => (
               <div key={item.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, border: "1px solid #e5e7eb", borderRadius: 10, padding: "12px 14px" }}>
-                <label className="homepage-toggle"><input type="checkbox" checked={item.visible !== false} onChange={e => updateHomepageLayout(index, { visible: e.target.checked })}/><b>{item.label}</b></label>
+                <label className="homepage-toggle"><input type="checkbox" checked={item.visible !== false} onChange={e => updateHomepageLayout(item.id, { visible: e.target.checked })}/><b>{item.label}</b></label>
                 <div className="row-actions">
                   <button type="button" className="btn secondary small" disabled={index === 0} onClick={() => moveHomepageSection(index, -1)}>↑</button>
                   <button type="button" className="btn secondary small" disabled={index === siteContent.homepageLayout.length - 1} onClick={() => moveHomepageSection(index, 1)}>↓</button>
