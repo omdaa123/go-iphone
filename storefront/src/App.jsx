@@ -1163,23 +1163,40 @@ function HomePage({ go, compareIds, onToggleCompare }) {
           : PRODUCTS.filter((p) => hasCollection(p, c.id)),
     }))
     .filter((c) => c.products.length > 0);
+  const defaultLayout = [
+    { id: "hero", visible: true, order: 0 },
+    { id: "categories", visible: true, order: 1 },
+    { id: "collections", visible: true, order: 2 },
+    { id: "tools", visible: true, order: 3 },
+    { id: "trust", visible: true, order: 4 },
+  ];
+  const savedLayout = Array.isArray(siteContent.homepageLayout) ? siteContent.homepageLayout : [];
+  const homepageLayout = defaultLayout.map(base => ({
+    ...base,
+    ...(savedLayout.find(item => item.id === base.id) || {}),
+  })).sort((a, b) => a.order - b.order);
+
+  function renderCollection(section, index) {
+    if (section.id === "featured") return <EditorialFeature key={section.id} product={section.products[0]} go={go} />;
+    if (section.id === "certified-refurbished") return <CertifiedPreownedSection key={section.id} products={section.products} go={go} onOpen={(id) => go("product", { id })} onToggleCompare={onToggleCompare} compareIds={compareIds} />;
+    const onNavAction = () => go("catalog", { category: section.products[0]?.category || "iphone" });
+    const props = { title: section.name, action: "View all", onNavAction, products: section.products, onOpen: (id) => go("product", { id }), onToggleCompare, compareIds };
+    if (section.id === "best-sellers") return <ProductGrid key={section.id} {...props} />;
+    if (section.id === "new-arrivals") return <ProductRail key={section.id} {...props} />;
+    const RailOrGrid = index % 2 === 0 ? ProductRail : ProductGrid;
+    return <RailOrGrid key={section.id} {...props} />;
+  }
 
   return (
     <div>
-      <Hero go={go} />
-      <CategoryGrid go={go} />
-      {merchandisingSections.map((section, index) => {
-        if (section.id === "featured") return <EditorialFeature key={section.id} product={section.products[0]} go={go} />;
-        if (section.id === "certified-refurbished") return <CertifiedPreownedSection key={section.id} products={section.products} go={go} onOpen={(id) => go("product", { id })} onToggleCompare={onToggleCompare} compareIds={compareIds} />;
-        const onNavAction = () => go("catalog", { category: section.products[0]?.category || "iphone" });
-        const props = { title: section.name, action: "View all", onNavAction, products: section.products, onOpen: (id) => go("product", { id }), onToggleCompare, compareIds };
-        if (section.id === "best-sellers") return <ProductGrid key={section.id} {...props} />;
-        if (section.id === "new-arrivals") return <ProductRail key={section.id} {...props} />;
-        const RailOrGrid = index % 2 === 0 ? ProductRail : ProductGrid;
-        return <RailOrGrid key={section.id} {...props} />;
+      {homepageLayout.filter(item => item.visible !== false).map(item => {
+        if (item.id === "hero") return <Hero key={item.id} go={go} />;
+        if (item.id === "categories") return <CategoryGrid key={item.id} go={go} />;
+        if (item.id === "collections") return <React.Fragment key={item.id}>{merchandisingSections.map(renderCollection)}</React.Fragment>;
+        if (item.id === "tools") return <ToolsSection key={item.id} onRecommend={() => go("recommend")} onCompare={() => go("compare")} />;
+        if (item.id === "trust") return <TrustSection key={item.id} />;
+        return null;
       })}
-      <ToolsSection onRecommend={() => go("recommend")} onCompare={() => go("compare")} />
-      <TrustSection />
     </div>
   );
 }
