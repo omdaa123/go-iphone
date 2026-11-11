@@ -1139,9 +1139,13 @@ function CertifiedPreownedSection({ products, go, onOpen, onToggleCompare, compa
 function HomePage({ go, compareIds, onToggleCompare }) {
   const { products: allProducts, siteContent } = useStoreData();
   const PRODUCTS = allProducts.filter(isPublished);
-  const featured = PRODUCTS.find((p) => hasCollection(p, "featured") && p.category === "iphone");
-  const bestSellers = PRODUCTS.filter((p) => hasCollection(p, "best-sellers"));
-  const latest = PRODUCTS.filter((p) => hasCollection(p, "new-arrivals"));
+  const collectionSettings = siteContent.collections || [];
+  const collectionSetting = (id) => collectionSettings.find((item) => item.id === id) || {};
+  const collectionVisible = (id) => collectionSetting(id).visible !== false;
+  const collectionTitle = (id, fallback) => collectionSetting(id).name || fallback;
+  const featured = collectionVisible("featured") ? PRODUCTS.find((p) => hasCollection(p, "featured") && p.category === "iphone") : null;
+  const bestSellers = collectionVisible("best-sellers") ? PRODUCTS.filter((p) => hasCollection(p, "best-sellers")) : [];
+  const latest = collectionVisible("new-arrivals") ? PRODUCTS.filter((p) => hasCollection(p, "new-arrivals")) : [];
   const preowned = PRODUCTS.filter((p) => p.hasUnits);
 
   // Any collection beyond the built-in ones above renders automatically
@@ -1159,11 +1163,11 @@ function HomePage({ go, compareIds, onToggleCompare }) {
     <div>
       <Hero go={go} />
       <CategoryGrid go={go} />
-      <EditorialFeature product={featured} go={go} />
-      <ProductGrid title="Best sellers" action="See all iPhone" onNavAction={() => go("catalog", { category: "iphone" })}
-        products={bestSellers} onOpen={(id) => go("product", { id })} onToggleCompare={onToggleCompare} compareIds={compareIds} />
-      <ProductRail title="Latest arrivals" action="See what's new" onNavAction={() => go("catalog", { category: "iphone" })}
-        products={latest} onOpen={(id) => go("product", { id })} onToggleCompare={onToggleCompare} compareIds={compareIds} />
+      {featured && <EditorialFeature product={featured} go={go} />}
+      {bestSellers.length > 0 && <ProductGrid title={collectionTitle("best-sellers", "Best sellers")} action="See all iPhone" onNavAction={() => go("catalog", { category: "iphone" })}
+        products={bestSellers} onOpen={(id) => go("product", { id })} onToggleCompare={onToggleCompare} compareIds={compareIds} />}
+      {latest.length > 0 && <ProductRail title={collectionTitle("new-arrivals", "Latest arrivals")} action="See what's new" onNavAction={() => go("catalog", { category: "iphone" })}
+        products={latest} onOpen={(id) => go("product", { id })} onToggleCompare={onToggleCompare} compareIds={compareIds} />}
       {customCollections.map((c, i) => {
         const RailOrGrid = i % 2 === 0 ? ProductRail : ProductGrid;
         return (
