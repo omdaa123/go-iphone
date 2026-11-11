@@ -564,7 +564,7 @@ function HomepageBuilder({ onError }) {
           </div>}
         </article>)}
       </div>}
-    </section>
+    </section>}
     {activeTab === "overview" && <section className="homepage-slides homepage-slides-workspace">
       <div className="panel-head"><div><h2>Hero slides <span className="count-pill">{slides.length}</span></h2><p>Desktop and mobile imagery, headline, CTA and visibility.</p></div></div>
       {loading ? <div className="loading-panel"><span className="spinner"/> Loading homepage content…</div> : slides.length ? <div className="hero-slide-list">{slides.map((slide, index) => <article className="hero-slide-card" key={slide.id}>
