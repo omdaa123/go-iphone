@@ -202,12 +202,19 @@ function Products({ onError }) {
   const [saving, setSaving] = useState(false);
   const [deleteId, setDeleteId] = useState("");
   const [media, setMedia] = useState([]);
+  const [collections, setCollections] = useState([]);
+  const [collectionIds, setCollectionIds] = useState([]);
   const [mediaOpen, setMediaOpen] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [primaryImageMediaId, setPrimaryImageMediaId] = useState("");
   const [galleryMediaIds, setGalleryMediaIds] = useState([]);
   const empty = { name: "", categoryKey: "iphone", productType: "smartphone", tagline: "", visibility: "draft", salesMode: "for_sale", availability: "in_stock", variants: [{ storage: "", color: "", price: "", stockQty: "" }] };
   const [form, setForm] = useState(empty);
+  useEffect(() => {
+    let active = true;
+    request("/collections").then(d => { if (active) setCollections(d.collections || []); }).catch(e => onError(e.message));
+    return () => { active = false; };
+  }, [onError]);
   useEffect(() => {
     let active = true; setLoading(true);
     const params = new URLSearchParams();
@@ -217,12 +224,13 @@ function Products({ onError }) {
       .catch(e => onError(e.message)).finally(() => { if (active) setLoading(false); });
     return () => { active = false; };
   }, [query, visibility, refresh, onError]);
-  function startNew() { setEditing("new"); setForm(empty); setPrimaryImageMediaId(""); setGalleryMediaIds([]); }
+  function startNew() { setEditing("new"); setForm(empty); setPrimaryImageMediaId(""); setGalleryMediaIds([]); setCollectionIds([]); }
   async function startEdit(id) {
     try {
       const d = await request(`/products/${id}`), p = d.product;
       await loadMedia();
       setPrimaryImageMediaId(d.primaryImage?.id || ""); setGalleryMediaIds(d.gallery.map(x => x.id));
+      setCollectionIds(d.collectionIds || []);
       setForm({ name: p.name || "", slug: p.slug || "", categoryKey: p.category_key, productType: p.product_type, tagline: p.tagline || "", visibility: p.visibility, salesMode: p.sales_mode, availability: p.availability, variants: d.variants.length ? d.variants.map(v => ({ storage: v.storage || "", color: v.color || "", price: String(Number(v.price_cents) / 100), stockQty: v.stock_qty == null ? "" : String(v.stock_qty) })) : [{ storage: "", color: "", price: "", stockQty: "" }] });
       setEditing(id);
     } catch (e) { onError(e.message); }
@@ -238,7 +246,7 @@ function Products({ onError }) {
   async function save(event) {
     event.preventDefault(); setSaving(true);
     const variants = form.variants.filter(v => v.price !== "").map(v => ({ storage: v.storage || null, color: v.color || null, priceCents: Math.round(Number(v.price) * 100), stockQty: v.stockQty === "" ? null : Number(v.stockQty) }));
-    const payload = { primaryImageMediaId: primaryImageMediaId || null, galleryMediaIds, name: form.name.trim(), categoryKey: form.categoryKey, productType: form.productType.trim(), tagline: form.tagline || null, visibility: form.visibility, salesMode: form.salesMode, availability: form.availability, variants };
+    const payload = { primaryImageMediaId: primaryImageMediaId || null, galleryMediaIds, collectionIds, name: form.name.trim(), categoryKey: form.categoryKey, productType: form.productType.trim(), tagline: form.tagline || null, visibility: form.visibility, salesMode: form.salesMode, availability: form.availability, variants };
     if (form.slug) payload.slug = form.slug;
     try {
       await request(editing === "new" ? "/products" : `/products/${editing}`, { method: editing === "new" ? "POST" : "PATCH", body: JSON.stringify(payload) });
@@ -262,6 +270,7 @@ function Products({ onError }) {
         <label>Availability<select value={form.availability} onChange={e => setForm(f => ({ ...f, availability: e.target.value }))}><option value="in_stock">In stock</option><option value="out_of_stock">Out of stock</option><option value="coming_soon">Coming soon</option><option value="preorder">Pre-order</option></select></label>
         <label>Visibility<select value={form.visibility} onChange={e => setForm(f => ({ ...f, visibility: e.target.value }))}><option value="draft">Draft</option><option value="published">Published</option><option value="hidden">Hidden</option></select></label>
       </div>
+      <section className="collection-selector"><div><h3>Homepage collections</h3><p>Choose which storefront sections should feature this product.</p></div><div className="collection-check-grid">{collections.map(collection => <label key={collection.id} className="collection-check"><input type="checkbox" checked={collectionIds.includes(collection.id)} onChange={e => setCollectionIds(ids => e.target.checked ? [...ids, collection.id] : ids.filter(id => id !== collection.id))}/><span><b>{collection.name}</b>{collection.is_system && <small>Built-in</small>}</span></label>)}</div></section>
       <div className="image-manager"><div><h3>Product images</h3><p>Choose the main product photo and optional gallery images.</p></div><div className="image-manager-actions"><button type="button" className="btn secondary small" onClick={() => { loadMedia(); setMediaOpen(true); }}><Image size={14}/> Choose from library</button><label className="btn secondary small upload-label">{uploading ? "Uploading…" : "Upload image"}<input type="file" accept="image/jpeg,image/png,image/webp,image/gif" disabled={uploading} onChange={e => uploadMedia(e.target.files?.[0])}/></label></div>{primaryImageMediaId && <div className="selected-image"><img src={media.find(m => m.id === primaryImageMediaId)?.url || ""} alt="Selected primary product"/> <span>Main image selected</span><button type="button" className="text-btn" onClick={() => setPrimaryImageMediaId("")}>Remove</button></div>}</div>
       {mediaOpen && <div className="media-picker-backdrop"><div className="media-picker"><div className="modal-head"><div><div className="eyebrow">MEDIA LIBRARY</div><h2>Choose product images</h2></div><button type="button" className="icon-btn" onClick={() => setMediaOpen(false)}><X size={18}/></button></div>{media.length ? <div className="media-picker-grid">{media.map(m => <div key={m.id} className={primaryImageMediaId === m.id || galleryMediaIds.includes(m.id) ? "media-choice selected" : "media-choice"}><img src={m.url} alt={m.file_name || "Store media"}/><span>{m.file_name || "Image"}</span><div className="media-choice-actions"><button type="button" onClick={() => setPrimaryImageMediaId(m.id)}>{primaryImageMediaId === m.id ? "Main image ✓" : "Set main"}</button><button type="button" onClick={() => setGalleryMediaIds(ids => ids.includes(m.id) ? ids.filter(id => id !== m.id) : [...ids, m.id])}>{galleryMediaIds.includes(m.id) ? "Remove gallery" : "Add to gallery"}</button></div></div>)}</div> : <p className="muted">No images uploaded yet. Upload an image to get started.</p>}<div className="modal-foot"><button type="button" className="btn secondary" onClick={() => setMediaOpen(false)}>Done</button></div></div></div>}
       <div className="variant-heading"><div><h3>Pricing & variants</h3><p>Enter prices in Egyptian pounds. Add every storage and color option.</p></div><button type="button" className="btn secondary small" onClick={addVariant}><Plus size={13}/> Add variant</button></div>
