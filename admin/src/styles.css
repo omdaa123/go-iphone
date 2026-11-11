@@ -301,3 +301,23 @@ th{font-size:11px;padding:14px 16px}td{font-size:13px;padding:15px 16px}
 .homepage-media-grid span{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-top:4px;font-size:9px;color:#596270}
 @media(max-width:850px){.hero-slide-card{grid-template-columns:150px minmax(0,1fr)}.hero-slide-actions{grid-column:1/-1;justify-content:flex-start}}
 @media(max-width:600px){.homepage-intro{align-items:flex-start;flex-wrap:wrap}.homepage-live{margin-left:61px}.hero-slide-card{grid-template-columns:1fr}.hero-slide-preview{max-width:none}.hero-slide-actions{grid-column:auto}.homepage-image-fields{grid-template-columns:1fr}.homepage-editor{max-height:92vh;overflow:auto}}
+
+
+/* Category image manager */
+.category-image-manager{background:#fff;border:1px solid #e6e8ed;border-radius:12px;padding:0 18px 18px;margin:0 0 20px;box-shadow:0 2px 8px #20242c05}
+.category-image-manager>.panel-head{padding:17px 0}
+.category-image-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(235px,1fr));gap:12px}
+.category-image-card{min-width:0;padding:12px;border:1px solid #e8ebf0;border-radius:10px;background:#fff}
+.category-image-preview{height:145px;display:grid;place-items:center;overflow:hidden;border-radius:8px;background:#f4f5f7}
+.category-image-preview>img{width:100%;height:100%;object-fit:cover}
+.category-image-preview>div{display:flex;flex-direction:column;align-items:center;gap:7px;color:#9299a4;font-size:11px;font-weight:700}
+.category-image-details{display:grid;gap:3px;margin:11px 0}
+.category-image-details b{font-size:14px;color:#252b35;font-weight:800}
+.category-image-details span{font-size:10px;color:#737c89;font-weight:600}
+.category-image-actions{display:flex;flex-wrap:wrap;gap:7px;align-items:center}
+.category-media-picker{display:grid;grid-template-columns:repeat(auto-fill,minmax(70px,1fr));gap:7px;margin-top:11px;padding-top:11px;border-top:1px solid #eceef2;max-height:190px;overflow:auto}
+.category-media-picker button{min-width:0;padding:5px;border:1px solid #e2e6ec;border-radius:7px;background:#fff;text-align:left;cursor:pointer}
+.category-media-picker button.selected{border-color:#b9975d;box-shadow:0 0 0 2px #b9975d25}
+.category-media-picker img{width:100%;aspect-ratio:1;object-fit:cover;border-radius:4px}
+.category-media-picker span{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-top:4px;font-size:10px;color:#596270}
+@media(max-width:600px){.category-image-manager{padding-left:12px;padding-right:12px}.category-image-grid{grid-template-columns:1fr}}
