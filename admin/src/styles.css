@@ -60,3 +60,105 @@
 .media-card span{font-size:9px;color:#8e98a8}
 .danger-text{color:#ed969c;text-align:left;justify-self:start}
 @media(max-width:600px){.media-picker{padding:14px}.media-library-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.image-manager-actions{flex-direction:column;align-items:stretch}}
+
+
+/* GO iPhone Admin — clean light theme */
+:root{
+ color-scheme:light;
+ color:#20242c;
+ background:#f5f6f8;
+ --bg:#f5f6f8;--panel:#ffffff;--panel-2:#f8f9fb;--line:#e7e9ee;
+ --muted:#747b88;--text:#20242c;--accent:#a9854e;--accent2:#c19b60;
+}
+body{background:#f5f6f8;color:#20242c}
+.login-shell{background:#f5f6f8}
+.login-glow{background:#c5a46d12}
+.login-card{background:#fff;border-color:#e6e8ed;box-shadow:0 24px 80px #20242c12}
+.login-card h1{color:#20242c}
+.login-form label,.editor-grid label,.variant-row label{color:#555d69}
+.login-form input,.toolbar input,.toolbar select,.editor-grid input,.editor-grid select,.variant-row input{
+ background:#fff;color:#20242c;border-color:#dfe3e9
+}
+.login-form input::placeholder,.toolbar input::placeholder{color:#9aa1ac}
+.login-foot{border-color:#e7e9ee;color:#7c8491}
+.login-bottom{color:#8b929d}
+.alert.error,.toast.error{background:#fff1f1;border-color:#f0caca;color:#a83e45}
+.sidebar{background:#fff;border-color:#e7e9ee}
+.brand span{color:#858c98}
+.store-switch,.user-card{background:#f7f8fa;border-color:#e7e9ee}
+.store-switch b,.user-info b{color:#252a33}
+.store-switch span,.user-info span{color:#818895}
+.nav-label{color:#9299a4}
+.nav-item{color:#626b78}
+.nav-item svg{color:#929aa6}
+.nav-item:hover{background:#f3f4f6;color:#252a33}
+.nav-item.active{background:#f5f0e7;color:#8b6936;box-shadow:inset 2px 0 #b38d54}
+.nav-item.active svg{color:#a27b43}
+.sidebar-bottom{border-color:#e7e9ee}
+.secure-note b{color:#3e6554}
+.secure-note span{color:#7b8d83}
+.user-avatar{background:#eee8dd;color:#8b6936}
+.main-area{background:#f5f6f8}
+.topbar{background:#ffffffed;border-color:#e7e9ee}
+.breadcrumb{color:#858c98}
+.breadcrumb b{color:#303641}
+.environment{color:#648575}
+.topbar-divider{background:#e3e6eb}
+.icon-btn{color:#727b88}
+.icon-btn:hover{background:#f0f1f4;color:#252a33}
+.content-area{color:#252a33}
+.page-heading h1,.panel-head h2,.quick-actions h2,.placeholder-panel h2{color:#20242c}
+.page-heading p,.panel-head p,.stat-detail{color:#7c8491}
+.stat-card,.panel{background:#fff;border-color:#e6e8ed;box-shadow:0 2px 8px #20242c05}
+.stat-top{color:#68717e}
+.stat-card>strong{color:#20242c}
+.stat-icon{background:#edf2fa;color:#6481b2}
+.stat-icon.violet{background:#f2edfa;color:#9274b6}
+.stat-icon.green{background:#eaf6ef;color:#4b9b76}
+.stat-icon.amber{background:#f8f1e5;color:#a9854e}
+.panel-head{border-color:#eceef2}
+th{color:#858d99;border-color:#eceef2}
+td{color:#4e5663;border-color:#eff0f3}
+tbody tr:hover{background:#f8f9fb}
+.mono{color:#987744}
+.status{background:#f0f2f5;color:#606977}
+.status.published,.status.completed,.status.paid,.status.available{background:#e8f5ed;color:#347c58}
+.status.draft,.status.pending,.status.new{background:#f8f0e2;color:#94703a}
+.status.hidden,.status.cancelled,.status.failed{background:#fbecee;color:#b64f59}
+.status.confirmed,.status.preparing,.status.ready{background:#edf1fb;color:#5875ad}
+.stock-list{background:#fff}
+.stock-row{border-color:#eff0f3}
+.stock-name b{color:#303641}
+.stock-name span,.empty-state p{color:#818995}
+.stock-qty{color:#9a7743}
+.product-avatar,.empty-icon{background:#f1f3f6;border-color:#e2e6ec;color:#8793a4}
+.quick-actions{background:#fff;border-color:#e6e8ed}
+.quick-actions button{background:#f7f8fa;border-color:#e3e6eb;color:#525b68}
+.quick-actions button:hover{border-color:#c5a46d;color:#8b6936}
+.app-footer{color:#8b929d}
+.spinner{border-color:#e1e4e9;border-top-color:#b38d54}
+.toolbar{border-color:#eceef2}
+.filter-tabs button{color:#737c89}
+.filter-tabs button.selected{background:#f5f0e7;color:#8b6936}
+.status-select{background:#fff;border-color:#dfe3e9;color:#3f4753}
+.placeholder-panel>p{color:#7c8491}
+.placeholder-orbit{border-color:#c5a46d55}
+.placeholder-icon{background:linear-gradient(145deg,#f4eee3,#fff);border-color:#e3d4b9;color:#a9854e;box-shadow:0 10px 30px #20242c0a}
+.toast{box-shadow:0 12px 35px #20242c18}
+.editor-modal,.confirm-modal,.media-picker{background:#fff;border-color:#e2e6ec;box-shadow:0 30px 100px #20242c25}
+.modal-head{border-color:#eceef2}
+.editor-grid input:focus,.editor-grid select:focus,.variant-row input:focus{border-color:#b9975d;box-shadow:0 0 0 3px #b9975d18}
+.variant-heading p,.confirm-modal p{color:#7c8491}
+.variant-row,.image-manager{background:#f8f9fb;border-color:#e6e9ef}
+.qr-wrap{background:#f8f9fb;border-color:#e3e6eb}
+.qr-wrap span{color:#737c89}
+.secret-box{background:#f7f8fa;border-color:#e3e6eb}
+.secret-box span{color:#818995}
+.secret-box code{color:#8b6936}
+.product-cell img,.media-card,.media-choice{background:#f6f7f9;border-color:#e4e7ec}
+.media-choice{color:#303641}
+.media-choice.selected{border-color:#b9975d}
+.media-choice-actions button{background:#f1f3f6;border-color:#dfe3e9;color:#48515e}
+.media-card span{color:#7c8491}
+.selected-image{color:#626b78}
+@media(max-width:760px){.mobile-backdrop{background:#20242c66}}
