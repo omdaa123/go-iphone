@@ -371,6 +371,7 @@ function HomepageBuilder({ onError }) {
   const [form, setForm] = useState(blank);
   const [mediaTarget, setMediaTarget] = useState("");
   const [refresh, setRefresh] = useState(0);
+  const [activeTab, setActiveTab] = useState("overview");
   const load = useCallback(async () => {
     setLoading(true);
     try {
@@ -512,8 +513,20 @@ function HomepageBuilder({ onError }) {
   const selectedImage = id => media.find(m => m.id === id)?.url || "";
   return <>
     <div className="page-heading"><div><div className="eyebrow">STORE EXPERIENCE</div><h1>Homepage Builder</h1><p>Manage the images and banners customers see across your storefront.</p></div><div className="heading-actions"><button className="btn secondary" onClick={() => setRefresh(v => v + 1)}><RefreshCw size={15}/> Refresh</button><button className="btn primary" onClick={startNew}><Plus size={15}/> Add hero slide</button></div></div>
-    <div className="homepage-intro"><div className="homepage-intro-icon"><Sparkles size={23}/></div><div><b>Your storefront hero section</b><p>Slides appear in the order shown below. If you have not added a banner yet, the storefront displays its built-in default hero design.</p></div><span className="homepage-live"><i/> Connected to storefront</span></div>
-    <section className="panel" style={{ marginBottom: 24 }}>
+    <div className="homepage-commandbar">
+      <div className="homepage-commandbar-copy"><span className="homepage-kicker">STORE EXPERIENCE / CONTENT CONTROL</span><h2>Shape the first impression.</h2><p>Build, organize and refine every section of your storefront from one workspace.</p></div>
+      <div className="homepage-commandbar-status"><span className="homepage-status-dot"/><div><b>Storefront connected</b><small>Content workspace</small></div></div>
+    </div>
+    <div className="homepage-metrics">
+      <div><span>HERO SLIDES</span><b>{slides.length}</b><small>{slides.filter(slide => slide.active).length} currently visible</small></div>
+      <div><span>SHOPPING CATEGORIES</span><b>{categories.length}</b><small>Category image controls</small></div>
+      <div><span>PAGE SECTIONS</span><b>{siteContent.homepageLayout.length}</b><small>{siteContent.homepageLayout.filter(item => item.visible !== false).length} enabled on homepage</small></div>
+      <div><span>MEDIA ASSETS</span><b>{media.length}</b><small>Available in your library</small></div>
+    </div>
+    <nav className="homepage-tabs" aria-label="Homepage builder sections">
+      {[["overview","Hero & banners"],["layout","Page structure"],["categories","Category visuals"],["content","Content & trust"]].map(([id,label],index)=><button type="button" key={id} className={activeTab===id?"active":""} onClick={()=>setActiveTab(id)}><span>0{index+1}</span>{label}</button>)}
+    </nav>
+    {activeTab === "layout" && <section className="panel homepage-editor-panel" style={{ marginBottom: 24 }}>
       <div className="panel-head"><div><h2>Homepage sections</h2><p>Edit the Tools and Trust content shown below your product collections.</p></div></div>
       <div style={{ padding: 22, display: "grid", gap: 24 }}>
         <div>
@@ -576,7 +589,7 @@ function HomepageBuilder({ onError }) {
         </div>
       </div>
     </section>
-    <section className="category-image-manager">
+    {activeTab === "categories" && <section className="category-image-manager">
       <div className="panel-head"><div><h2>Category images <span className="count-pill">{categories.length}</span></h2><p>Choose the image shown for each shopping category across the storefront.</p></div></div>
       {loading ? <div className="loading-panel"><span className="spinner"/> Loading categories…</div> : <div className="category-image-grid">
         {categories.map(category => <article className="category-image-card" key={category.key}>
@@ -593,14 +606,25 @@ function HomepageBuilder({ onError }) {
         </article>)}
       </div>}
     </section>
-    <section className="homepage-slides">
+    {activeTab === "overview" && <section className="homepage-slides homepage-slides-workspace">
       <div className="panel-head"><div><h2>Hero slides <span className="count-pill">{slides.length}</span></h2><p>Desktop and mobile imagery, headline, CTA and visibility.</p></div></div>
       {loading ? <div className="loading-panel"><span className="spinner"/> Loading homepage content…</div> : slides.length ? <div className="hero-slide-list">{slides.map((slide, index) => <article className="hero-slide-card" key={slide.id}>
         <div className="hero-slide-preview">{slide.image_url ? <img src={slide.image_url} alt=""/> : <div className="hero-preview-empty"><Image size={27}/><span>No desktop image</span></div>}<span className={slide.active ? "hero-state active" : "hero-state"}>{slide.active ? "LIVE" : "HIDDEN"}</span><span className="hero-order">#{index + 1}</span></div>
         <div className="hero-slide-info"><div className="eyebrow">{slide.eyebrow || "GO IPHONE"}</div><h3>{slide.title}</h3><p>{slide.subtitle || "No supporting text added."}</p><div className="hero-slide-meta"><span>{slide.cta_text || "No CTA"}</span><span>{Math.round(Number(slide.duration_ms || 6500) / 100) / 10}s duration</span><span>{slide.mobile_image_url ? "Mobile image set" : "No mobile image"}</span></div></div>
         <div className="hero-slide-actions"><button className="btn secondary small" disabled={index === 0} onClick={() => move(index, -1)} title="Move up"><ArrowUpRight size={14}/></button><button className="btn secondary small" disabled={index === slides.length - 1} onClick={() => move(index, 1)} title="Move down"><ArrowDownRight size={14}/></button><button className="btn secondary small" onClick={() => startEdit(slide)}>Edit</button><button className="btn danger small" onClick={() => remove(slide.id)}>Delete</button></div>
       </article>)}</div> : <EmptyState icon={Image} title="No custom hero slides yet" detail="Your storefront is still showing its default hero. Add a slide whenever you are ready to publish your own banner."/>}
-    </section>
+    </section>}
+    {activeTab === "content" && <section className="homepage-content-workspace">
+      <div className="panel homepage-content-card"><div className="panel-head"><div><h2>Tools section</h2><p>Shape the guided shopping experience and comparison tools.</p></div><label className="homepage-toggle"><input type="checkbox" checked={siteContent.toolsSection.visible !== false} onChange={e => setSiteContent(c => ({ ...c, toolsSection: { ...c.toolsSection, visible: e.target.checked } }))}/> Show section</label></div>
+        <div className="editor-grid"><label>Small heading<input value={siteContent.toolsSection.eyebrow || ""} onChange={e => setSiteContent(c => ({ ...c, toolsSection: { ...c.toolsSection, eyebrow: e.target.value } }))}/></label><label>Main heading<input value={siteContent.toolsSection.title || ""} onChange={e => setSiteContent(c => ({ ...c, toolsSection: { ...c.toolsSection, title: e.target.value } }))}/></label></div>
+        <div className="homepage-content-image-grid">{[{key:"recommendationImage",title:"Find your perfect device"},{key:"comparisonImage",title:"Compare devices"}].map(item=><div className="homepage-content-image" key={item.key}><b>{item.title}</b><label className="btn secondary small upload-label">{uploading?"Uploading…":"Upload image"}<input type="file" accept="image/jpeg,image/png,image/webp,image/gif" disabled={uploading} onChange={e=>{uploadToolsImage(e.target.files?.[0],item.key);e.target.value="";}}/></label>{siteContent.toolsSection[item.key] && <img src={siteContent.toolsSection[item.key]} alt=""/>}</div>)}</div>
+        <div className="modal-foot"><button className="btn primary" disabled={saving} onClick={()=>saveSiteSection("toolsSection",siteContent.toolsSection)}>{saving?"Saving…":"Save Tools section"}</button></div>
+      </div>
+      <div className="panel homepage-content-card"><div className="panel-head"><div><h2>Trust & reassurance</h2><p>Give shoppers clear reasons to buy with confidence.</p></div><label className="homepage-toggle"><input type="checkbox" checked={siteContent.trustSection.visible !== false} onChange={e=>setSiteContent(c=>({...c,trustSection:{...c.trustSection,visible:e.target.checked}}))}/> Show section</label></div>
+        <div className="homepage-trust-grid">{siteContent.trustSection.points.map((point,index)=><article className="homepage-trust-item" key={point.id||index}><label className="homepage-toggle"><input type="checkbox" checked={point.visible!==false} onChange={e=>updateTrustPoint(index,"visible",e.target.checked)}/> Visible</label><label>Title<input value={point.title||""} onChange={e=>updateTrustPoint(index,"title",e.target.value)}/></label><label>Description<textarea rows="3" value={point.desc||""} onChange={e=>updateTrustPoint(index,"desc",e.target.value)}/></label><label className="btn secondary small upload-label">{uploading?"Uploading…":"Upload icon / image"}<input type="file" accept="image/jpeg,image/png,image/webp,image/gif" disabled={uploading} onChange={e=>{uploadTrustImage(e.target.files?.[0],index);e.target.value="";}}/></label>{point.image&&<img src={point.image} alt=""/>}</article>)}</div>
+        <div className="modal-foot"><button className="btn primary" disabled={saving} onClick={()=>saveSiteSection("trustSection",siteContent.trustSection)}>{saving?"Saving…":"Save trust content"}</button></div>
+      </div>
+    </section>}
     {editing && <div className="modal-backdrop"><form className="editor-modal homepage-editor" onSubmit={save}>
       <div className="modal-head"><div><div className="eyebrow">HOMEPAGE BUILDER</div><h2>{editing === "new" ? "Create hero slide" : "Edit hero slide"}</h2></div><button type="button" className="icon-btn" onClick={() => setEditing(null)}><X size={19}/></button></div>
       <div className="editor-grid">
