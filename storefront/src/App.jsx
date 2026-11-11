@@ -1001,9 +1001,9 @@ function TrustSection() {
   return (
     <section style={{ borderColor: T.line }} className="max-w-7xl mx-auto px-6 md:px-10 py-20 md:py-24 border-t">
       <div className="grid grid-cols-2 md:grid-cols-4 gap-x-8 gap-y-10">
-        {points.map(({ icon: Icon, title, desc }) => (
+        {points.map(({ icon: Icon, title, desc, image }) => (
           <div key={title} className="flex flex-col gap-3">
-            <Icon size={18} strokeWidth={1.5} style={{ color: T.graphite }} />
+            {image ? <img src={image} alt="" loading="lazy" style={{ width: 34, height: 34, objectFit: "contain" }} /> : <Icon size={18} strokeWidth={1.5} style={{ color: T.graphite }} />}
             <div>
               <p style={{ color: T.ink }} className="text-sm font-medium mb-1">{title}</p>
               <p style={{ color: T.graphite }} className="text-xs leading-relaxed">{desc}</p>
