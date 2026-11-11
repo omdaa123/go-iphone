@@ -2155,6 +2155,7 @@ function defaultSiteContent() {
       image: "", title: "Which iPhone is right for you?", description: "Answer a few questions and we'll match you with the best device for your budget and needs.",
       cta: "Find your perfect device", visible: true,
     },
+    designSystem: { preset: "signature", colors: { ink: "#111110", paper: "#FAFAF8", stone: "#F0EEE9", stoneDeep: "#E9E5DD", line: "#E3E0D9", graphite: "#706C64", mist: "#9C978D", brass: "#AD8642", brassSoft: "#D2B060", brassDeep: "#8E6F34" }, fontFamily: "Inter" },
     toolsSection: { visible: true, eyebrow: "Tools", title: "Not sure which to choose?" },
     trustSection: { visible: true, points: [
       { id: "warranty", title: "Every device warrantied", desc: "New and certified pre-owned devices each ship with a Go iPhone warranty.", visible: true },
@@ -2192,6 +2193,7 @@ function StoreDataProvider({ children }) {
           announcement: { ...d.announcement, ...(sc.announcement || {}) },
           comparisonSection: { ...d.comparisonSection, ...(sc.comparisonSection || {}) },
           recommendationSection: { ...d.recommendationSection, ...(sc.recommendationSection || {}) },
+          designSystem: { ...d.designSystem, ...(sc.designSystem || {}), colors: { ...d.designSystem.colors, ...(sc.designSystem?.colors || {}) } },
           toolsSection: { ...d.toolsSection, ...(sc.toolsSection || {}) },
           trustSection: { ...d.trustSection, ...(sc.trustSection || {}), points: Array.isArray(sc.trustSection?.points) ? sc.trustSection.points : d.trustSection.points },
         },
@@ -2243,7 +2245,16 @@ function StoreDataProvider({ children }) {
    APP ROOT
    ============================================================ */
 function AppShell() {
-  const { placeOrder } = useStoreData();
+  const { placeOrder, siteContent } = useStoreData();
+  const designSystem = siteContent.designSystem || {};
+  const designColors = designSystem.colors || {};
+  Object.assign(T, {
+    ink: designColors.ink || "#111110", paper: designColors.paper || "#FAFAF8",
+    stone: designColors.stone || "#F0EEE9", stoneDeep: designColors.stoneDeep || "#E9E5DD",
+    line: designColors.line || "#E3E0D9", graphite: designColors.graphite || "#706C64",
+    mist: designColors.mist || "#9C978D", brass: designColors.brass || "#AD8642",
+    brassSoft: designColors.brassSoft || "#D2B060", brassDeep: designColors.brassDeep || "#8E6F34",
+  });
   const [view, setView] = useState("home");
   const [params, setParams] = useState({});
   const [cart, setCart] = useState([]);
@@ -2317,7 +2328,7 @@ function AppShell() {
   }
 
   return (
-    <div style={{ backgroundColor: T.paper, fontFamily: FONT_UI }} className="min-h-screen">
+    <div style={{ backgroundColor: T.paper, color: T.ink, fontFamily: designSystem.fontFamily === "Georgia" ? "Georgia, serif" : designSystem.fontFamily === "Arial" ? "Arial, sans-serif" : FONT_UI }} className="min-h-screen">
       <style>{`
         @import url('${FONTS_HREF}');
         button { letter-spacing: 0.01em; }
