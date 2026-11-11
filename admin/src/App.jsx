@@ -393,6 +393,17 @@ function HomepageBuilder({ onError }) {
   function updateTrustPoint(index, key, value) {
     setSiteContent(current => ({ ...current, trustSection: { ...current.trustSection, points: current.trustSection.points.map((point, i) => i === index ? { ...point, [key]: value } : point) } }));
   }
+  async function uploadToolsImage(file, key) {
+    if (!file) return;
+    setUploading(true);
+    try {
+      const dataUrl = await compressImage(file);
+      const d = await request("/media", { method: "POST", body: JSON.stringify({ dataUrl, fileName: file.name, usageTag: "tools" }) });
+      setMedia(list => [d.media, ...list]);
+      setSiteContent(current => ({ ...current, toolsSection: { ...current.toolsSection, [key]: d.media.url } }));
+    } catch (e) { onError(e.message); }
+    finally { setUploading(false); }
+  }
   async function uploadTrustImage(file, index) {
     if (!file) return;
     setUploading(true);
@@ -490,6 +501,23 @@ function HomepageBuilder({ onError }) {
           <div className="editor-grid">
             <label>Small heading<input value={siteContent.toolsSection.eyebrow || ""} onChange={e => setSiteContent(c => ({ ...c, toolsSection: { ...c.toolsSection, eyebrow: e.target.value } }))}/></label>
             <label>Main heading<input value={siteContent.toolsSection.title || ""} onChange={e => setSiteContent(c => ({ ...c, toolsSection: { ...c.toolsSection, title: e.target.value } }))}/></label>
+          </div>
+          <div className="editor-grid" style={{ marginTop: 16 }}>
+            {[
+              { key: "recommendationImage", title: "Find your perfect device" },
+              { key: "comparisonImage", title: "Compare devices" },
+            ].map(item => (
+              <div className="field-wide" key={item.key} style={{ border: "1px solid #e5e7eb", padding: 14, borderRadius: 10 }}>
+                <b>{item.title}</b>
+                <div style={{ marginTop: 10 }}>
+                  <label className="btn secondary small upload-label">{uploading ? "Uploading…" : "Upload image"}<input type="file" accept="image/jpeg,image/png,image/webp,image/gif" disabled={uploading} onChange={e => { uploadToolsImage(e.target.files?.[0], item.key); e.target.value = ""; }}/></label>
+                </div>
+                {(siteContent.toolsSection[item.key] || (item.key === "recommendationImage" ? siteContent.recommendationSection?.image : siteContent.comparisonSection?.image)) && <div style={{ display: "flex", alignItems: "center", gap: 12, marginTop: 10 }}>
+                  <img src={siteContent.toolsSection[item.key] || (item.key === "recommendationImage" ? siteContent.recommendationSection?.image : siteContent.comparisonSection?.image)} alt="" style={{ width: 120, height: 76, objectFit: "cover", borderRadius: 8, background: "#f3f4f6" }}/>
+                  <button type="button" className="text-btn danger-text" onClick={() => setSiteContent(c => ({ ...c, toolsSection: { ...c.toolsSection, [item.key]: "" } }))}>Remove image</button>
+                </div>}
+              </div>
+            ))}
           </div>
           <div className="modal-foot"><button className="btn primary" disabled={saving} onClick={() => saveSiteSection("toolsSection", siteContent.toolsSection)}>{saving ? "Saving…" : "Save Tools section"}</button></div>
         </div>
