@@ -162,3 +162,60 @@ tbody tr:hover{background:#f8f9fb}
 .media-card span{color:#7c8491}
 .selected-image{color:#626b78}
 @media(max-width:760px){.mobile-backdrop{background:#20242c66}}
+
+
+/* Readability pass: stronger typography and higher contrast */
+body{font-weight:500;-webkit-font-smoothing:antialiased}
+button,input,select{font-weight:600}
+.brand b{font-weight:800}
+.brand span{color:#68717e;font-weight:600}
+.login-card h1,.page-heading h1{font-weight:800}
+.login-card>p,.page-heading p{color:#626b78;font-weight:500}
+.login-form label{color:#343b46;font-weight:700}
+.login-form input,.toolbar input,.toolbar select,.editor-grid input,.editor-grid select,.variant-row input{font-size:13px;font-weight:500}
+.nav-label{color:#737c89;font-weight:800}
+.nav-item{font-size:13px;font-weight:600;color:#4d5663}
+.nav-item.active{font-weight:700;color:#76572c}
+.store-switch b,.user-info b{font-size:11px;font-weight:800}
+.store-switch span,.user-info span{font-weight:600;color:#69727f}
+.secure-note b{font-weight:800}
+.secure-note span{color:#62766b;font-weight:600}
+.breadcrumb{font-size:12px;font-weight:600;color:#68717e}
+.breadcrumb b{font-weight:800;color:#252b35}
+.environment{font-size:10px;font-weight:800}
+.page-heading .eyebrow,.eyebrow,.login-kicker{font-weight:800}
+.page-heading p{font-size:13px}
+.stat-top{font-size:12px;font-weight:700;color:#4f5865}
+.stat-card>strong{font-weight:800}
+.stat-detail{font-size:11px;font-weight:600;color:#626b78}
+.panel-head h2,.quick-actions h2{font-weight:800}
+.panel-head p{font-size:11px;font-weight:500;color:#626b78}
+th{font-size:10px;font-weight:800;color:#626b78}
+td{font-size:12px;font-weight:500;color:#343c48}
+.status{font-size:10px;font-weight:700}
+.stock-name b,.product-cell b{font-size:12px;font-weight:700;color:#252b35}
+.stock-name span,.subline{font-size:10px;font-weight:600;color:#68717e}
+.stock-qty{font-size:11px;font-weight:800}
+.empty-state b{font-size:12px;font-weight:800;color:#303743}
+.empty-state p,.placeholder-panel>p{font-size:12px;font-weight:500;color:#626b78}
+.quick-actions button,.btn{font-weight:700}
+.app-footer{font-size:10px;font-weight:600;color:#68717e}
+.toolbar input,.toolbar select{font-size:12px}
+.filter-tabs button{font-size:11px;font-weight:700;color:#596270}
+.results-count{font-size:11px;font-weight:600;color:#626b78}
+.placeholder-panel h2{font-weight:800}
+.placeholder-panel .eyebrow{font-weight:800}
+.modal-head h2,.confirm-modal h2{font-weight:800}
+.editor-grid label,.variant-row label{font-size:11px;font-weight:700;color:#424a56}
+.variant-heading h3{font-weight:800}
+.variant-heading p,.confirm-modal p{font-size:12px;font-weight:500;color:#626b78}
+.qr-wrap span,.secret-box span{font-weight:600;color:#626b78}
+.secret-box code{font-weight:700}
+.media-choice>span,.media-card b{font-size:11px;font-weight:700}
+.media-card span{font-size:10px;font-weight:600;color:#626b78}
+@media(max-width:760px){
+ .nav-item{font-size:13px}
+ .page-heading p{font-size:12px}
+ th{font-size:9px}
+ td{font-size:11px}
+}
