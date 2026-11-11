@@ -332,6 +332,112 @@ function MediaLibrary({ onError }) {
   </>;
 }
 
+
+function HomepageBuilder({ onError }) {
+  const blank = { eyebrow: "GO IPHONE", title: "", subtitle: "", badge: "", ctaText: "Shop now", linkCategoryKey: "iphone", linkProductId: "", imageMediaId: "", mobileImageMediaId: "", active: true, durationMs: 6500 };
+  const [slides, setSlides] = useState([]);
+  const [media, setMedia] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [editing, setEditing] = useState(null);
+  const [form, setForm] = useState(blank);
+  const [mediaTarget, setMediaTarget] = useState("");
+  const [refresh, setRefresh] = useState(0);
+  const load = useCallback(async () => {
+    setLoading(true);
+    try {
+      const results = await Promise.all([request("/hero-slides"), request("/media")]);
+      setSlides(results[0].heroSlides || []);
+      setMedia(results[1].media || []);
+    } catch (e) { onError(e.message); }
+    finally { setLoading(false); }
+  }, [onError]);
+  useEffect(() => { load(); }, [load, refresh]);
+  function startNew() { setForm({ ...blank }); setEditing("new"); }
+  function startEdit(slide) {
+    setForm({
+      eyebrow: slide.eyebrow || "", title: slide.title || "", subtitle: slide.subtitle || "",
+      badge: slide.badge || "", ctaText: slide.cta_text || "", linkCategoryKey: slide.link_category_key || "iphone",
+      linkProductId: slide.link_product_id || "", imageMediaId: slide.image_media_id || "",
+      mobileImageMediaId: slide.mobile_image_media_id || "", active: slide.active !== false,
+      durationMs: Number(slide.duration_ms || 6500),
+    });
+    setEditing(slide.id);
+  }
+  async function upload(file, target) {
+    if (!file) return;
+    setUploading(true);
+    try {
+      const dataUrl = await compressImage(file);
+      const d = await request("/media", { method: "POST", body: JSON.stringify({ dataUrl, fileName: file.name, usageTag: "hero" }) });
+      setMedia(list => [d.media, ...list]);
+      setForm(f => ({ ...f, [target]: d.media.id }));
+    } catch (e) { onError(e.message); }
+    finally { setUploading(false); }
+  }
+  async function save(event) {
+    event.preventDefault(); setSaving(true);
+    const payload = {
+      eyebrow: form.eyebrow || null, title: form.title.trim(), subtitle: form.subtitle || null,
+      badge: form.badge || null, ctaText: form.ctaText || null,
+      linkCategoryKey: form.linkCategoryKey || null, linkProductId: form.linkProductId || null,
+      imageMediaId: form.imageMediaId || null, mobileImageMediaId: form.mobileImageMediaId || null,
+      active: form.active, durationMs: Number(form.durationMs),
+    };
+    try {
+      await request(editing === "new" ? "/hero-slides" : "/hero-slides/" + editing, {
+        method: editing === "new" ? "POST" : "PATCH", body: JSON.stringify(payload),
+      });
+      setEditing(null); setRefresh(v => v + 1);
+    } catch (e) { onError(e.message); }
+    finally { setSaving(false); }
+  }
+  async function remove(id) {
+    if (!window.confirm("Delete this hero slide? This cannot be undone.")) return;
+    try { await request("/hero-slides/" + id, { method: "DELETE" }); setSlides(list => list.filter(x => x.id !== id)); }
+    catch (e) { onError(e.message); }
+  }
+  async function move(index, direction) {
+    const next = [...slides]; const target = index + direction;
+    if (target < 0 || target >= next.length) return;
+    [next[index], next[target]] = [next[target], next[index]];
+    setSlides(next);
+    try { await request("/hero-slides/reorder", { method: "POST", body: JSON.stringify({ orderedIds: next.map(x => x.id) }) }); }
+    catch (e) { onError(e.message); load(); }
+  }
+  const selectedImage = id => media.find(m => m.id === id)?.url || "";
+  return <>
+    <div className="page-heading"><div><div className="eyebrow">STORE EXPERIENCE</div><h1>Homepage Builder</h1><p>Build the first impression of your store. Manage hero banners, images and calls to action.</p></div><div className="heading-actions"><button className="btn secondary" onClick={() => setRefresh(v => v + 1)}><RefreshCw size={15}/> Refresh</button><button className="btn primary" onClick={startNew}><Plus size={15}/> Add hero slide</button></div></div>
+    <div className="homepage-intro"><div className="homepage-intro-icon"><Sparkles size={23}/></div><div><b>Your storefront hero section</b><p>Slides appear in the order shown below. If you have not added a banner yet, the storefront displays its built-in default hero design.</p></div><span className="homepage-live"><i/> Connected to storefront</span></div>
+    <section className="homepage-slides">
+      <div className="panel-head"><div><h2>Hero slides <span className="count-pill">{slides.length}</span></h2><p>Desktop and mobile imagery, headline, CTA and visibility.</p></div></div>
+      {loading ? <div className="loading-panel"><span className="spinner"/> Loading homepage content…</div> : slides.length ? <div className="hero-slide-list">{slides.map((slide, index) => <article className="hero-slide-card" key={slide.id}>
+        <div className="hero-slide-preview">{slide.image_url ? <img src={slide.image_url} alt=""/> : <div className="hero-preview-empty"><Image size={27}/><span>No desktop image</span></div>}<span className={slide.active ? "hero-state active" : "hero-state"}>{slide.active ? "LIVE" : "HIDDEN"}</span><span className="hero-order">#{index + 1}</span></div>
+        <div className="hero-slide-info"><div className="eyebrow">{slide.eyebrow || "GO IPHONE"}</div><h3>{slide.title}</h3><p>{slide.subtitle || "No supporting text added."}</p><div className="hero-slide-meta"><span>{slide.cta_text || "No CTA"}</span><span>{Math.round(Number(slide.duration_ms || 6500) / 100) / 10}s duration</span><span>{slide.mobile_image_url ? "Mobile image set" : "No mobile image"}</span></div></div>
+        <div className="hero-slide-actions"><button className="btn secondary small" disabled={index === 0} onClick={() => move(index, -1)} title="Move up"><ArrowUpRight size={14}/></button><button className="btn secondary small" disabled={index === slides.length - 1} onClick={() => move(index, 1)} title="Move down"><ArrowDownRight size={14}/></button><button className="btn secondary small" onClick={() => startEdit(slide)}>Edit</button><button className="btn danger small" onClick={() => remove(slide.id)}>Delete</button></div>
+      </article>)}</div> : <EmptyState icon={Image} title="No custom hero slides yet" detail="Your storefront is still showing its default hero. Add a slide whenever you are ready to publish your own banner."/>}
+    </section>
+    {editing && <div className="modal-backdrop"><form className="editor-modal homepage-editor" onSubmit={save}>
+      <div className="modal-head"><div><div className="eyebrow">HOMEPAGE BUILDER</div><h2>{editing === "new" ? "Create hero slide" : "Edit hero slide"}</h2></div><button type="button" className="icon-btn" onClick={() => setEditing(null)}><X size={19}/></button></div>
+      <div className="editor-grid">
+        <label>Eyebrow<input maxLength={100} value={form.eyebrow} onChange={e => setForm(f => ({ ...f, eyebrow: e.target.value }))} placeholder="GO IPHONE"/></label>
+        <label>Badge (optional)<input maxLength={50} value={form.badge} onChange={e => setForm(f => ({ ...f, badge: e.target.value }))} placeholder="New arrival"/></label>
+        <label className="field-wide">Main headline<input required maxLength={200} value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} placeholder="Your next favorite starts here."/></label>
+        <label className="field-wide">Supporting text<input maxLength={300} value={form.subtitle} onChange={e => setForm(f => ({ ...f, subtitle: e.target.value }))} placeholder="A short line that introduces this collection."/></label>
+        <label>Button label<input maxLength={50} value={form.ctaText} onChange={e => setForm(f => ({ ...f, ctaText: e.target.value }))} placeholder="Shop now"/></label>
+        <label>Button destination<select value={form.linkCategoryKey} onChange={e => setForm(f => ({ ...f, linkCategoryKey: e.target.value }))}>{["iphone","ipad","mac","watch","airpods","apple-accessory","other-accessory"].map(k => <option key={k} value={k}>{titleCase(k)}</option>)}</select></label>
+        <label>Slide duration (milliseconds)<input type="number" min="2000" max="30000" step="500" value={form.durationMs} onChange={e => setForm(f => ({ ...f, durationMs: e.target.value }))}/></label>
+        <label className="homepage-toggle"><input type="checkbox" checked={form.active} onChange={e => setForm(f => ({ ...f, active: e.target.checked }))}/> Publish this slide on the storefront</label>
+      </div>
+      <div className="homepage-image-fields">
+        {["imageMediaId","mobileImageMediaId"].map((key, i) => <div className="homepage-image-field" key={key}><div><b>{i ? "Mobile banner" : "Desktop banner"}</b><span>{i ? "Optional image optimized for phones." : "Recommended wide landscape image."}</span></div>{selectedImage(form[key]) ? <img src={selectedImage(form[key])} alt={i ? "Mobile banner" : "Desktop banner"}/> : <div className="homepage-image-empty"><Image size={20}/><span>No image selected</span></div>}<div className="homepage-image-buttons"><label className="btn secondary small upload-label">{uploading ? "Uploading…" : "Upload image"}<input type="file" accept="image/jpeg,image/png,image/webp,image/gif" disabled={uploading} onChange={e => upload(e.target.files?.[0], key)}/></label><button type="button" className="btn secondary small" onClick={() => setMediaTarget(mediaTarget === key ? "" : key)}>Choose from library</button>{form[key] && <button type="button" className="text-btn danger-text" onClick={() => setForm(f => ({ ...f, [key]: "" }))}>Remove</button>}</div>{mediaTarget === key && <div className="homepage-media-grid">{media.map(m => <button type="button" key={m.id} className={form[key] === m.id ? "selected" : ""} onClick={() => { setForm(f => ({ ...f, [key]: m.id })); setMediaTarget(""); }}><img src={m.url} alt={m.file_name || "Media"}/><span>{m.file_name || "Image"}</span></button>)}</div>}</div>)}
+      </div>
+      <div className="modal-foot"><button type="button" className="btn secondary" onClick={() => setEditing(null)}>Cancel</button><button className="btn primary" disabled={saving || uploading || !form.title.trim()}>{saving ? "Saving…" : editing === "new" ? "Create slide" : "Save changes"}</button></div>
+    </form></div>}
+  </>;
+}
+
 function Placeholder({ id, onNavigate }) {
   const content = {
     inventory: ["Inventory", "Track individual devices, stock levels and availability.", Boxes, "Inventory workspace is next in the build."],
@@ -419,7 +525,8 @@ export default function App() {
         {page === "products" && <Products onError={showError}/>}
         {page === "orders" && <Orders onError={showError}/>}
         {page === "media" && <MediaLibrary onError={showError}/>}
-        {!["dashboard","products","orders","media"].includes(page) && <Placeholder id={page} onNavigate={navigate}/>}
+        {page === "homepage" && <HomepageBuilder onError={showError}/>}
+        {!["dashboard","products","orders","media","homepage"].includes(page) && <Placeholder id={page} onNavigate={navigate}/>}
         <footer className="app-footer"><span>© {new Date().getFullYear()} GO iPhone</span><span>Admin workspace <i/> Built for your store</span></footer>
       </div>
     </main>
