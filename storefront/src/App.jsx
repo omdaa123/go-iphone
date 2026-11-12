@@ -1262,15 +1262,16 @@ function CatalogPage({ category, go, compareIds, onToggleCompare }) {
   const { products: allProducts } = useStoreData();
   const [active, setActive] = useState({});
   const [subcategory, setSubcategory] = useState("all");
+  const [deviceSubcategory, setDeviceSubcategory] = useState("all");
   const [sort, setSort] = useState("relevance");
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [filtersMounted, filtersVisible] = useMountTransition(filtersOpen, 260);
-  useEffect(() => { setActive({}); setSubcategory("all"); }, [category]);
+  useEffect(() => { setActive({}); setSubcategory("all"); setDeviceSubcategory("all"); }, [category]);
 
   const options = useMemo(() => buildFilterOptions(category), [category, allProducts]);
   const keys = CATEGORY_FILTER_KEYS[category] || [];
 
-  const items = allProducts.filter((p) => p.category === category && isPublished(p) && (category !== "other-devices" || subcategory === "all" || p.productType === subcategory)).filter((p) => {
+  const items = allProducts.filter((p) => p.category === category && isPublished(p) && (category !== "other-devices" || subcategory === "all" || p.productType === subcategory) && (category !== "other-devices" || subcategory !== "other-electronics" || deviceSubcategory === "all" || p.specs?.["Product subcategory"] === deviceSubcategory)).filter((p) => {
     return keys.every((key) => {
       const chosen = active[key];
       if (!chosen || !chosen.length) return true;
@@ -1331,6 +1332,23 @@ function CatalogPage({ category, go, compareIds, onToggleCompare }) {
           ].map((branch) => (
             <button key={branch.key} onClick={() => setSubcategory(branch.key)}
               style={{ borderColor: subcategory === branch.key ? T.ink : T.line, backgroundColor: subcategory === branch.key ? T.ink : "transparent", color: subcategory === branch.key ? "#fff" : T.ink }}
+              className="border px-4 py-2.5 text-sm font-medium transition-colors">
+              {branch.label}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {category === "other-devices" && subcategory === "other-electronics" && (
+        <div className="flex flex-wrap gap-2 mb-8" aria-label="Other electronics types">
+          {[
+            { key: "all", label: "All electronics" },
+            { key: "speakers", label: "Speakers" },
+            { key: "headphones", label: "Headphones" },
+            { key: "other-electronics", label: "Other Electronics" },
+          ].map((branch) => (
+            <button key={branch.key} onClick={() => setDeviceSubcategory(branch.key)}
+              style={{ borderColor: deviceSubcategory === branch.key ? T.ink : T.line, backgroundColor: deviceSubcategory === branch.key ? T.ink : "transparent", color: deviceSubcategory === branch.key ? "#fff" : T.ink }}
               className="border px-4 py-2.5 text-sm font-medium transition-colors">
               {branch.label}
             </button>
