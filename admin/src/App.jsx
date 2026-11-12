@@ -19,6 +19,29 @@ const date = (value) => value ? new Date(value).toLocaleDateString("en-GB", {
 const titleCase = (value = "") => String(value).replaceAll("_", " ").replace(/\b\w/g, c => c.toUpperCase());
 const IPHONE_MODELS = ["iPhone X","iPhone XS","iPhone XS Max","iPhone XR","iPhone 11","iPhone 11 Pro","iPhone 11 Pro Max","iPhone SE (2nd generation)","iPhone 12 mini","iPhone 12","iPhone 12 Pro","iPhone 12 Pro Max","iPhone 13 mini","iPhone 13","iPhone 13 Pro","iPhone 13 Pro Max","iPhone SE (3rd generation)","iPhone 14","iPhone 14 Plus","iPhone 14 Pro","iPhone 14 Pro Max","iPhone 15","iPhone 15 Plus","iPhone 15 Pro","iPhone 15 Pro Max","iPhone 16","iPhone 16 Plus","iPhone 16 Pro","iPhone 16 Pro Max","iPhone 16e","iPhone 17","iPhone 17 Pro","iPhone 17 Pro Max","iPhone Air","iPhone 17e","iPhone 18 Pro","iPhone 18 Pro Max","iPhone Duo"];
 
+const WATCH_MODELS = [
+  { name:"Apple Watch Series 12", year:2026, sizes:["42mm","46mm"], materials:["Aluminum","Titanium","Ceramic"], connectivity:["GPS","GPS + Cellular"], colors:["Space Gray","Black","Light Gold","Dark Bronze","Natural Titanium","Radiant Gold Titanium","Pearl White Ceramic","Night Blue Ceramic"], display:"Always-On Retina", chip:"S11", capacity:"64GB" },
+  { name:"Apple Watch Ultra 4", year:2026, sizes:["49mm"], materials:["Titanium"], connectivity:["GPS + Cellular"], colors:["Natural Titanium","Black Titanium"], display:"Always-On Retina", chip:"S11", capacity:"64GB" },
+  { name:"Apple Watch SE 3", year:2025, sizes:["40mm","44mm"], materials:["Aluminum"], connectivity:["GPS","GPS + Cellular"], colors:["Midnight","Starlight"], display:"Always-On Retina", chip:"S10", capacity:"64GB" },
+  { name:"Apple Watch Series 11", year:2025, sizes:["42mm","46mm"], materials:["Aluminum","Titanium"], connectivity:["GPS","GPS + Cellular"], colors:["Rose Gold","Silver","Space Gray","Jet Black","Natural Titanium","Gold Titanium","Slate Titanium"], display:"Always-On Retina", chip:"S10", capacity:"64GB" },
+  { name:"Apple Watch Ultra 3", year:2025, sizes:["49mm"], materials:["Titanium"], connectivity:["GPS + Cellular"], colors:["Natural Titanium","Black Titanium"], display:"Always-On Retina", chip:"S10", capacity:"64GB" },
+  { name:"Apple Watch Series 10", year:2024, sizes:["42mm","46mm"], materials:["Aluminum","Titanium"], connectivity:["GPS","GPS + Cellular"], colors:["Jet Black","Rose Gold","Silver","Natural Titanium","Gold Titanium","Slate Titanium"], display:"Always-On Retina", chip:"S10", capacity:"64GB" },
+  { name:"Apple Watch Ultra 2", year:2023, sizes:["49mm"], materials:["Titanium"], connectivity:["GPS + Cellular"], colors:["Natural Titanium","Black Titanium"], display:"Always-On Retina", chip:"S9", capacity:"64GB" },
+  { name:"Apple Watch Series 9", year:2023, sizes:["41mm","45mm"], materials:["Aluminum","Stainless Steel"], connectivity:["GPS","GPS + Cellular"], colors:["Midnight","Starlight","Silver","Pink","(PRODUCT)RED","Gold Stainless Steel","Silver Stainless Steel","Graphite Stainless Steel"], display:"Always-On Retina", chip:"S9", capacity:"64GB" },
+  { name:"Apple Watch Ultra", year:2022, sizes:["49mm"], materials:["Titanium"], connectivity:["GPS + Cellular"], colors:["Natural Titanium"], display:"Always-On Retina", chip:"S8", capacity:"32GB" },
+  { name:"Apple Watch Series 8", year:2022, sizes:["41mm","45mm"], materials:["Aluminum","Stainless Steel"], connectivity:["GPS","GPS + Cellular"], colors:["Midnight","Starlight","Silver","(PRODUCT)RED","Gold Stainless Steel","Silver Stainless Steel","Graphite Stainless Steel"], display:"Always-On Retina", chip:"S8", capacity:"32GB" },
+  { name:"Apple Watch Series 7", year:2021, sizes:["41mm","45mm"], materials:["Aluminum","Stainless Steel","Titanium"], connectivity:["GPS","GPS + Cellular"], colors:["Midnight","Starlight","Green","Blue","(PRODUCT)RED","Silver Stainless Steel","Graphite Stainless Steel","Gold Stainless Steel","Natural Titanium","Space Black Titanium"], display:"Always-On Retina", chip:"S7", capacity:"32GB" },
+  { name:"Apple Watch SE (2nd generation)", year:2022, sizes:["40mm","44mm"], materials:["Aluminum"], connectivity:["GPS","GPS + Cellular"], colors:["Midnight","Starlight","Silver"], display:"Retina", chip:"S8", capacity:"32GB" },
+  { name:"Apple Watch Series 6", year:2020, sizes:["40mm","44mm"], materials:["Aluminum","Stainless Steel","Titanium"], connectivity:["GPS","GPS + Cellular"], colors:["Space Gray","Silver","Gold","Blue","(PRODUCT)RED","Graphite Stainless Steel","Gold Stainless Steel","Natural Titanium","Space Black Titanium"], display:"Always-On Retina", chip:"S6", capacity:"32GB" },
+  { name:"Apple Watch SE (1st generation)", year:2020, sizes:["40mm","44mm"], materials:["Aluminum"], connectivity:["GPS","GPS + Cellular"], colors:["Space Gray","Silver","Gold"], display:"Retina", chip:"S5", capacity:"32GB" },
+  { name:"Apple Watch Series 5", year:2019, sizes:["40mm","44mm"], materials:["Aluminum","Stainless Steel","Titanium","Ceramic"], connectivity:["GPS","GPS + Cellular"], colors:["Space Gray","Silver","Gold","White Ceramic","Natural Titanium","Space Black Titanium"], display:"Always-On Retina", chip:"S5", capacity:"32GB" },
+  { name:"Apple Watch Series 4", year:2018, sizes:["40mm","44mm"], materials:["Aluminum","Stainless Steel"], connectivity:["GPS","GPS + Cellular"], colors:["Silver","Gold","Space Gray","Gold Stainless Steel","Silver Stainless Steel","Space Black Stainless Steel"], display:"Retina", chip:"S4", capacity:"16GB" },
+  { name:"Apple Watch Series 3", year:2017, sizes:["38mm","42mm"], materials:["Aluminum","Stainless Steel","Ceramic"], connectivity:["GPS","GPS + Cellular"], colors:["Silver","Space Gray","Gold","White Ceramic","Gray Ceramic"], display:"Retina", chip:"S3", capacity:"8GB / 16GB (by version)" },
+  { name:"Apple Watch Series 2", year:2016, sizes:["38mm","42mm"], materials:["Aluminum","Stainless Steel","Ceramic"], connectivity:["GPS"], colors:["Silver","Space Gray","Gold","Rose Gold","White Ceramic","Black Ceramic"], display:"Retina", chip:"S2", capacity:"8GB" },
+  { name:"Apple Watch Series 1", year:2016, sizes:["38mm","42mm"], materials:["Aluminum"], connectivity:["GPS"], colors:["Silver","Space Gray","Gold","Rose Gold"], display:"Retina", chip:"S1P", capacity:"8GB" },
+  { name:"Apple Watch (1st generation)", year:2015, sizes:["38mm","42mm"], materials:["Stainless Steel","18-karat Gold"], connectivity:["GPS (iPhone-connected)"], colors:["Stainless Steel","Space Black Stainless Steel","18-karat Yellow Gold","18-karat Rose Gold"], display:"Retina", chip:"S1", capacity:"8GB" }
+];
+
 async function request(path, options = {}) {
   const method = String(options.method || "GET").toUpperCase();
   if (import.meta.env.DEV && method !== "GET" && !path.startsWith("/auth/")) {
@@ -231,6 +254,7 @@ function Products({ onError }) {
   const [watchSize, setWatchSize] = useState("42mm");
   const [watchConnectivity, setWatchConnectivity] = useState("GPS");
   const [watchMaterial, setWatchMaterial] = useState("Aluminum");
+  const [watchColor, setWatchColor] = useState("");
   const [watchBand, setWatchBand] = useState("");
   const [watchCondition, setWatchCondition] = useState("New");
   const [watchBattery, setWatchBattery] = useState("");
@@ -254,7 +278,7 @@ function Products({ onError }) {
     setIphoneModel(""); setIphoneCondition("New"); setIphoneStorage("128GB"); setIphoneColor("");
     setIphoneRegion(""); setIphoneSim("Physical SIM + eSIM"); setIphoneBattery("");
     setIphoneGrade("Like New"); setIphoneNotes(""); setIphonePrice(""); setIphoneSku(""); setIphoneStep(1);
-    setWatchModel(""); setWatchSize("42mm"); setWatchConnectivity("GPS"); setWatchMaterial("Aluminum"); setWatchBand("");
+    setWatchModel(""); setWatchSize("42mm"); setWatchConnectivity("GPS"); setWatchMaterial("Aluminum"); setWatchColor(""); setWatchBand("");
     setWatchCondition("New"); setWatchBattery(""); setWatchGrade("Like New"); setWatchNotes(""); setWatchPrice(""); setWatchSku(""); setWatchStep(1);
   }
   async function startEdit(id) {
@@ -300,15 +324,17 @@ function Products({ onError }) {
       setSaving(true);
       try {
         const name = watchModel.trim();
+        const watchSpec = WATCH_MODELS.find(model => model.name === name);
+        if (!watchSpec) { onError("Choose a valid Apple Watch model from the catalog."); return; }
         const created = await request("/products", { method: "POST", body: JSON.stringify({
           name, categoryKey: "watch", productType: "smartwatch", tagline: form.tagline || null,
-          specs: { Model: name, "Case size": watchSize, Connectivity: watchConnectivity, "Case material": watchMaterial, ...(watchBand ? { "Band style": watchBand } : {}) },
-          storageOptions: [watchSize], colors: [], meta: { modelName: name, caseSize: watchSize, connectivity: watchConnectivity, caseMaterial: watchMaterial, ...(watchBand ? { bandStyle: watchBand } : {}) },
+          specs: { Model: name, "Release year": String(watchSpec.year), "Case size": watchSize, Connectivity: watchConnectivity, "Case material": watchMaterial, Color: watchColor, Display: watchSpec.display, Chip: watchSpec.chip, Capacity: watchSpec.capacity, ...(watchBand ? { "Band style": watchBand } : {}) },
+          storageOptions: [watchSize], colors: [watchColor], meta: { modelName: name, releaseYear: watchSpec.year, caseSize: watchSize, connectivity: watchConnectivity, caseMaterial: watchMaterial, color: watchColor, display: watchSpec.display, chip: watchSpec.chip, capacity: watchSpec.capacity, ...(watchBand ? { bandStyle: watchBand } : {}) },
           hasUnits: true, visibility: form.visibility, salesMode: form.salesMode, availability: "in_stock",
           variants: [], primaryImageMediaId: primaryImageMediaId || null, galleryMediaIds, collectionIds
         }) });
         await request("/products/" + created.product.id + "/units", { method: "POST", body: JSON.stringify({
-          storage: watchSize, color: watchMaterial, batteryPct: watchCondition === "New" || watchBattery === "" ? null : Number(watchBattery),
+          storage: watchSize, color: [watchMaterial, watchColor].filter(Boolean).join(" · "), batteryPct: watchCondition === "New" || watchBattery === "" ? null : Number(watchBattery),
           condition: watchCondition === "New" ? "New" : watchGrade, sku: watchSku || null,
           priceCents: Math.round(Number(watchPrice) * 100), warranty: null,
           notes: watchCondition === "New" ? null : [watchBand, watchNotes].filter(Boolean).join(" · ") || null
@@ -385,14 +411,18 @@ function Products({ onError }) {
       </section>}
       {editing === "new" && form.categoryKey === "watch" && <section className="iphone-wizard watch-wizard">
         <div className="iphone-wizard-steps"><span className={watchStep===1?"active":""}>01 · Model</span><span className={watchStep===2?"active":""}>02 · Configuration</span><span className={watchStep===3?"active":""}>03 · Condition & price</span></div>
-        {watchStep===1 && <div className="editor-grid"><label className="field-wide">Apple Watch model<input required value={watchModel} onChange={e=>setWatchModel(e.target.value)} placeholder="e.g. Apple Watch Series 11, SE, Ultra 3"/></label><p className="field-wide muted">Enter the exact model name printed on the box or device. This avoids missing or outdated model options.</p></div>}
-        {watchStep===2 && <div className="editor-grid">
-          <label>Case size<select value={watchSize} onChange={e=>setWatchSize(e.target.value)}>{["38mm","40mm","41mm","42mm","44mm","45mm","46mm","49mm"].map(v=><option key={v}>{v}</option>)}</select></label>
-          <label>Connectivity<select value={watchConnectivity} onChange={e=>setWatchConnectivity(e.target.value)}>{["GPS","GPS + Cellular"].map(v=><option key={v}>{v}</option>)}</select></label>
-          <label>Case material<select value={watchMaterial} onChange={e=>setWatchMaterial(e.target.value)}>{["Aluminum","Stainless Steel","Titanium","Ceramic","Other"].map(v=><option key={v}>{v}</option>)}</select></label>
-          <label>Band style / size (optional)<input value={watchBand} onChange={e=>setWatchBand(e.target.value)} placeholder="e.g. Sport Band / M-L"/></label>
-        </div>}
-        {watchStep===3 && <div className="editor-grid">
+        {watchStep===1 && <div className="editor-grid">
+           <label className="field-wide">Apple Watch model<select required value={watchModel} onChange={e=>{const model=WATCH_MODELS.find(x=>x.name===e.target.value);setWatchModel(e.target.value);if(model){setWatchSize(model.sizes[0]);setWatchMaterial(model.materials[0]);setWatchConnectivity(model.connectivity[0]);setWatchColor(model.colors[0]);}}}><option value="">Choose an official Apple Watch model…</option>{WATCH_MODELS.map(model=><option key={model.name} value={model.name}>{model.name} · {model.year}</option>)}</select></label>
+           {watchModel && <div className="field-wide watch-model-summary"><b>{WATCH_MODELS.find(x=>x.name===watchModel)?.display}</b><span>Chip {WATCH_MODELS.find(x=>x.name===watchModel)?.chip} · {WATCH_MODELS.find(x=>x.name===watchModel)?.capacity} · Introduced {WATCH_MODELS.find(x=>x.name===watchModel)?.year}</span><small>Options below are filtered to this model.</small></div>}
+         </div>}
+         {watchStep===2 && <div className="editor-grid">
+           <label>Case size<select value={watchSize} onChange={e=>setWatchSize(e.target.value)}>{(WATCH_MODELS.find(x=>x.name===watchModel)?.sizes||[]).map(v=><option key={v}>{v}</option>)}</select></label>
+           <label>Connectivity<select value={watchConnectivity} onChange={e=>setWatchConnectivity(e.target.value)}>{(WATCH_MODELS.find(x=>x.name===watchModel)?.connectivity||[]).map(v=><option key={v}>{v}</option>)}</select></label>
+           <label>Case material<select value={watchMaterial} onChange={e=>{setWatchMaterial(e.target.value);const model=WATCH_MODELS.find(x=>x.name===watchModel);setWatchColor(model?.colors.find(c=>c.toLowerCase().includes(e.target.value.toLowerCase()))||model?.colors[0]||"");}}>{(WATCH_MODELS.find(x=>x.name===watchModel)?.materials||[]).map(v=><option key={v}>{v}</option>)}</select></label>
+           <label>Official color<select value={watchColor} onChange={e=>setWatchColor(e.target.value)}>{(WATCH_MODELS.find(x=>x.name===watchModel)?.colors||[]).map(v=><option key={v}>{v}</option>)}</select></label>
+           <label className="field-wide">Band style / size (optional)<input value={watchBand} onChange={e=>setWatchBand(e.target.value)} placeholder="e.g. Sport Band / M-L"/></label>
+         </div>}
+         {watchStep===3 && <div className="editor-grid">
           <label>Device condition<select value={watchCondition} onChange={e=>setWatchCondition(e.target.value)}><option>New</option><option>Used</option></select></label>
           {watchCondition==="Used" && <><label>Battery health (%)<input type="number" min="1" max="100" value={watchBattery} onChange={e=>setWatchBattery(e.target.value)} placeholder="e.g. 92"/></label><label>Condition grade<select value={watchGrade} onChange={e=>setWatchGrade(e.target.value)}>{["Like New","Excellent","Good","Fair"].map(v=><option key={v}>{v}</option>)}</select></label><label className="field-wide">Defects / repairs / notes<input value={watchNotes} onChange={e=>setWatchNotes(e.target.value)} placeholder="Scratches, replaced parts, repairs…"/></label></>}
           <label>Selling price (EGP)<input type="number" min="0" step="0.01" required value={watchPrice} onChange={e=>setWatchPrice(e.target.value)}/></label>
