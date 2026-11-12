@@ -649,6 +649,16 @@ function CollectionsManager({ onError }) {
   const [saving, setSaving] = useState(false);
   const [editing, setEditing] = useState(null);
   const [form, setForm] = useState({ id: "", name: "", description: "" });
+  const [query, setQuery] = useState("");
+  const [visibilityFilter, setVisibilityFilter] = useState("all");
+  const visibleItems = items.filter(item => {
+    const matchesQuery = !query.trim() || [item.name, item.id, item.description].some(value => String(value || "").toLowerCase().includes(query.trim().toLowerCase()));
+    const matchesVisibility = visibilityFilter === "all" || (visibilityFilter === "visible" ? item.visible !== false : item.visible === false);
+    return matchesQuery && matchesVisibility;
+  });
+  const visibleCount = items.filter(item => item.visible !== false).length;
+  const hiddenCount = items.length - visibleCount;
+  const productTotal = items.reduce((sum, item) => sum + Number(item.product_count || 0), 0);
   const load = useCallback(async () => {
     setLoading(true);
     try { const d = await request("/collections"); setItems(d.collections || []); }
@@ -702,14 +712,17 @@ function CollectionsManager({ onError }) {
     <div className="page-heading"><div><div className="eyebrow">STORE EXPERIENCE</div><h1>Collections</h1><p>Build and organize the product sections that appear across your storefront.</p></div><div className="heading-actions"><button className="btn secondary" onClick={() => setRefresh(v => v + 1)}><RefreshCw size={15}/> Refresh</button><button className="btn primary" onClick={startNew}><Plus size={15}/> New collection</button></div></div>
     <div className="homepage-intro"><div className="homepage-intro-icon"><ShoppingBag size={22}/></div><div><b>Merchandising sections</b><p>Collections group products into storefront sections. Add products to a collection from the product editor, then control its title and visibility here.</p></div><span className="homepage-live"><i/> Store connected</span></div>
     <section className="panel">
+      <div className="collection-overview-grid"><div className="collection-overview-card"><span>Total collections</span><b>{items.length}</b><small>Curated storefront groups</small></div><div className="collection-overview-card"><span>Visible on store</span><b>{visibleCount}</b><small>Available to shoppers</small></div><div className="collection-overview-card"><span>Hidden</span><b>{hiddenCount}</b><small>Saved but not displayed</small></div><div className="collection-overview-card"><span>Product assignments</span><b>{productTotal}</b><small>Across all collections</small></div></div>
+    <section className="panel">
       <div className="panel-head"><div><h2>All collections <span className="count-pill">{items.length}</span></h2><p>Use the arrows to change display order. Built-in collections are protected from deletion.</p></div></div>
-      {loading ? <div className="loading-panel"><span className="spinner"/> Loading collections…</div> : items.length ? <div className="collection-admin-list">{items.map((item, index) => <article className="collection-admin-row" key={item.id}>
+      <div className="collection-toolbar"><div className="search-box"><Search size={16}/><input value={query} onChange={e => setQuery(e.target.value)} placeholder="Search collections by name or ID…"/></div><select value={visibilityFilter} onChange={e => setVisibilityFilter(e.target.value)}><option value="all">All visibility</option><option value="visible">Visible only</option><option value="hidden">Hidden only</option></select><span className="results-count">{visibleItems.length} shown</span></div>
+      {loading ? <div className="loading-panel"><span className="spinner"/> Loading collections…</div> : visibleItems.length ? <div className="collection-admin-list">{visibleItems.map((item) => <article className="collection-admin-row" key={item.id}>
         <div className="collection-admin-order"><button className="btn secondary small" disabled={index === 0} onClick={() => move(index, -1)} aria-label="Move collection up"><ArrowUpRight size={14}/></button><button className="btn secondary small" disabled={index === items.length - 1} onClick={() => move(index, 1)} aria-label="Move collection down"><ArrowDownRight size={14}/></button></div>
         <div className="collection-admin-info"><div><b>{item.name}</b>{item.is_system && <span className="count-pill">Built-in</span>}</div><span>{item.description || item.id}</span></div>
         <div className="collection-admin-count"><b>{Number(item.product_count || 0)}</b><span>products</span></div>
         <span className={item.visible === false ? "status hidden" : "status published"}>{item.visible === false ? "Hidden" : "Visible"}</span>
         <div className="row-actions"><button className="btn secondary small" onClick={() => startEdit(item)}>Edit</button><button className="btn secondary small" onClick={() => toggleVisible(item)}>{item.visible === false ? "Show" : "Hide"}</button>{!item.is_system && <button className="btn danger small" onClick={() => remove(item)}>Delete</button>}</div>
-      </article>)}</div> : <EmptyState icon={ShoppingBag} title="No collections yet" detail="Create your first collection to build a custom product section."/>}
+      </article>)}</div> : <EmptyState icon={ShoppingBag} title={items.length ? "No matching collections" : "No collections yet"} detail={items.length ? "Try a different search or visibility filter." : "Create your first collection to build a custom product section."}/>}
     </section>
     {editing && <div className="modal-backdrop"><form className="editor-modal" onSubmit={save}>
       <div className="modal-head"><div><div className="eyebrow">MERCHANDISING</div><h2>{editing === "new" ? "Create collection" : "Edit collection"}</h2></div><button type="button" className="icon-btn" onClick={() => setEditing(null)}><X size={19}/></button></div>
