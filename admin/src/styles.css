@@ -841,3 +841,8 @@ table td{font-size:12px;padding:15px 16px}
 .product-category-choice{display:block;margin:14px 0 16px;padding:12px 14px;border:1px solid #303846;border-radius:10px;background:#171d27;color:#cbd2de;font-size:11px;font-weight:650}
 .product-category-choice select{display:block;width:100%;margin-top:8px}
 .watch-wizard{margin-top:4px}
+
+.watch-model-summary{display:flex;flex-direction:column;gap:5px;padding:13px 15px;border:1px solid #d7e1ee;border-radius:10px;background:#f5f8fc;color:#27364a}
+.watch-model-summary b{font-size:13px;color:#17263a}
+.watch-model-summary span{font-size:12px;font-weight:650;color:#3d5877}
+.watch-model-summary small{font-size:11px;color:#68778a}
