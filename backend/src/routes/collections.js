@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { z } from "zod";
-import { pool } from "../db.js";
+import { pool, withTransaction } from "../db.js";
 import { requireAuth } from "../middleware/auth.js";
 import { requirePermission } from "../middleware/rbac.js";
 import { validateBody } from "../middleware/validate.js";
@@ -17,6 +17,47 @@ collectionsRouter.get("/", async (req, res, next) => {
        GROUP BY c.id ORDER BY c.sort_order`
     );
     res.json({ collections: rows });
+  } catch (err) { next(err); }
+});
+
+
+collectionsRouter.get("/:id/products", async (req, res, next) => {
+  try {
+    const collection = await pool.query("SELECT id FROM collections WHERE id = $1", [req.params.id]);
+    if (!collection.rows[0]) return res.status(404).json({ error: "Collection not found." });
+    const { rows } = await pool.query(
+      `SELECT p.id, p.name, p.category_key, p.product_type, p.visibility, m.url AS image_url
+       FROM product_collections pc JOIN products p ON p.id = pc.product_id
+       LEFT JOIN media m ON m.id = p.primary_image_media_id
+       WHERE pc.collection_id = $1 ORDER BY p.name`,
+      [req.params.id]
+    );
+    res.json({ products: rows });
+  } catch (err) { next(err); }
+});
+
+const collectionProductsSchema = z.object({ productIds: z.array(z.string().uuid()).max(500) });
+collectionsRouter.put("/:id/products", requirePermission("cms.write"), validateBody(collectionProductsSchema), async (req, res, next) => {
+  try {
+    const result = await withTransaction(async client => {
+      const exists = await client.query("SELECT id FROM collections WHERE id = $1 FOR UPDATE", [req.params.id]);
+      if (!exists.rows[0]) return null;
+      if (req.body.productIds.length) {
+        const found = await client.query("SELECT id FROM products WHERE id = ANY($1::uuid[])", [req.body.productIds]);
+        if (found.rows.length !== new Set(req.body.productIds).size) {
+          const err = new Error("One or more selected products could not be found."); err.statusCode = 400; throw err;
+        }
+      }
+      await client.query("DELETE FROM product_collections WHERE collection_id = $1", [req.params.id]);
+      for (const productId of [...new Set(req.body.productIds)]) {
+        await client.query("INSERT INTO product_collections (product_id, collection_id) VALUES ($1,$2) ON CONFLICT DO NOTHING", [productId, req.params.id]);
+      }
+      const { rows } = await client.query("SELECT COUNT(*)::int AS product_count FROM product_collections WHERE collection_id = $1", [req.params.id]);
+      return rows[0].product_count;
+    });
+    if (result === null) return res.status(404).json({ error: "Collection not found." });
+    await logAudit({ adminUserId: req.admin.id, action: "collection.products.update", resourceType: "collection", resourceId: req.params.id, after: { productCount: result }, ip: req.ip });
+    res.json({ ok: true, productCount: result });
   } catch (err) { next(err); }
 });
 
