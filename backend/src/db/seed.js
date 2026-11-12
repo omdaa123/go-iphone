@@ -15,6 +15,7 @@ const CATEGORIES = [
   { key: "airpods", label: "AirPods" },
   { key: "apple-accessory", label: "Apple Accessories" },
   { key: "other-accessory", label: "Other Accessories" },
+  { key: "other-devices", label: "Other Devices" },
 ];
 
 const COLLECTIONS = [
