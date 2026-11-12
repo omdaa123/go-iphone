@@ -713,3 +713,39 @@ table td{font-size:12px;padding:15px 16px}
 .inventory-product-pick>b{font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .inventory-product-pick .btn{flex-shrink:0}
 @media(max-width:700px){.inventory-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}.inventory-product-picks{grid-template-columns:1fr}}
+
+/* Collections merchandising workspace */
+.collections-workspace{display:grid;grid-template-columns:minmax(340px,.92fr) minmax(460px,1.35fr);gap:18px;align-items:start}
+.collections-list-panel,.collection-detail-panel{min-width:0}
+.collection-select-row{display:block;padding:12px;border:1px solid #e7e9ee;border-radius:12px;margin:9px 12px;background:#fff}
+.collection-select-row.selected{border-color:#b68c4c;box-shadow:0 0 0 2px #b68c4c20}
+.collection-open-button{display:flex;align-items:center;gap:12px;width:100%;text-align:left;background:transparent;border:0;padding:0;color:inherit}
+.collection-cover-thumb{width:48px;height:48px;border-radius:10px;background:#f2f3f5;display:grid;place-items:center;overflow:hidden;color:#8b929f;flex-shrink:0}
+.collection-cover-thumb img{width:100%;height:100%;object-fit:cover}
+.collection-admin-info{min-width:0;flex:1}
+.collection-admin-info>div{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.collection-admin-info>span{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;font-size:12px;color:#737b89;margin-top:4px}
+.collection-row-tools{display:flex;gap:6px;flex-wrap:wrap;margin:10px 0 0 60px}
+.collection-detail-panel{padding-bottom:18px}
+.collection-empty-detail{min-height:360px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:35px;color:#7c8492}
+.collection-empty-detail h2{font-size:20px;color:#252a34;margin:14px 0 4px}
+.collection-empty-detail p{max-width:330px;font-size:13px}
+.collection-detail-heading{padding-bottom:14px}
+.collection-cover-editor{display:flex;gap:16px;padding:16px;margin:0 18px 18px;border:1px solid #e8eaf0;border-radius:12px;align-items:center}
+.collection-cover-editor>img,.collection-cover-placeholder{width:132px;height:92px;object-fit:cover;border-radius:9px;background:#f2f3f5;flex-shrink:0}
+.collection-cover-placeholder{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px;color:#9299a5;font-size:11px}
+.collection-cover-editor p,.collection-products-heading p{font-size:12px;color:#7b8390;margin:4px 0 10px}
+.collection-description-field{display:grid;gap:7px;margin:0 18px 18px;font-size:12px;font-weight:700;color:#454c58}
+.collection-description-field textarea{border:1px solid #dfe3e9;border-radius:8px;padding:10px;font:inherit;font-weight:400;min-height:76px}
+.collection-products-heading{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:0 18px 12px}
+.collection-products-heading h3{font-size:15px;margin:0}
+.collection-product-picker{max-height:430px;overflow:auto;border-top:1px solid #edf0f3;border-bottom:1px solid #edf0f3}
+.collection-product-option{display:flex;align-items:center;gap:11px;padding:10px 16px;border-bottom:1px solid #f0f1f4;cursor:pointer}
+.collection-product-option:last-child{border-bottom:0}
+.collection-product-option>img,.collection-product-option>.product-avatar{width:42px;height:42px;object-fit:cover;border-radius:8px;background:#f2f3f5;display:grid;place-items:center;flex-shrink:0}
+.collection-product-option>span:nth-of-type(1){display:grid;gap:3px;flex:1;min-width:0}
+.collection-product-option b{font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.collection-product-option small{font-size:10px;color:#838b98}
+.collection-detail-panel .modal-foot{padding:14px 18px 0;display:flex;justify-content:space-between;gap:12px;align-items:center}
+@media(max-width:1120px){.collections-workspace{grid-template-columns:1fr}.collection-product-picker{max-height:360px}}
+@media(max-width:600px){.collection-cover-editor{align-items:flex-start;flex-direction:column}.collection-detail-panel .modal-foot{align-items:stretch;flex-direction:column}.collection-row-tools{margin-left:0}}
