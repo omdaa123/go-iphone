@@ -586,7 +586,7 @@ function Navbar({ go, cartCount, compareCount, onSearch, onCart }) {
           </button>
 
           <nav className="hidden md:flex items-center gap-9">
-            {CATEGORIES.filter((c) => c.key !== "apple-accessory" && c.key !== "other-accessory").map((c) => (
+            {CATEGORIES.filter((c) => !["apple-accessory", "other-accessory", "other-devices"].includes(c.key)).map((c) => (
               <button key={c.key} onClick={() => go("catalog", { category: c.key })}
                 style={{ color: T.ink, fontSize: "13.5px" }} className="group relative font-medium py-1">
                 {c.label}
@@ -613,6 +613,11 @@ function Navbar({ go, cartCount, compareCount, onSearch, onCart }) {
                 </div>
               </div>
             </div>
+            <button onClick={() => go("catalog", { category: "other-devices" })}
+              style={{ color: T.ink, fontSize: "13.5px" }} className="group relative font-medium py-1">
+              Other Devices
+              <span className="absolute left-0 -bottom-0 h-px w-0 group-hover:w-full transition-all duration-300" style={{ backgroundColor: T.ink }} />
+            </button>
           </nav>
 
           <div className="flex items-center gap-1 md:gap-2">
@@ -641,7 +646,7 @@ function Navbar({ go, cartCount, compareCount, onSearch, onCart }) {
             <button onClick={() => setMenuOpen(false)} style={{ color: T.ink }} className="p-2 -m-2"><X size={22} /></button>
           </div>
           <div className="flex-1 overflow-y-auto px-6 py-4 flex flex-col">
-            {CATEGORIES.filter((c) => c.key !== "apple-accessory" && c.key !== "other-accessory").map((c) => (
+            {CATEGORIES.filter((c) => !["apple-accessory", "other-accessory", "other-devices"].includes(c.key)).map((c) => (
               <button key={c.key} onClick={() => { go("catalog", { category: c.key }); setMenuOpen(false); }}
                 style={{ color: T.ink, borderColor: T.line }} className="text-2xl font-medium tracking-tight py-4 border-b text-left">
                 {c.label}
@@ -656,6 +661,10 @@ function Navbar({ go, cartCount, compareCount, onSearch, onCart }) {
                   style={{ color: T.graphite }} className="text-sm font-medium text-left">Other Accessories</button>
               </div>
             </div>
+            <button onClick={() => { go("catalog", { category: "other-devices" }); setMenuOpen(false); }}
+              style={{ color: T.ink, borderColor: T.line }} className="text-2xl font-medium tracking-tight py-4 border-b text-left">
+              Other Devices
+            </button>
             <button onClick={() => { go("compare"); setMenuOpen(false); }} style={{ color: T.graphite, borderColor: T.line }} className="text-sm font-medium py-4 border-b text-left flex items-center justify-between">Compare devices <Scale size={15} /></button>
             <button onClick={() => { go("recommend"); setMenuOpen(false); }} style={{ color: T.graphite }} className="text-sm font-medium py-4 text-left">Find your perfect device</button>
           </div>
