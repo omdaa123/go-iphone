@@ -1171,10 +1171,14 @@ function HomePage({ go, compareIds, onToggleCompare }) {
     { id: "trust", visible: true, order: 4 },
   ];
   const savedLayout = Array.isArray(siteContent.homepageLayout) ? siteContent.homepageLayout : [];
-  const homepageLayout = defaultLayout.map(base => ({
-    ...base,
-    ...(savedLayout.find(item => item.id === base.id) || {}),
-  })).sort((a, b) => a.order - b.order);
+  const homepageLayout = (savedLayout.length
+    ? savedLayout.map(item => ({ ...item, type: item.type || item.id }))
+    : defaultLayout.map(item => ({ ...item, type: item.id }))
+  ).sort((a, b) => a.order - b.order);
+  const now = Date.now();
+  const isInPublishWindow = item =>
+    (!item.publishAt || new Date(item.publishAt).getTime() <= now) &&
+    (!item.unpublishAt || new Date(item.unpublishAt).getTime() > now);
 
   function renderCollection(section, index) {
     if (section.id === "featured") return <EditorialFeature key={section.id} product={section.products[0]} go={go} />;
@@ -1189,12 +1193,13 @@ function HomePage({ go, compareIds, onToggleCompare }) {
 
   return (
     <div>
-      {homepageLayout.filter(item => item.visible !== false).map(item => {
-        if (item.id === "hero") return <Hero key={item.id} go={go} />;
-        if (item.id === "categories") return <CategoryGrid key={item.id} go={go} />;
-        if (item.id === "collections") return <React.Fragment key={item.id}>{merchandisingSections.map(renderCollection)}</React.Fragment>;
-        if (item.id === "tools") return <ToolsSection key={item.id} onRecommend={() => go("recommend")} onCompare={() => go("compare")} />;
-        if (item.id === "trust") return <TrustSection key={item.id} />;
+      {homepageLayout.filter(item => item.visible !== false && isInPublishWindow(item)).map(item => {
+        const type = item.type || item.id;
+        if (type === "hero") return <Hero key={item.id} go={go} />;
+        if (type === "categories") return <CategoryGrid key={item.id} go={go} />;
+        if (type === "collections") return <React.Fragment key={item.id}>{merchandisingSections.map((section, index) => renderCollection(section, index))}</React.Fragment>;
+        if (type === "tools") return <ToolsSection key={item.id} onRecommend={() => go("recommend")} onCompare={() => go("compare")} />;
+        if (type === "trust") return <TrustSection key={item.id} />;
         return null;
       })}
     </div>
