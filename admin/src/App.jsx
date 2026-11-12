@@ -219,7 +219,7 @@ function Products({ onError }) {
   const [iphoneCondition, setIphoneCondition] = useState("New");
   const [iphoneStorage, setIphoneStorage] = useState("128GB");
   const [iphoneColor, setIphoneColor] = useState("");
-  const [iphoneRegion, setIphoneRegion] = useState("International");
+  const [iphoneRegion, setIphoneRegion] = useState("");
   const [iphoneSim, setIphoneSim] = useState("Physical SIM + eSIM");
   const [iphoneBattery, setIphoneBattery] = useState("");
   const [iphoneGrade, setIphoneGrade] = useState("Like New");
@@ -240,7 +240,7 @@ function Products({ onError }) {
   function startNew() {
     setEditing("new"); setForm(empty); setPrimaryImageMediaId(""); setGalleryMediaIds([]); setCollectionIds([]);
     setIphoneModel(""); setIphoneCondition("New"); setIphoneStorage("128GB"); setIphoneColor("");
-    setIphoneRegion("International"); setIphoneSim("Physical SIM + eSIM"); setIphoneBattery("");
+    setIphoneRegion(""); setIphoneSim("Physical SIM + eSIM"); setIphoneBattery("");
     setIphoneGrade("Like New"); setIphoneNotes(""); setIphonePrice(""); setIphoneSku(""); setIphoneStep(1);
   }
   async function startEdit(id) {
@@ -254,7 +254,23 @@ function Products({ onError }) {
     } catch (e) { onError(e.message); }
   }
   async function loadMedia() { try { const d = await request("/media"); setMedia(d.media || []); } catch (e) { onError(e.message); } }
-  async function uploadMedia(file) { if (!file) return; setUploading(true); try { const dataUrl = await compressImage(file); const d = await request("/media", { method: "POST", body: JSON.stringify({ dataUrl, fileName: file.name, usageTag: "product" }) }); setMedia(current => [d.media, ...current]); setPrimaryImageMediaId(d.media.id); } catch (e) { onError(e.message); } finally { setUploading(false); } }
+  async function uploadMedia(fileList) {
+    const files = Array.from(fileList || []).filter(Boolean);
+    if (!files.length) return;
+    setUploading(true);
+    try {
+      const uploaded = [];
+      for (const file of files) {
+        const dataUrl = await compressImage(file);
+        const d = await request("/media", { method: "POST", body: JSON.stringify({ dataUrl, fileName: file.name, usageTag: "product" }) });
+        uploaded.push(d.media);
+      }
+      setMedia(current => [...uploaded, ...current]);
+      setPrimaryImageMediaId(current => current || uploaded[0]?.id || "");
+      setGalleryMediaIds(current => [...new Set([...current, ...uploaded.slice(current.length ? 0 : 1).map(item => item.id)])]);
+    } catch (e) { onError(e.message); }
+    finally { setUploading(false); }
+  }
   function addVariant() { setForm(f => ({ ...f, variants: [...f.variants, { storage: "", color: "", price: "", stockQty: "" }] })); }
   function changeVariant(index, key, value) { setForm(f => ({ ...f, variants: f.variants.map((v, i) => i === index ? { ...v, [key]: value } : v) })); }
   async function removeProduct() {
@@ -269,9 +285,9 @@ function Products({ onError }) {
       try {
         const created = await request("/products", { method: "POST", body: JSON.stringify({
           name: iphoneModel, categoryKey: "iphone", productType: "smartphone", tagline: form.tagline || null,
-          specs: { Model: iphoneModel, "Regional version": iphoneRegion, "SIM configuration": iphoneSim },
+          specs: { Model: iphoneModel, ...(iphoneRegion ? { "Regional version": iphoneRegion } : {}), "SIM configuration": iphoneSim },
           storageOptions: [iphoneStorage], colors: iphoneColor ? [iphoneColor] : [],
-          meta: { modelName: iphoneModel, regionalVersion: iphoneRegion, simConfiguration: iphoneSim },
+          meta: { modelName: iphoneModel, ...(iphoneRegion ? { regionalVersion: iphoneRegion } : {}), simConfiguration: iphoneSim },
           hasUnits: true, visibility: form.visibility, salesMode: form.salesMode, availability: "in_stock",
           variants: [], primaryImageMediaId: primaryImageMediaId || null, galleryMediaIds, collectionIds
         }) });
@@ -310,7 +326,7 @@ function Products({ onError }) {
         {iphoneStep===2 && <div className="editor-grid">
           <label>Storage<select value={iphoneStorage} onChange={e=>setIphoneStorage(e.target.value)}>{["64GB","128GB","256GB","512GB","1TB","2TB"].map(v=><option key={v}>{v}</option>)}</select></label>
           <label>Color<input value={iphoneColor} onChange={e=>setIphoneColor(e.target.value)} placeholder="e.g. Midnight"/></label>
-          <label>Regional version<select value={iphoneRegion} onChange={e=>setIphoneRegion(e.target.value)}>{["International","USA","China / Hong Kong","Japan","Middle East"].map(v=><option key={v}>{v}</option>)}</select></label>
+          <label>Country / region (optional)<select value={iphoneRegion} onChange={e=>setIphoneRegion(e.target.value)}><option value="">Not specified</option>{["International","USA","China / Hong Kong","Japan","Middle East"].map(v=><option key={v}>{v}</option>)}</select></label>
           <label>SIM configuration<select value={iphoneSim} onChange={e=>setIphoneSim(e.target.value)}>{["Physical SIM + eSIM","Dual physical SIM","eSIM only","Dual eSIM","Physical SIM only","Verify from model number"].map(v=><option key={v}>{v}</option>)}</select></label>
           <p className="field-wide muted">SIM support varies by region and exact model number. Confirm the physical device before saving.</p>
         </div>}
@@ -336,7 +352,12 @@ function Products({ onError }) {
         <label>Availability<select value={form.availability} onChange={e => setForm(f => ({ ...f, availability: e.target.value }))}><option value="in_stock">In stock</option><option value="out_of_stock">Out of stock</option><option value="coming_soon">Coming soon</option><option value="preorder">Pre-order</option></select></label>
         <label>Visibility<select value={form.visibility} onChange={e => setForm(f => ({ ...f, visibility: e.target.value }))}><option value="draft">Draft</option><option value="published">Published</option><option value="hidden">Hidden</option></select></label>
       </div>}
-      <div className="image-manager"><div><h3>Product images</h3><p>Choose the main product photo and optional gallery images.</p></div><div className="image-manager-actions"><button type="button" className="btn secondary small" onClick={() => { loadMedia(); setMediaOpen(true); }}><Image size={14}/> Choose from library</button><label className="btn secondary small upload-label">{uploading ? "Uploading…" : "Upload image"}<input type="file" accept="image/jpeg,image/png,image/webp,image/gif" disabled={uploading} onChange={e => uploadMedia(e.target.files?.[0])}/></label></div>{primaryImageMediaId && <div className="selected-image"><img src={media.find(m => m.id === primaryImageMediaId)?.url || ""} alt="Selected primary product"/> <span>Main image selected</span><button type="button" className="text-btn" onClick={() => setPrimaryImageMediaId("")}>Remove</button></div>}</div>
+      <div className="image-manager"><div><h3>Product images</h3><p>Choose the main product photo and optional gallery images.</p></div><div className="image-manager-actions"><button type="button" className="btn secondary small" onClick={() => { loadMedia(); setMediaOpen(true); }}><Image size={14}/> Choose from library</button><label className="btn secondary small upload-label">{uploading ? "Uploading…" : "Upload images"}<input type="file" multiple accept="image/jpeg,image/png,image/webp,image/gif" disabled={uploading} onChange={e => { uploadMedia(e.target.files); e.target.value = ""; }}/></label></div>{(primaryImageMediaId || galleryMediaIds.length > 0) && <div className="selected-image-list">
+        {[...(primaryImageMediaId ? [{ id: primaryImageMediaId, main: true }] : []), ...galleryMediaIds.filter(id => id !== primaryImageMediaId).map(id => ({ id, main: false }))].map(image => {
+          const asset = media.find(m => m.id === image.id);
+          return <div className="selected-image" key={image.id}><img src={asset?.url || ""} alt={asset?.file_name || "Product image"}/><span>{image.main ? "Main image" : "Gallery image"}</span>{!image.main && <button type="button" className="text-btn" onClick={() => setGalleryMediaIds(ids => ids.filter(id => id !== image.id))}>Remove</button>}{image.main && <button type="button" className="text-btn" onClick={() => { setPrimaryImageMediaId(""); }}>Remove</button>}</div>;
+        })}
+      </div>}</div>
       {mediaOpen && <div className="media-picker-backdrop"><div className="media-picker"><div className="modal-head"><div><div className="eyebrow">MEDIA LIBRARY</div><h2>Choose product images</h2></div><button type="button" className="icon-btn" onClick={() => setMediaOpen(false)}><X size={18}/></button></div>{media.length ? <div className="media-picker-grid">{media.map(m => <div key={m.id} className={primaryImageMediaId === m.id || galleryMediaIds.includes(m.id) ? "media-choice selected" : "media-choice"}><img src={m.url} alt={m.file_name || "Store media"}/><span>{m.file_name || "Image"}</span><div className="media-choice-actions"><button type="button" onClick={() => setPrimaryImageMediaId(m.id)}>{primaryImageMediaId === m.id ? "Main image ✓" : "Set main"}</button><button type="button" onClick={() => setGalleryMediaIds(ids => ids.includes(m.id) ? ids.filter(id => id !== m.id) : [...ids, m.id])}>{galleryMediaIds.includes(m.id) ? "Remove gallery" : "Add to gallery"}</button></div></div>)}</div> : <p className="muted">No images uploaded yet. Upload an image to get started.</p>}<div className="modal-foot"><button type="button" className="btn secondary" onClick={() => setMediaOpen(false)}>Done</button></div></div></div>}
       {!(editing === "new" && form.categoryKey === "iphone") && <>
       <div className="variant-heading"><div><h3>Pricing & variants</h3><p>Enter prices in Egyptian pounds. Add every storage and color option.</p></div><button type="button" className="btn secondary small" onClick={addVariant}><Plus size={13}/> Add variant</button></div>
