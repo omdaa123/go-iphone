@@ -17,6 +17,7 @@ const date = (value) => value ? new Date(value).toLocaleDateString("en-GB", {
   day: "2-digit", month: "short", year: "numeric"
 }) : "—";
 const titleCase = (value = "") => String(value).replaceAll("_", " ").replace(/\b\w/g, c => c.toUpperCase());
+const IPHONE_MODELS = ["iPhone X","iPhone XS","iPhone XS Max","iPhone XR","iPhone 11","iPhone 11 Pro","iPhone 11 Pro Max","iPhone SE (2nd generation)","iPhone 12 mini","iPhone 12","iPhone 12 Pro","iPhone 12 Pro Max","iPhone 13 mini","iPhone 13","iPhone 13 Pro","iPhone 13 Pro Max","iPhone SE (3rd generation)","iPhone 14","iPhone 14 Plus","iPhone 14 Pro","iPhone 14 Pro Max","iPhone 15","iPhone 15 Plus","iPhone 15 Pro","iPhone 15 Pro Max","iPhone 16","iPhone 16 Plus","iPhone 16 Pro","iPhone 16 Pro Max","iPhone 16e","iPhone 17","iPhone 17 Pro","iPhone 17 Pro Max","iPhone Air","iPhone 17e","iPhone 18 Pro","iPhone 18 Pro Max","iPhone Duo"];
 
 async function request(path, options = {}) {
   const method = String(options.method || "GET").toUpperCase();
@@ -214,6 +215,19 @@ function Products({ onError }) {
   const [galleryMediaIds, setGalleryMediaIds] = useState([]);
   const empty = { name: "", categoryKey: "iphone", productType: "smartphone", tagline: "", visibility: "draft", salesMode: "for_sale", availability: "in_stock", variants: [{ storage: "", color: "", price: "", stockQty: "" }] };
   const [form, setForm] = useState(empty);
+  const [iphoneModel, setIphoneModel] = useState("");
+  const [iphoneCondition, setIphoneCondition] = useState("New");
+  const [iphoneStorage, setIphoneStorage] = useState("128GB");
+  const [iphoneColor, setIphoneColor] = useState("");
+  const [iphoneRegion, setIphoneRegion] = useState("International");
+  const [iphoneSim, setIphoneSim] = useState("Physical SIM + eSIM");
+  const [iphoneBattery, setIphoneBattery] = useState("");
+  const [iphoneGrade, setIphoneGrade] = useState("Like New");
+  const [iphoneNotes, setIphoneNotes] = useState("");
+  const [iphonePrice, setIphonePrice] = useState("");
+  const [iphoneSku, setIphoneSku] = useState("");
+  const [iphoneStep, setIphoneStep] = useState(1);
+
   useEffect(() => {
     let active = true; setLoading(true);
     const params = new URLSearchParams();
@@ -223,7 +237,12 @@ function Products({ onError }) {
       .catch(e => onError(e.message)).finally(() => { if (active) setLoading(false); });
     return () => { active = false; };
   }, [query, visibility, refresh, onError]);
-  function startNew() { setEditing("new"); setForm(empty); setPrimaryImageMediaId(""); setGalleryMediaIds([]); setCollectionIds([]); }
+  function startNew() {
+    setEditing("new"); setForm(empty); setPrimaryImageMediaId(""); setGalleryMediaIds([]); setCollectionIds([]);
+    setIphoneModel(""); setIphoneCondition("New"); setIphoneStorage("128GB"); setIphoneColor("");
+    setIphoneRegion("International"); setIphoneSim("Physical SIM + eSIM"); setIphoneBattery("");
+    setIphoneGrade("Like New"); setIphoneNotes(""); setIphonePrice(""); setIphoneSku(""); setIphoneStep(1);
+  }
   async function startEdit(id) {
     try {
       const d = await request(`/products/${id}`), p = d.product;
@@ -243,7 +262,32 @@ function Products({ onError }) {
     catch (e) { onError(e.message); }
   }
   async function save(event) {
-    event.preventDefault(); setSaving(true);
+    event.preventDefault();
+    if (editing === "new" && form.categoryKey === "iphone") {
+      if (!iphoneModel || !iphonePrice) { onError("Choose an iPhone model and enter its selling price."); return; }
+      setSaving(true);
+      try {
+        const created = await request("/products", { method: "POST", body: JSON.stringify({
+          name: iphoneModel, categoryKey: "iphone", productType: "smartphone", tagline: form.tagline || null,
+          specs: { Model: iphoneModel, "Regional version": iphoneRegion, "SIM configuration": iphoneSim },
+          storageOptions: [iphoneStorage], colors: iphoneColor ? [iphoneColor] : [],
+          meta: { modelName: iphoneModel, regionalVersion: iphoneRegion, simConfiguration: iphoneSim, stockCondition: iphoneCondition },
+          hasUnits: true, visibility: form.visibility, salesMode: form.salesMode, availability: "in_stock",
+          variants: [], primaryImageMediaId: primaryImageMediaId || null, galleryMediaIds, collectionIds
+        }) });
+        await request("/products/" + created.product.id + "/units", { method: "POST", body: JSON.stringify({
+          storage: iphoneStorage, color: iphoneColor || null,
+          batteryPct: iphoneCondition === "New" || iphoneBattery === "" ? null : Number(iphoneBattery),
+          condition: iphoneCondition === "New" ? "New" : iphoneGrade,
+          sku: iphoneSku || null, priceCents: Math.round(Number(iphonePrice) * 100),
+          warranty: null, notes: iphoneCondition === "New" ? null : iphoneNotes || null
+        }) });
+        setEditing(null); setRefresh(v => v + 1);
+      } catch (e) { onError(e.message); }
+      finally { setSaving(false); }
+      return;
+    }
+    setSaving(true);
     const variants = form.variants.filter(v => v.price !== "").map(v => ({ storage: v.storage || null, color: v.color || null, priceCents: Math.round(Number(v.price) * 100), stockQty: v.stockQty === "" ? null : Number(v.stockQty) }));
     const payload = { primaryImageMediaId: primaryImageMediaId || null, galleryMediaIds, collectionIds, name: form.name.trim(), categoryKey: form.categoryKey, productType: form.productType.trim(), tagline: form.tagline || null, visibility: form.visibility, salesMode: form.salesMode, availability: form.availability, variants };
     if (form.slug) payload.slug = form.slug;
@@ -260,6 +304,28 @@ function Products({ onError }) {
     </section>
     {editing && <div className="modal-backdrop"><form className="editor-modal" onSubmit={save}>
       <div className="modal-head"><div><div className="eyebrow">CATALOGUE</div><h2>{editing === "new" ? "Add product" : "Edit product"}</h2></div><button type="button" className="icon-btn" onClick={() => setEditing(null)}><X size={19}/></button></div>
+      {!(editing === "new" && form.categoryKey === "iphone") && {editing === "new" && form.categoryKey === "iphone" && <section className="iphone-wizard">
+        <div className="iphone-wizard-steps"><span className={iphoneStep===1?"active":""}>01 · Model</span><span className={iphoneStep===2?"active":""}>02 · Version</span><span className={iphoneStep===3?"active":""}>03 · Condition & price</span></div>
+        {iphoneStep===1 && <div className="editor-grid"><label className="field-wide">Choose iPhone model<select required value={iphoneModel} onChange={e=>setIphoneModel(e.target.value)}><option value="">Select model…</option>{IPHONE_MODELS.map(m=><option key={m}>{m}</option>)}</select></label><p className="field-wide muted">Choose the exact model, starting from iPhone X.</p></div>}
+        {iphoneStep===2 && <div className="editor-grid">
+          <label>Storage<select value={iphoneStorage} onChange={e=>setIphoneStorage(e.target.value)}>{["64GB","128GB","256GB","512GB","1TB","2TB"].map(v=><option key={v}>{v}</option>)}</select></label>
+          <label>Color<input value={iphoneColor} onChange={e=>setIphoneColor(e.target.value)} placeholder="e.g. Midnight"/></label>
+          <label>Regional version<select value={iphoneRegion} onChange={e=>setIphoneRegion(e.target.value)}>{["International","USA","China / Hong Kong","Japan","Middle East"].map(v=><option key={v}>{v}</option>)}</select></label>
+          <label>SIM configuration<select value={iphoneSim} onChange={e=>setIphoneSim(e.target.value)}>{["Physical SIM + eSIM","Dual physical SIM","eSIM only","Dual eSIM","Physical SIM only","Verify from model number"].map(v=><option key={v}>{v}</option>)}</select></label>
+          <p className="field-wide muted">SIM support varies by region and exact model number. Confirm the physical device before saving.</p>
+        </div>}
+        {iphoneStep===3 && <div className="editor-grid">
+          <label>Device condition<select value={iphoneCondition} onChange={e=>setIphoneCondition(e.target.value)}><option>New</option><option>Used</option></select></label>
+          {iphoneCondition==="Used" && <>
+            <label>Battery health (%)<input type="number" min="1" max="100" value={iphoneBattery} onChange={e=>setIphoneBattery(e.target.value)} placeholder="e.g. 88"/></label>
+            <label>Condition grade<select value={iphoneGrade} onChange={e=>setIphoneGrade(e.target.value)}>{["Like New","Excellent","Good","Fair"].map(v=><option key={v}>{v}</option>)}</select></label>
+            <label className="field-wide">Defects / repairs / notes<input value={iphoneNotes} onChange={e=>setIphoneNotes(e.target.value)} placeholder="Scratches, replaced parts, repairs…"/></label>
+          </>}
+          <label>Selling price (EGP)<input type="number" min="0" step="0.01" required value={iphonePrice} onChange={e=>setIphonePrice(e.target.value)}/></label>
+          <label>SKU (optional)<input value={iphoneSku} onChange={e=>setIphoneSku(e.target.value)}/></label>
+        </div>}
+        <div className="modal-foot"><button type="button" className="btn secondary" onClick={()=>iphoneStep===1?setEditing(null):setIphoneStep(v=>v-1)}>{iphoneStep===1?"Cancel":"Back"}</button>{iphoneStep<3?<button type="button" className="btn primary" disabled={iphoneStep===1&&!iphoneModel} onClick={()=>setIphoneStep(v=>v+1)}>Continue <ArrowRight size={14}/></button>:<button type="button" className="btn secondary" onClick={()=>setIphoneStep(2)}>Edit version</button>}</div>
+      </section>}
       <div className="editor-grid">
         <label className="field-wide">Product name<input required value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))}/></label>
         <label>Category<select value={form.categoryKey} onChange={e => setForm(f => ({ ...f, categoryKey: e.target.value }))}>{["iphone","ipad","mac","watch","airpods","apple-accessory","other-accessory"].map(k => <option key={k} value={k}>{titleCase(k)}</option>)}</select></label>
@@ -270,7 +336,7 @@ function Products({ onError }) {
         <label>Visibility<select value={form.visibility} onChange={e => setForm(f => ({ ...f, visibility: e.target.value }))}><option value="draft">Draft</option><option value="published">Published</option><option value="hidden">Hidden</option></select></label>
       </div>
       
-      <div className="image-manager"><div><h3>Product images</h3><p>Choose the main product photo and optional gallery images.</p></div><div className="image-manager-actions"><button type="button" className="btn secondary small" onClick={() => { loadMedia(); setMediaOpen(true); }}><Image size={14}/> Choose from library</button><label className="btn secondary small upload-label">{uploading ? "Uploading…" : "Upload image"}<input type="file" accept="image/jpeg,image/png,image/webp,image/gif" disabled={uploading} onChange={e => uploadMedia(e.target.files?.[0])}/></label></div>{primaryImageMediaId && <div className="selected-image"><img src={media.find(m => m.id === primaryImageMediaId)?.url || ""} alt="Selected primary product"/> <span>Main image selected</span><button type="button" className="text-btn" onClick={() => setPrimaryImageMediaId("")}>Remove</button></div>}</div>
+      }      <div className="image-manager"><div><h3>Product images</h3><p>Choose the main product photo and optional gallery images.</p></div><div className="image-manager-actions"><button type="button" className="btn secondary small" onClick={() => { loadMedia(); setMediaOpen(true); }}><Image size={14}/> Choose from library</button><label className="btn secondary small upload-label">{uploading ? "Uploading…" : "Upload image"}<input type="file" accept="image/jpeg,image/png,image/webp,image/gif" disabled={uploading} onChange={e => uploadMedia(e.target.files?.[0])}/></label></div>{primaryImageMediaId && <div className="selected-image"><img src={media.find(m => m.id === primaryImageMediaId)?.url || ""} alt="Selected primary product"/> <span>Main image selected</span><button type="button" className="text-btn" onClick={() => setPrimaryImageMediaId("")}>Remove</button></div>}</div>
       {mediaOpen && <div className="media-picker-backdrop"><div className="media-picker"><div className="modal-head"><div><div className="eyebrow">MEDIA LIBRARY</div><h2>Choose product images</h2></div><button type="button" className="icon-btn" onClick={() => setMediaOpen(false)}><X size={18}/></button></div>{media.length ? <div className="media-picker-grid">{media.map(m => <div key={m.id} className={primaryImageMediaId === m.id || galleryMediaIds.includes(m.id) ? "media-choice selected" : "media-choice"}><img src={m.url} alt={m.file_name || "Store media"}/><span>{m.file_name || "Image"}</span><div className="media-choice-actions"><button type="button" onClick={() => setPrimaryImageMediaId(m.id)}>{primaryImageMediaId === m.id ? "Main image ✓" : "Set main"}</button><button type="button" onClick={() => setGalleryMediaIds(ids => ids.includes(m.id) ? ids.filter(id => id !== m.id) : [...ids, m.id])}>{galleryMediaIds.includes(m.id) ? "Remove gallery" : "Add to gallery"}</button></div></div>)}</div> : <p className="muted">No images uploaded yet. Upload an image to get started.</p>}<div className="modal-foot"><button type="button" className="btn secondary" onClick={() => setMediaOpen(false)}>Done</button></div></div></div>}
       <div className="variant-heading"><div><h3>Pricing & variants</h3><p>Enter prices in Egyptian pounds. Add every storage and color option.</p></div><button type="button" className="btn secondary small" onClick={addVariant}><Plus size={13}/> Add variant</button></div>
       {form.variants.map((v, i) => <div className="variant-row" key={i}>
@@ -280,7 +346,8 @@ function Products({ onError }) {
         <label>Stock qty<input type="number" min="0" step="1" value={v.stockQty} onChange={e => changeVariant(i, "stockQty", e.target.value)}/></label>
         <button type="button" className="icon-btn danger-icon" title="Remove variant" disabled={form.variants.length === 1} onClick={() => setForm(f => ({ ...f, variants: f.variants.filter((_, j) => j !== i) }))}><X size={15}/></button>
       </div>)}
-      <div className="modal-foot"><button type="button" className="btn secondary" onClick={() => setEditing(null)}>Cancel</button><button className="btn primary" disabled={saving}>{saving ? "Saving…" : "Save product"}</button></div>
+      {!(editing === "new" && form.categoryKey === "iphone") && <div className="modal-foot"><button type="button" className="btn secondary" onClick={() => setEditing(null)}>Cancel</button><button className="btn primary" disabled={saving}>{saving ? "Saving…" : "Save product"}</button></div>}
+      {editing === "new" && form.categoryKey === "iphone" && iphoneStep === 3 && <div className="modal-foot"><button type="button" className="btn primary" disabled={saving}>{saving ? "Creating…" : "Create product & stock unit"}</button></div>}
     </form></div>}
     {deleteId && <div className="modal-backdrop"><div className="confirm-modal"><div className="eyebrow">CONFIRM ACTION</div><h2>Delete this product?</h2><p>This permanently removes the product and its linked variants and inventory units.</p><div className="modal-foot"><button className="btn secondary" onClick={() => setDeleteId("")}>Cancel</button><button className="btn danger" onClick={removeProduct}>Delete product</button></div></div></div>}
   </>;
