@@ -488,7 +488,7 @@ function Products({ onError }) {
            {watchModel && <div className="field-wide watch-model-summary"><b>{WATCH_MODELS.find(x=>x.name===watchModel)?.display}</b><span>Chip {WATCH_MODELS.find(x=>x.name===watchModel)?.chip} · {WATCH_MODELS.find(x=>x.name===watchModel)?.capacity} · Introduced {WATCH_MODELS.find(x=>x.name===watchModel)?.year}</span><small>Options below are filtered to this model.</small></div>}
          </div>}
          {watchStep===2 && <div className="editor-grid">
-            <label>Case size<select value={watchSize} onChange={e=>setWatchSize(e.target.value)}>{(selectedWatchModel?.sizes||[]).map(v=><option key={v}>{v}</option>)}</select></label>
+            <label>Case size<select value={watchSize} onChange={e=>setWatchSize(e.target.value)}>{["38mm","40mm","41mm","42mm","44mm","45mm","46mm","49mm"].map(v=><option key={v}>{v}</option>)}</select></label>
             <label>Connectivity<select value={watchConnectivity} onChange={e=>setWatchConnectivity(e.target.value)}>{watchConnectivityOptions.map(v=><option key={v}>{v}</option>)}</select></label>
             <label>Case material<select value={watchMaterial} onChange={e=>{const material=e.target.value;setWatchMaterial(material);setWatchConnectivity((selectedWatchModel?.connectivityByMaterial?.[material]||selectedWatchModel?.connectivity||[])[0]||"");setWatchColor((selectedWatchModel?.colorsByMaterial?.[material]||selectedWatchModel?.colors||[])[0]||"");}}>{watchMaterialOptions.map(v=><option key={v}>{v}</option>)}</select></label>
             <label>Official color<select value={watchColor} onChange={e=>setWatchColor(e.target.value)}>{watchColorOptions.map(v=><option key={v}>{v}</option>)}</select></label>
