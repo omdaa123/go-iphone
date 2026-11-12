@@ -15,7 +15,8 @@ adminUsersRouter.get("/", async (req, res, next) => {
     const { rows } = await pool.query(
       `SELECT id, email, role, totp_enabled, is_active, created_at, last_login_at FROM admin_users ORDER BY created_at`
     );
-    res.json({ adminUsers: rows });
+    const roleResult = await pool.query(`SELECT name, permissions FROM roles ORDER BY name`);
+    res.json({ adminUsers: rows, roles: roleResult.rows });
   } catch (err) { next(err); }
 });
 
@@ -60,5 +61,20 @@ adminUsersRouter.post("/:id/deactivate", async (req, res, next) => {
     await pool.query(`UPDATE sessions SET revoked_at = now() WHERE admin_user_id = $1 AND revoked_at IS NULL`, [req.params.id]);
     await logAudit({ adminUserId: req.admin.id, action: "admin_user.deactivate", resourceType: "admin_user", resourceId: req.params.id, ip: req.ip });
     res.json({ ok: true });
+  } catch (err) { next(err); }
+});
+
+adminUsersRouter.patch("/:id/active", async (req, res, next) => {
+  try {
+    const active = z.object({ isActive: z.boolean() }).parse(req.body);
+    if (req.params.id === req.admin.id && !active.isActive) return res.status(400).json({ error: "You can't deactivate your own account." });
+    const { rows } = await pool.query(
+      `UPDATE admin_users SET is_active = $1 WHERE id = $2 RETURNING id, email, role, is_active`,
+      [active.isActive, req.params.id]
+    );
+    if (!rows[0]) return res.status(404).json({ error: "Admin not found." });
+    if (!active.isActive) await pool.query(`UPDATE sessions SET revoked_at = now() WHERE admin_user_id = $1 AND revoked_at IS NULL`, [req.params.id]);
+    await logAudit({ adminUserId: req.admin.id, action: active.isActive ? "admin_user.activate" : "admin_user.deactivate", resourceType: "admin_user", resourceId: req.params.id, after: rows[0], ip: req.ip });
+    res.json({ adminUser: rows[0] });
   } catch (err) { next(err); }
 });
