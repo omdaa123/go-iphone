@@ -1491,6 +1491,65 @@ function Reservations({ onError }) {
   {loading?<div className="loading-panel"><span className="spinner"/> Loading reservations…</div>:visible.length?<div className="table-wrap"><table><thead><tr><th>REQUEST</th><th>CUSTOMER</th><th>PHONE</th><th>PRODUCT</th><th>DATE</th><th>STATUS</th></tr></thead><tbody>{visible.map(r=><tr key={r.id}><td className="mono">#{String(r.id).slice(-7).toUpperCase()}</td><td><b>{r.customer_name||"—"}</b></td><td>{r.customer_phone||"—"}</td><td>{r.product_name||"—"}</td><td>{date(r.created_at)}</td><td><select className="status-select" disabled={localPreview||busyId===r.id} value={r.status} onChange={e=>update(r,e.target.value)}>{["New","Contacted","Confirmed","Ready","Completed","Cancelled"].map(s=><option key={s}>{s}</option>)}</select></td></tr>)}</tbody></table></div>:<EmptyState icon={Clock3} title="No reservations found" detail="Customer reservation requests will appear here."/>}</section></>;
 }
 
+
+function CustomersPage({ onError }) {
+  const [items,setItems]=useState([]), [loading,setLoading]=useState(true), [query,setQuery]=useState(""), [selected,setSelected]=useState(null), [refresh,setRefresh]=useState(0);
+  useEffect(()=>{let active=true;setLoading(true);request("/customers").then(d=>{if(active)setItems(d.customers||[]);}).catch(e=>onError(e.message)).finally(()=>{if(active)setLoading(false);});return()=>{active=false;};},[refresh,onError]);
+  const visible=useMemo(()=>{const q=query.trim().toLowerCase();return items.filter(c=>!q||[c.name,c.phone,c.email,c.city].some(v=>String(v||"").toLowerCase().includes(q)));},[items,query]);
+  const spend=items.reduce((n,c)=>n+Number(c.total_spent_cents||0),0);
+  return <>
+    <div className="page-heading"><div><div className="eyebrow">CUSTOMER RELATIONSHIPS</div><h1>Customers</h1><p>One clear view of every buyer and reservation contact.</p></div><button className="btn secondary" onClick={()=>setRefresh(v=>v+1)}><RefreshCw size={15}/> Refresh</button></div>
+    <div className="inventory-metrics"><div><span>TOTAL CUSTOMERS</span><b>{items.length}</b></div><div><span>WITH ORDERS</span><b>{items.filter(c=>Number(c.orders_count)>0).length}</b></div><div><span>RESERVATIONS</span><b>{items.reduce((n,c)=>n+Number(c.reservations_count||0),0)}</b></div><div><span>TOTAL SALES</span><b>{money(spend)}</b></div></div>
+    <section className="panel"><div className="toolbar"><div style={{position:"relative",flex:"1 1 300px",maxWidth:440}}><Search size={15} style={{position:"absolute",left:13,top:14,color:"var(--muted)"}}/><input value={query} onChange={e=>setQuery(e.target.value)} placeholder="Search name, phone, email or city…" style={{paddingLeft:38}}/></div><span className="results-count">{visible.length} customers</span></div>
+      {loading?<div className="loading-panel"><span className="spinner"/> Loading customers…</div>:visible.length?<div className="table-wrap"><table><thead><tr><th>CUSTOMER</th><th>PHONE</th><th>EMAIL</th><th>ORDERS</th><th>RESERVATIONS</th><th>SPENT</th><th>LAST ACTIVITY</th></tr></thead><tbody>{visible.map(c=><tr key={c.id} onClick={()=>setSelected(c)} style={{cursor:"pointer"}}><td><b>{c.name||"Customer"}</b><span className="subline">{[c.city,c.address].filter(Boolean).join(" · ")}</span></td><td>{c.phone||"—"}</td><td>{c.email||"—"}</td><td>{c.orders_count}</td><td>{c.reservations_count}</td><td>{money(c.total_spent_cents)}</td><td>{date(c.last_activity)}</td></tr>)}</tbody></table></div>:<EmptyState icon={Users} title={query?"No matching customers":"No customers yet"} detail={query?"Try another name, phone number or email.":"Customers will appear automatically when they place an order or reserve a device."}/>}
+    </section>
+    {selected&&<div className="modal-backdrop" onClick={()=>setSelected(null)}><section className="modal" onClick={e=>e.stopPropagation()}><div className="modal-head"><div><div className="eyebrow">CUSTOMER PROFILE</div><h2>{selected.name||"Customer"}</h2></div><button className="icon-btn" onClick={()=>setSelected(null)}><X size={18}/></button></div><div className="editor-grid"><div><small className="muted">PHONE</small><p>{selected.phone||"—"}</p></div><div><small className="muted">EMAIL</small><p>{selected.email||"—"}</p></div><div><small className="muted">CITY</small><p>{selected.city||"—"}</p></div><div><small className="muted">ADDRESS</small><p>{selected.address||"—"}</p></div><div><small className="muted">ORDERS</small><p>{selected.orders_count}</p></div><div><small className="muted">RESERVATIONS</small><p>{selected.reservations_count}</p></div><div><small className="muted">TOTAL SPENT</small><p>{money(selected.total_spent_cents)}</p></div><div><small className="muted">LAST ACTIVITY</small><p>{date(selected.last_activity)}</p></div></div><div className="modal-foot"><button className="btn secondary" onClick={()=>setSelected(null)}>Close profile</button></div></section></div>}
+  </>;
+}
+
+function TeamAccessPage({ user, onError }) {
+  const [users,setUsers]=useState([]),[roles,setRoles]=useState([]),[loading,setLoading]=useState(true),[refresh,setRefresh]=useState(0),[creating,setCreating]=useState(false),[saving,setSaving]=useState(false);
+  const [email,setEmail]=useState(""),[password,setPassword]=useState(""),[role,setRole]=useState("STAFF");
+  const localPreview=import.meta.env.DEV;
+  const load=useCallback(()=>{setLoading(true);request("/users").then(d=>{setUsers(d.adminUsers||[]);setRoles(d.roles||[]);}).catch(e=>onError(e.message)).finally(()=>setLoading(false));},[onError]);
+  useEffect(()=>{load();},[load,refresh]);
+  async function createMember(e){e.preventDefault();setSaving(true);try{await request("/users",{method:"POST",body:JSON.stringify({email,password,role})});setEmail("");setPassword("");setRole("STAFF");setCreating(false);setRefresh(v=>v+1);}catch(err){onError(err.message);}finally{setSaving(false);}}
+  async function changeRole(member,nextRole){try{await request("/users/"+member.id+"/role",{method:"PATCH",body:JSON.stringify({role:nextRole})});setUsers(list=>list.map(u=>u.id===member.id?{...u,role:nextRole}:u));}catch(e){onError(e.message);}}
+  async function toggleActive(member){const isActive=!member.is_active;try{await request("/users/"+member.id+"/active",{method:"PATCH",body:JSON.stringify({isActive})});setUsers(list=>list.map(u=>u.id===member.id?{...u,is_active:isActive}:u));}catch(e){onError(e.message);}}
+  return <>
+    <div className="page-heading"><div><div className="eyebrow">SECURITY & PERMISSIONS</div><h1>Team & Access</h1><p>Control who can enter your workspace and what each role can manage.</p></div><button className="btn primary" disabled={localPreview} onClick={()=>setCreating(v=>!v)}><Plus size={15}/> Add team member</button></div>
+    {localPreview&&<div className="design-safety-note"><ShieldCheck size={17}/><div><b>Read-only local preview</b><span>Team changes are disabled in local preview. Use the live admin workspace to manage access.</span></div></div>}
+    <section className="panel"><div className="panel-head"><div><h2>Team members</h2><p>{users.length} accounts · role-based access</p></div><button className="btn secondary small" onClick={()=>setRefresh(v=>v+1)}><RefreshCw size={14}/> Refresh</button></div>
+      {loading?<div className="loading-panel"><span className="spinner"/> Loading team…</div>:users.length?<div className="table-wrap"><table><thead><tr><th>MEMBER</th><th>ROLE</th><th>2-STEP VERIFICATION</th><th>LAST LOGIN</th><th>STATUS</th><th>ACTION</th></tr></thead><tbody>{users.map(m=><tr key={m.id}><td><b>{m.email}</b><span className="subline">Added {date(m.created_at)}</span></td><td><select className="status-select" disabled={localPreview||m.id===user?.id||!m.is_active} value={m.role} onChange={e=>changeRole(m,e.target.value)}>{["OWNER","MANAGER","STAFF","CONTENT"].map(v=><option key={v}>{v}</option>)}</select></td><td><span className={m.totp_enabled?"status paid":"status pending"}>{m.totp_enabled?"Enabled":"Not enabled"}</span></td><td>{date(m.last_login_at)}</td><td><span className={m.is_active?"status paid":"status cancelled"}>{m.is_active?"Active":"Inactive"}</span></td><td><button className="btn secondary small" disabled={localPreview||m.id===user?.id} onClick={()=>toggleActive(m)}>{m.is_active?"Deactivate":"Reactivate"}</button></td></tr>)}</tbody></table></div>:<EmptyState icon={ShieldCheck} title="No team members" detail="Admin accounts will appear here."/>}
+    </section>
+    <section className="panel" style={{marginTop:20}}><div className="panel-head"><div><h2>Role permissions</h2><p>Permissions are checked by the backend on every protected request.</p></div></div><div className="editor-grid">{roles.map(r=><div key={r.name} style={{padding:16,border:"1px solid var(--line)",borderRadius:12,background:"var(--panel-2)"}}><b>{titleCase(r.name)}</b><p className="muted" style={{fontSize:12,margin:"8px 0"}}>{Object.entries(r.permissions||{}).filter(([,v])=>v).map(([k])=>titleCase(k)).join(" · ")||"No permissions assigned"}</p></div>)}</div></section>
+    {creating&&<div className="modal-backdrop"><form className="modal" onSubmit={createMember}><div className="modal-head"><div><div className="eyebrow">TEAM INVITATION</div><h2>Add team member</h2></div><button type="button" className="icon-btn" onClick={()=>setCreating(false)}><X size={18}/></button></div><div className="editor-grid"><label className="field-wide">Email address<input type="email" required value={email} onChange={e=>setEmail(e.target.value)} placeholder="teammate@company.com"/></label><label className="field-wide">Temporary password<input type="password" required minLength={12} value={password} onChange={e=>setPassword(e.target.value)} placeholder="At least 12 characters"/></label><label className="field-wide">Access role<select value={role} onChange={e=>setRole(e.target.value)}>{["MANAGER","STAFF","CONTENT"].map(v=><option key={v}>{v}</option>)}</select></label></div><p className="muted" style={{fontSize:12}}>Share the temporary password securely. The new member should change it after signing in.</p><div className="modal-foot"><button type="button" className="btn secondary" onClick={()=>setCreating(false)}>Cancel</button><button className="btn primary" disabled={saving}>{saving?"Creating…":"Create account"}</button></div></form></div>}
+  </>;
+}
+
+function SettingsPage({ onError }) {
+  const defaults={
+    store_profile:{storeName:"GO iPhone",tagline:"Discover your next favorite.",currency:"EGP",timezone:"Africa/Cairo"},
+    store_contact:{email:"",phone:"",whatsapp:"",address:"",city:""},
+    store_fulfillment:{deliveryEnabled:true,deliveryNote:"Cash on delivery",deliveryAreas:"",estimatedDelivery:""},
+    store_checkout:{cashOnDelivery:true,bankTransfer:false,onlinePayments:false,orderNotes:true}
+  };
+  const labels={store_profile:"Store identity",store_contact:"Contact information",store_fulfillment:"Delivery & fulfilment",store_checkout:"Checkout & payments"};
+  const [values,setValues]=useState(defaults),[loading,setLoading]=useState(true),[saving,setSaving]=useState(""),[saved,setSaved]=useState(""),[refresh,setRefresh]=useState(0);
+  const localPreview=import.meta.env.DEV;
+  useEffect(()=>{let active=true;request("/settings").then(d=>{if(!active)return;setValues(v=>Object.fromEntries(Object.keys(defaults).map(k=>[k,{...defaults[k],...(d.settings?.[k]||{})}])));}).catch(e=>onError(e.message)).finally(()=>{if(active)setLoading(false);});return()=>{active=false;};},[refresh,onError]);
+  function change(group,key,value){setValues(v=>({...v,[group]:{...v[group],[key]:value}}));setSaved("");}
+  async function save(group){setSaving(group);setSaved("");try{await request("/settings/"+group,{method:"PUT",body:JSON.stringify(values[group])});setSaved(group);}catch(e){onError(e.message);}finally{setSaving("");}}
+  const input=(group,key,label,type="text",hint="")=><label>{label}<input type={type} value={values[group][key]??""} onChange={e=>change(group,key,e.target.value)} placeholder={hint}/></label>;
+  const toggle=(group,key,label)=><label className="settings-toggle"><span>{label}</span><input type="checkbox" checked={!!values[group][key]} onChange={e=>change(group,key,e.target.checked)}/></label>;
+  return <>
+    <div className="page-heading"><div><div className="eyebrow">STORE CONFIGURATION</div><h1>Settings</h1><p>Manage your store identity, contact details, delivery and checkout preferences.</p></div><button className="btn secondary" onClick={()=>setRefresh(v=>v+1)}><RefreshCw size={15}/> Reload</button></div>
+    {localPreview&&<div className="design-safety-note"><ShieldCheck size={17}/><div><b>Read-only local preview</b><span>Settings can be reviewed here. Saving is enabled in the live admin workspace.</span></div></div>}
+    {loading?<div className="loading-panel"><span className="spinner"/> Loading settings…</div>:Object.keys(defaults).map(group=><section className="panel" key={group} style={{marginBottom:18}}><div className="panel-head"><div><h2>{labels[group]}</h2><p>Changes are saved securely to your store configuration.</p></div><button className="btn primary small" disabled={localPreview||saving===group} onClick={()=>save(group)}>{saving===group?"Saving…":saved===group?"Saved ✓":"Save changes"}</button></div>
+      <div className="editor-grid">{group==="store_profile"?<>{input(group,"storeName","Store name")}{input(group,"tagline","Store tagline")}{input(group,"currency","Currency code")}{input(group,"timezone","Time zone")}</>:group==="store_contact"?<>{input(group,"email","Support email","email")}{input(group,"phone","Phone number","tel")}{input(group,"whatsapp","WhatsApp number","tel")}{input(group,"city","City")}{input(group,"address","Business address")}</>:group==="store_fulfillment"?<>{toggle(group,"deliveryEnabled","Enable delivery")}{input(group,"deliveryNote","Delivery method / note")}{input(group,"deliveryAreas","Delivery areas","text","e.g. All Egypt")}{input(group,"estimatedDelivery","Estimated delivery time","text","e.g. 1–3 business days")}</>:<>{toggle(group,"cashOnDelivery","Cash on delivery")}{toggle(group,"bankTransfer","Bank transfer")}{toggle(group,"onlinePayments","Online payments")}{toggle(group,"orderNotes","Allow customer order notes")}</>}</div></section>)}
+  </>;
+}
+
 function Placeholder({ id, onNavigate }) {
   const content = {
     inventory: ["Inventory", "Track individual devices, stock levels and availability.", Boxes, "Inventory workspace is next in the build."],
@@ -1579,11 +1638,14 @@ export default function App() {
         {page === "orders" && <Orders onError={showError}/>}
         {page === "inventory" && <Inventory onError={showError}/>}
         {page === "reservations" && <Reservations onError={showError}/>}
+        {page === "customers" && <CustomersPage onError={showError}/>}
+        {page === "team" && <TeamAccessPage user={user} onError={showError}/>}
+        {page === "settings" && <SettingsPage onError={showError}/>}
         {page === "media" && <MediaLibrary onError={showError}/>}
         {page === "homepage" && <HomepageBuilder onError={showError}/>}
         {page === "collections" && <CollectionsManager onError={showError}/>}
         {page === "design" && <DesignStudio onError={showError}/>}
-        {!["dashboard","products","orders","inventory","reservations","media","homepage","collections","design"].includes(page) && <Placeholder id={page} onNavigate={navigate}/>}
+        {!["dashboard","products","orders","inventory","reservations","customers","team","settings","media","homepage","collections","design"].includes(page) && <Placeholder id={page} onNavigate={navigate}/>}
         <footer className="app-footer"><span>© {new Date().getFullYear()} GO iPhone</span><span>Admin workspace <i/> Built for your store</span></footer>
       </div>
     </main>
