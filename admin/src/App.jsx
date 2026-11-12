@@ -784,7 +784,32 @@ function HomepageBuilder({ onError }) {
 }
 
 
+function StoreCategoriesManager({ onError }) {
+  const [categories,setCategories]=useState([]);
+  const [products,setProducts]=useState([]);
+  const [selectedKey,setSelectedKey]=useState("");
+  const [pickerOpen,setPickerOpen]=useState(false);
+  const [query,setQuery]=useState("");
+  const [savingId,setSavingId]=useState("");
+  const [loading,setLoading]=useState(true);
+  const [refresh,setRefresh]=useState(0);
+  const selected=categories.find(c=>c.key===selectedKey);
+  const label=c=>c.name||c.label||c.title||titleCase(c.key);
+  const load=useCallback(async()=>{setLoading(true);try{const [a,b]=await Promise.all([request("/categories"),request("/products")]);setCategories(a.categories||[]);setProducts(b.products||[]);}catch(e){onError(e.message);}finally{setLoading(false);}},[onError]);
+  useEffect(()=>{load();},[load,refresh]);
+  const assigned=products.filter(p=>p.category_key===selectedKey);
+  const candidates=products.filter(p=>p.category_key!==selectedKey&&(!query.trim()||[p.name,p.category_key].some(v=>String(v||"").toLowerCase().includes(query.toLowerCase()))));
+  async function move(p,key){setSavingId(p.id);try{await request("/products/"+encodeURIComponent(p.id),{method:"PATCH",body:JSON.stringify({categoryKey:key})});setProducts(list=>list.map(x=>x.id===p.id?{...x,category_key:key}:x));}catch(e){onError(e.message);}finally{setSavingId("");}}
+  return <><div className="page-heading"><div><div className="eyebrow">STORE EXPERIENCE / CATALOG STRUCTURE</div><h1>Store Categories</h1><p>Manage iPhone, iPad, Mac, Apple Watch, AirPods and other store departments.</p></div><button className="btn secondary" onClick={()=>setRefresh(v=>v+1)}><RefreshCw size={15}/> Refresh</button></div>
+  {!selected?<section className="panel collections-library-panel"><div className="panel-head"><div><h2>Store departments</h2><p>Open a category to manage the products shown inside it.</p></div></div>{loading?<div className="loading-panel">Loading categories…</div>:<div className="collection-library-grid">{categories.map(c=><button className="collection-library-card collection-library-open" key={c.key} onClick={()=>setSelectedKey(c.key)}><div className="collection-library-cover">{c.image_url?<img src={c.image_url} alt=""/>:<div><Package size={28}/></div>}</div><div className="collection-library-card-body"><h3>{label(c)}</h3><div className="collection-library-meta">{products.filter(p=>p.category_key===c.key).length} products</div></div></button>)}</div>}</section>:<>
+  <div className="page-heading collection-open-heading"><div><button className="text-btn" onClick={()=>{setSelectedKey("");setPickerOpen(false);}}>← All store categories</button><div className="eyebrow">CATEGORY WORKSPACE</div><h1>{label(selected)}</h1><p>{assigned.length} products</p></div><button className="btn primary" onClick={()=>setPickerOpen(true)}><Plus size={15}/> Move products here</button></div>
+  <section className="panel collection-products-panel"><div className="panel-head"><h2>Products ({assigned.length})</h2></div><div className="collection-assigned-grid">{assigned.map(p=><article className="collection-assigned-product" key={p.id}>{p.image_url?<img src={p.image_url} alt=""/>:<div className="product-avatar"><Smartphone size={20}/></div>}<div><b>{p.name}</b><small>{titleCase(p.product_type)}</small></div><select value={p.category_key} disabled={savingId===p.id} onChange={e=>move(p,e.target.value)}>{categories.map(c=><option key={c.key} value={c.key}>{label(c)}</option>)}</select></article>)}</div></section>
+  {pickerOpen&&<div className="modal-backdrop collection-picker-backdrop"><section className="editor-modal collection-picker-modal"><div className="modal-head"><div><h2>Move products to {label(selected)}</h2><p>Each product has one main store category. Moving it here changes its current category.</p></div><button className="icon-btn" onClick={()=>setPickerOpen(false)}><X size={19}/></button></div><div className="collection-picker-search"><input value={query} onChange={e=>setQuery(e.target.value)} placeholder="Search products…"/></div><div className="collection-picker-list">{candidates.map(p=><article className="collection-picker-product" key={p.id}><div><b>{p.name}</b><small>Currently: {titleCase(p.category_key)}</small></div><button className="btn secondary small" disabled={savingId===p.id} onClick={()=>move(p,selectedKey)}>{savingId===p.id?"Moving…":"Move here"}</button></article>)}</div><div className="modal-foot"><button className="btn primary" onClick={()=>setPickerOpen(false)}>Done</button></div></section></div>}
+  </>}</>;
+}
+
 function CollectionsManager({ onError }) {
+  const [activeArea, setActiveArea] = useState("categories");
   const [items, setItems] = useState([]);
   const [products, setProducts] = useState([]);
   const [assigned, setAssigned] = useState([]);
@@ -882,6 +907,8 @@ function CollectionsManager({ onError }) {
   const assignedProducts = products.filter(p => assigned.includes(p.id));
   const availableProducts = filteredProducts.filter(p => !assigned.includes(p.id));
   return <>
+    <div className="collections-area-tabs"><button className={activeArea==="categories"?"active":""} onClick={()=>setActiveArea("categories")}>Store Categories</button><button className={activeArea==="collections"?"active":""} onClick={()=>setActiveArea("collections")}>Custom Collections</button></div>
+    {activeArea==="categories" ? <StoreCategoriesManager onError={onError}/> : <>
     {!selected ? <>
       <div className="page-heading"><div><div className="eyebrow">STORE EXPERIENCE / MERCHANDISING</div><h1>Collections</h1><p>Create curated product groups, then open any collection to add exactly the products you want.</p></div><div className="heading-actions"><button className="btn secondary" onClick={() => setRefresh(v => v + 1)}><RefreshCw size={15}/> Refresh</button><button className="btn primary" onClick={startNew}><Plus size={15}/> New collection</button></div></div>
       <div className="collection-overview-grid"><div className="collection-overview-card"><span>Total collections</span><b>{items.length}</b><small>Curated product groups</small></div><div className="collection-overview-card"><span>Product assignments</span><b>{items.reduce((sum,x)=>sum+Number(x.product_count||0),0)}</b><small>Across all groups</small></div><div className="collection-overview-card"><span>Visible on store</span><b>{items.filter(x=>x.visible!==false && details[x.id]?.homepageVisible!==false).length}</b><small>Managed in Homepage Builder</small></div><div className="collection-overview-card"><span>Hidden</span><b>{items.filter(x=>x.visible===false || details[x.id]?.homepageVisible===false).length}</b><small>Managed in Homepage Builder</small></div></div>
@@ -913,6 +940,7 @@ function CollectionsManager({ onError }) {
       {showProductPicker&&<div className="modal-backdrop collection-picker-backdrop"><section className="editor-modal collection-picker-modal"><div className="modal-head"><div><div className="eyebrow">PRODUCT CATALOG</div><h2>Add products to {selected.name}</h2><p>Select products from your store catalog. You can add more than one.</p></div><button type="button" className="icon-btn" onClick={()=>setShowProductPicker(false)}><X size={19}/></button></div><div className="collection-picker-search"><div className="search-box"><Search size={16}/><input autoFocus value={productQuery} onChange={e=>setProductQuery(e.target.value)} placeholder="Search by product name or category…"/></div><span>{assignedProducts.length} already added</span></div>{productsLoading?<div className="loading-panel"><span className="spinner"/> Loading products…</div>:<div className="collection-picker-list">{availableProducts.map(p=><article className="collection-picker-product" key={p.id}>{p.image_url?<img src={p.image_url} alt=""/>:<div className="product-avatar"><Smartphone size={19}/></div>}<div><b>{p.name}</b><small>{titleCase(p.category_key)} · {p.visibility}</small></div><button className="btn secondary small" onClick={()=>setAssigned(ids=>[...ids,p.id])}><Plus size={14}/> Add</button></article>)}{!availableProducts.length&&<div className="collection-picker-empty">{products.length===assigned.length?"All catalog products are already in this collection.":"No matching products found."}</div>}</div>}<div className="modal-foot"><span className="muted">{assignedProducts.length} products selected</span><button className="btn primary" onClick={()=>setShowProductPicker(false)}>Done</button></div></section></div>}
     </>}
     {editing&&<div className="modal-backdrop"><form className="editor-modal" onSubmit={save}><div className="modal-head"><div><div className="eyebrow">MERCHANDISING</div><h2>{editing==="new"?"Create collection":"Edit collection"}</h2></div><button type="button" className="icon-btn" onClick={()=>setEditing(null)}><X size={19}/></button></div><div className="editor-grid">{editing==="new"&&<label className="field-wide">Collection ID<input required pattern="[a-z0-9-]+" value={form.id} onChange={e=>setForm(f=>({...f,id:e.target.value.toLowerCase().replace(/[^a-z0-9-]/g,"-")}))} placeholder="e.g. student-deals"/><span className="field-hint">Lowercase letters, numbers and hyphens.</span></label>}<label className="field-wide">Collection name<input required maxLength={100} value={form.name} onChange={e=>setForm(f=>({...f,name:e.target.value}))}/></label><label className="field-wide">Internal description<input maxLength={300} value={form.description} onChange={e=>setForm(f=>({...f,description:e.target.value}))}/></label></div><div className="modal-foot"><button type="button" className="btn secondary" onClick={()=>setEditing(null)}>Cancel</button><button className="btn primary" disabled={saving}>{saving?"Saving…":editing==="new"?"Create collection":"Save changes"}</button></div></form></div>}
+    </>}
   </>;
 }
 
