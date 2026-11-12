@@ -2137,7 +2137,8 @@ function CheckoutPage({ cart, go, onPlaceOrder }) {
    focus). Cart + compare stay in the browser (localStorage) — they
    are per-shopper and not sensitive.
    ============================================================ */
-const API_URL = (import.meta.env.VITE_API_URL || "http://localhost:4000").replace(/\/$/, "");
+const IS_ADMIN_PREVIEW = new URLSearchParams(window.location.search).get("adminPreview") === "1";
+const API_URL = (import.meta.env.VITE_API_URL || (import.meta.env.DEV && IS_ADMIN_PREVIEW ? "" : "http://localhost:4000")).replace(/\/$/, "");
 
 async function apiFetch(path, options = {}) {
   const res = await fetch(`${API_URL}${path}`, {
