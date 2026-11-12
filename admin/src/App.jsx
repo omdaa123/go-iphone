@@ -271,7 +271,7 @@ function Products({ onError }) {
           name: iphoneModel, categoryKey: "iphone", productType: "smartphone", tagline: form.tagline || null,
           specs: { Model: iphoneModel, "Regional version": iphoneRegion, "SIM configuration": iphoneSim },
           storageOptions: [iphoneStorage], colors: iphoneColor ? [iphoneColor] : [],
-          meta: { modelName: iphoneModel, regionalVersion: iphoneRegion, simConfiguration: iphoneSim, stockCondition: iphoneCondition },
+          meta: { modelName: iphoneModel, regionalVersion: iphoneRegion, simConfiguration: iphoneSim },
           hasUnits: true, visibility: form.visibility, salesMode: form.salesMode, availability: "in_stock",
           variants: [], primaryImageMediaId: primaryImageMediaId || null, galleryMediaIds, collectionIds
         }) });
