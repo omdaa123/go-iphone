@@ -473,3 +473,68 @@ th{font-size:11px;padding:14px 16px}td{font-size:13px;padding:15px 16px}
 .homepage-editor-panel .homepage-toggle,.homepage-content-card .homepage-toggle{font-size:11px}
 @media(max-width:850px){.homepage-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}.homepage-commandbar{align-items:flex-start;flex-direction:column}.homepage-commandbar-status{align-self:flex-start}}
 @media(max-width:600px){.homepage-commandbar{padding:21px 18px;border-radius:14px}.homepage-metrics{gap:8px}.homepage-metrics>div{padding:12px}.homepage-metrics b{font-size:22px}.homepage-tabs{margin-left:-2px;margin-right:-2px}.homepage-tabs button{padding:11px 12px}.homepage-editor-panel,.homepage-content-card{padding-left:13px;padding-right:13px}.homepage-content-image-grid,.homepage-trust-grid{grid-template-columns:1fr}}
+
+
+/* Global readability pass — larger, clearer admin typography */
+body{font-size:14px}
+.sidebar .nav-label{font-size:11px}
+.sidebar .nav-item{font-size:14px;padding:12px 12px}
+.store-switch b{font-size:13px}.store-switch span{font-size:11px}
+.secure-note b{font-size:12px}.secure-note span{font-size:11px}
+.user-info b{font-size:12px}.user-info span{font-size:11px}
+.topbar{font-size:14px}.breadcrumb{font-size:13px}.environment{font-size:11px}
+.content-area{font-size:14px}
+.page-heading h1{font-size:32px}.page-heading p{font-size:14px}
+.page-heading .eyebrow,.eyebrow{font-size:11px}
+.panel-head h2,.quick-actions h2{font-size:16px}
+.panel-head p{font-size:12px}
+.btn{font-size:14px;padding:11px 15px}
+.btn.small{font-size:12px;padding:9px 12px}
+.text-btn,.link-btn{font-size:13px}
+.toolbar input,.toolbar select{font-size:13px;padding:11px 13px}
+.results-count{font-size:12px}
+.filter-tabs button{font-size:12px;padding:10px 12px}
+table th{font-size:10px;padding:14px 16px}
+table td{font-size:12px;padding:15px 16px}
+.status{font-size:11px;padding:5px 9px}
+.stat-top{font-size:13px}.stat-card>strong{font-size:28px}.stat-detail{font-size:12px}
+.stock-name b{font-size:12px}.stock-name span{font-size:11px}.stock-qty{font-size:12px}
+.empty-state b{font-size:13px}.empty-state p{font-size:12px}
+.quick-actions button{font-size:12px;padding:11px 13px}
+.app-footer{font-size:11px}
+.login-card h1{font-size:36px}.login-card>p{font-size:14px}
+.login-form label{font-size:14px}.login-form input{font-size:14px;padding:14px 15px}
+.login-foot{font-size:12px}.login-bottom{font-size:11px}
+.editor-grid label,.variant-row label{font-size:12px}
+.editor-grid input,.editor-grid select,.variant-row input{font-size:13px;padding:12px}
+.modal-head h2,.confirm-modal h2{font-size:24px}
+.confirm-modal p{font-size:14px}
+.homepage-commandbar h2{font-size:clamp(27px,3.2vw,38px)}
+.homepage-commandbar p{font-size:14px}
+.homepage-kicker{font-size:11px}
+.homepage-commandbar-status b{font-size:13px}.homepage-commandbar-status small{font-size:11px}
+.homepage-metrics span{font-size:11px}.homepage-metrics b{font-size:29px}.homepage-metrics small{font-size:12px}
+.homepage-tabs button{font-size:13px;padding:13px 16px}
+.homepage-tabs button span{font-size:10px}
+.homepage-editor-panel .panel-head h2,.homepage-content-card .panel-head h2{font-size:18px}
+.homepage-editor-panel .panel-head p,.homepage-content-card .panel-head p{font-size:13px}
+.homepage-toggle{font-size:14px}
+.homepage-content-image>b{font-size:14px}
+.homepage-trust-item>label:not(.homepage-toggle):not(.btn){font-size:13px}
+.homepage-trust-item input:not([type=checkbox]),.homepage-trust-item textarea{font-size:14px;padding:12px}
+.hero-slide-info h3{font-size:19px}.hero-slide-info>p{font-size:14px}
+.hero-slide-meta{font-size:12px}
+.hero-slide-actions .btn{font-size:12px;padding:9px 12px}
+.category-image-details b{font-size:16px}.category-image-details span{font-size:12px}
+.design-section-heading h2{font-size:18px}.design-section-heading p{font-size:13px}
+.design-preset-copy b{font-size:14px}.design-preset-copy small{font-size:12px}
+.design-color-copy b{font-size:13px}.design-color-copy small,.design-color-copy code{font-size:11px}
+.design-setting{font-size:13px}.design-setting select{font-size:14px}
+@media(max-width:760px){
+  .page-heading h1{font-size:29px}
+  .page-heading p{font-size:13px}
+  .sidebar .nav-item{font-size:14px}
+  table th{font-size:10px}table td{font-size:12px}
+  .homepage-commandbar h2{font-size:28px}
+  .homepage-tabs button{font-size:12px}
+}
