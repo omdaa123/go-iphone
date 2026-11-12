@@ -656,13 +656,29 @@ function HomepageBuilder({ onError }) {
                     <button type="button" className="btn secondary small" disabled={index === 0} onClick={() => moveHomepageSection(index, -1)}>↑</button>
                     <button type="button" className="btn secondary small" disabled={index === siteContent.homepageLayout.length - 1} onClick={() => moveHomepageSection(index, 1)}>↓</button>
                     <button type="button" className="btn secondary small" onClick={() => duplicateHomepageSection(item)}>Duplicate</button>
+                    <button
+                      type="button"
+                      className={Boolean(item.scheduleEnabled ?? (item.publishAt || item.unpublishAt)) ? "btn secondary small" : "btn primary small"}
+                      onClick={() => {
+                        const scheduled = Boolean(item.scheduleEnabled ?? (item.publishAt || item.unpublishAt));
+                        updateHomepageLayout(item.id, scheduled
+                          ? { scheduleEnabled: false, publishAt: null, unpublishAt: null }
+                          : { scheduleEnabled: true });
+                      }}
+                    >
+                      {Boolean(item.scheduleEnabled ?? (item.publishAt || item.unpublishAt)) ? "Turn schedule off" : "Always visible"}
+                    </button>
                   </div>
                 </div>
-                <div style={{ display: "flex", gap: 12, flexWrap: "wrap", alignItems: "end" }}>
-                  <label style={{ display: "grid", gap: 5, fontSize: 12 }}>Publish from<input type="datetime-local" value={item.publishAt ? new Date(item.publishAt).toISOString().slice(0,16) : ""} onChange={e => updateHomepageLayout(item.id, { publishAt: e.target.value ? new Date(e.target.value).toISOString() : null })}/></label>
-                  <label style={{ display: "grid", gap: 5, fontSize: 12 }}>Unpublish at<input type="datetime-local" value={item.unpublishAt ? new Date(item.unpublishAt).toISOString().slice(0,16) : ""} onChange={e => updateHomepageLayout(item.id, { unpublishAt: e.target.value ? new Date(e.target.value).toISOString() : null })}/></label>
-                  <small className="muted">Leave dates empty for immediate, ongoing visibility.</small>
-                </div>
+                {Boolean(item.scheduleEnabled ?? (item.publishAt || item.unpublishAt)) ? (
+                  <div style={{ display: "flex", gap: 12, flexWrap: "wrap", alignItems: "end" }}>
+                    <label style={{ display: "grid", gap: 5, fontSize: 12 }}>Publish from<input type="datetime-local" value={item.publishAt ? new Date(item.publishAt).toISOString().slice(0,16) : ""} onChange={e => updateHomepageLayout(item.id, { publishAt: e.target.value ? new Date(e.target.value).toISOString() : null })}/></label>
+                    <label style={{ display: "grid", gap: 5, fontSize: 12 }}>Unpublish at<input type="datetime-local" value={item.unpublishAt ? new Date(item.unpublishAt).toISOString().slice(0,16) : ""} onChange={e => updateHomepageLayout(item.id, { unpublishAt: e.target.value ? new Date(e.target.value).toISOString() : null })}/></label>
+                    <small className="muted">This section follows the dates you set.</small>
+                  </div>
+                ) : (
+                  <small className="muted">Always visible — this section stays on the homepage until you hide it.</small>
+                )}
               </div>
             ))}
           </div>
