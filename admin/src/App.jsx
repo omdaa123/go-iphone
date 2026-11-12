@@ -82,6 +82,30 @@ const WATCH_EDITIONS = {
   nike:["Apple Watch Series 12","Apple Watch SE 3","Apple Watch Series 11","Apple Watch Series 7","Apple Watch Series 6","Apple Watch Series 5","Apple Watch Series 4","Apple Watch Series 3","Apple Watch Series 2"]
 };
 
+// Actual display diagonal, in inches, mapped to the selected case size.
+// Values follow Apple's published display resolutions / pixel density by generation.
+const WATCH_SCREEN_INCHES = {
+  "Apple Watch Series 12": {"42mm":"1.77″","46mm":"1.96″"},
+  "Apple Watch Ultra 4": {"49mm":"2.00″"},
+  "Apple Watch SE 3": {"40mm":"1.57″","44mm":"1.73″"},
+  "Apple Watch Series 11": {"42mm":"1.77″","46mm":"1.96″"},
+  "Apple Watch Ultra 3": {"49mm":"2.00″"},
+  "Apple Watch Series 10": {"42mm":"1.77″","46mm":"1.96″"},
+  "Apple Watch Ultra 2": {"49mm":"1.93″"},
+  "Apple Watch Series 9": {"41mm":"1.69″","45mm":"1.90″"},
+  "Apple Watch Ultra": {"49mm":"1.93″"},
+  "Apple Watch Series 8": {"41mm":"1.69″","45mm":"1.90″"},
+  "Apple Watch Series 7": {"41mm":"1.69″","45mm":"1.90″"},
+  "Apple Watch SE (2nd generation)": {"40mm":"1.57″","44mm":"1.78″"},
+  "Apple Watch Series 6": {"40mm":"1.57″","44mm":"1.78″"},
+  "Apple Watch SE (1st generation)": {"40mm":"1.57″","44mm":"1.78″"},
+  "Apple Watch Series 5": {"40mm":"1.57″","44mm":"1.78″"},
+  "Apple Watch Series 4": {"40mm":"1.57″","44mm":"1.78″"},
+  "Apple Watch Series 3": {"38mm":"1.32″","42mm":"1.50″"},
+  "Apple Watch Series 2": {"38mm":"1.32″","42mm":"1.50″"},
+  "Apple Watch Series 1": {"38mm":"1.32″","42mm":"1.50″"},
+  "Apple Watch (1st generation)": {"38mm":"1.32″","42mm":"1.50″"}
+};
 async function request(path, options = {}) {
   const method = String(options.method || "GET").toUpperCase();
   if (import.meta.env.DEV && method !== "GET" && !path.startsWith("/auth/")) {
@@ -473,7 +497,7 @@ function Products({ onError }) {
             <label>Model number (optional)<input value={watchModelNumber} onChange={e=>setWatchModelNumber(e.target.value.trim().toUpperCase())} placeholder="e.g. A3335 / A3452"/></label>
             <div className="field-wide watch-spec-panel"><strong>Technical specifications · {watchModel}</strong><div className="watch-spec-grid">
               {[
-                ["Collection",watchEdition],["Display",watchTech.displayType||selectedWatchModel?.display],["Brightness",watchTech.brightness],["Resolution",watchTech.resolution?.[watchSize]||"Check model number"],["Display area",watchTech.displayArea?.[watchSize]],["Chip",selectedWatchModel?.chip],["Storage",selectedWatchModel?.capacity],["Battery",watchTech.battery],["Charging",watchTech.charging],["Water resistance",watchTech.water],["Dust resistance",watchTech.dust],["Glass",watchTech.glass],["Case material",watchMaterial],["Colour",watchColor],["Weight",watchTech.weight?.[watchSize]],["Wrist fit",watchTech.wristFit?.[watchSize]],["Dimensions",watchTech.dimensionsByMaterial?.[watchMaterial]?.[watchSize]||watchTech.dimensions?.[watchSize]],["GPS",watchTech.gps],["Wireless",watchTech.wireless],["Compatibility",watchTech.compatibility],["Audio",watchTech.audio],["Sensors",watchTech.sensors],["Key features",watchTech.features]
+                ["Collection",watchEdition],["Display",watchTech.displayType||selectedWatchModel?.display],["Screen size",WATCH_SCREEN_INCHES[watchModel]?.[watchSize]],["Brightness",watchTech.brightness],["Resolution",watchTech.resolution?.[watchSize]||"Check model number"],["Display area",watchTech.displayArea?.[watchSize]],["Chip",selectedWatchModel?.chip],["Storage",selectedWatchModel?.capacity],["Battery",watchTech.battery],["Charging",watchTech.charging],["Water resistance",watchTech.water],["Dust resistance",watchTech.dust],["Glass",watchTech.glass],["Case material",watchMaterial],["Colour",watchColor],["Weight",watchTech.weight?.[watchSize]],["Wrist fit",watchTech.wristFit?.[watchSize]],["Dimensions",watchTech.dimensionsByMaterial?.[watchMaterial]?.[watchSize]||watchTech.dimensions?.[watchSize]],["GPS",watchTech.gps],["Wireless",watchTech.wireless],["Compatibility",watchTech.compatibility],["Audio",watchTech.audio],["Sensors",watchTech.sensors],["Key features",watchTech.features]
               ].filter(([,v])=>v).map(([k,v])=><div key={k}><small>{k}</small><span>{v}</span></div>)}
             </div><p>Battery figures are Apple's estimates. Actual performance depends on settings, network and usage. Confirm regional model number for cellular bands and exact compatibility.</p></div>
           </div>}
