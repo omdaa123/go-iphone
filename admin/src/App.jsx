@@ -569,7 +569,7 @@ function Products({ onError }) {
         })}
       </div>}</div>
       {mediaOpen && <div className="media-picker-backdrop"><div className="media-picker"><div className="modal-head"><div><div className="eyebrow">MEDIA LIBRARY</div><h2>Choose product images</h2></div><button type="button" className="icon-btn" onClick={() => setMediaOpen(false)}><X size={18}/></button></div>{media.length ? <div className="media-picker-grid">{media.map(m => <div key={m.id} className={primaryImageMediaId === m.id || galleryMediaIds.includes(m.id) ? "media-choice selected" : "media-choice"}><img src={m.url} alt={m.file_name || "Store media"}/><span>{m.file_name || "Image"}</span><div className="media-choice-actions"><button type="button" onClick={() => setPrimaryImageMediaId(m.id)}>{primaryImageMediaId === m.id ? "Main image ✓" : "Set main"}</button><button type="button" onClick={() => setGalleryMediaIds(ids => ids.includes(m.id) ? ids.filter(id => id !== m.id) : [...ids, m.id])}>{galleryMediaIds.includes(m.id) ? "Remove gallery" : "Add to gallery"}</button></div></div>)}</div> : <p className="muted">No images uploaded yet. Upload an image to get started.</p>}<div className="modal-foot"><button type="button" className="btn secondary" onClick={() => setMediaOpen(false)}>Done</button></div></div></div>}
-      {!(editing === "new" && (form.categoryKey === "iphone" || form.categoryKey === "watch")) && <>
+      {!(editing === "new" && ["iphone","watch","ipad","mac"].includes(form.categoryKey)) && <>
       <div className="variant-heading"><div><h3>Pricing & variants</h3><p>Enter prices in Egyptian pounds. Add every storage and color option.</p></div><button type="button" className="btn secondary small" onClick={addVariant}><Plus size={13}/> Add variant</button></div>
       {form.variants.map((v, i) => <div className="variant-row" key={i}>
         <label>Storage<input value={v.storage} onChange={e => changeVariant(i, "storage", e.target.value)}/></label>
@@ -579,7 +579,7 @@ function Products({ onError }) {
         <button type="button" className="icon-btn danger-icon" title="Remove variant" disabled={form.variants.length === 1} onClick={() => setForm(f => ({ ...f, variants: f.variants.filter((_, j) => j !== i) }))}><X size={15}/></button>
       </div>)}
       </>}
-      {!(editing === "new" && (form.categoryKey === "iphone" || form.categoryKey === "watch")) && <div className="modal-foot"><button type="button" className="btn secondary" onClick={() => setEditing(null)}>Cancel</button><button className="btn primary" disabled={saving}>{saving ? "Saving…" : "Save product"}</button></div>}
+      {!(editing === "new" && ["iphone","watch","ipad","mac"].includes(form.categoryKey)) && <div className="modal-foot"><button type="button" className="btn secondary" onClick={() => setEditing(null)}>Cancel</button><button className="btn primary" disabled={saving}>{saving ? "Saving…" : "Save product"}</button></div>}
     </form></div>}
     {deleteId && <div className="modal-backdrop"><div className="confirm-modal"><div className="eyebrow">CONFIRM ACTION</div><h2>Delete this product?</h2><p>This permanently removes the product and its linked variants and inventory units.</p><div className="modal-foot"><button className="btn secondary" onClick={() => setDeleteId("")}>Cancel</button><button className="btn danger" onClick={removeProduct}>Delete product</button></div></div></div>}
   </>;
