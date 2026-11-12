@@ -2183,6 +2183,21 @@ function defaultSiteContent() {
 function StoreDataProvider({ children }) {
   const [catalog, setCatalog] = useState({ categories: [], products: [], deviceUnits: [], heroSlides: [], siteContent: defaultSiteContent() });
   const [status, setStatus] = useState("loading"); // loading | ready | error
+  const [previewDraft, setPreviewDraft] = useState(null);
+  const adminPreview = new URLSearchParams(window.location.search).get("adminPreview") === "1";
+  useEffect(() => {
+    if (!adminPreview) return;
+    const receiveDraft = event => {
+      if (event.source !== window.parent || event.data?.type !== "GO_IPHONE_ADMIN_PREVIEW") return;
+      const payload = event.data.payload || {};
+      setPreviewDraft({
+        siteContent: payload.siteContent && typeof payload.siteContent === "object" ? payload.siteContent : null,
+        heroSlides: Array.isArray(payload.heroSlides) ? payload.heroSlides : null,
+      });
+    };
+    window.addEventListener("message", receiveDraft);
+    return () => window.removeEventListener("message", receiveDraft);
+  }, [adminPreview]);
 
   // Plain mutable mirror so the pure helper functions (unitsFor, priceFrom,
   // computeRecommendation, ...) always read the live catalog.
@@ -2225,12 +2240,14 @@ function StoreDataProvider({ children }) {
   }, [load]);
 
   async function addReservation(payload) {
+    if (adminPreview) throw new Error("Reservations are disabled in admin preview.");
     await apiFetch("/api/reservations", { method: "POST", body: JSON.stringify(payload) });
   }
 
   // The server — not this browser — decides prices, checks stock, and claims
   // any specific used device atomically. We only send *what* the shopper wants.
   async function placeOrder(payload) {
+    if (adminPreview) throw new Error("Checkout is disabled in admin preview.");
     try {
       const data = await apiFetch("/api/orders", { method: "POST", body: JSON.stringify(payload) });
       load(true);
@@ -2245,8 +2262,14 @@ function StoreDataProvider({ children }) {
     products: catalog.products,
     units: catalog.deviceUnits,
     categories: catalog.categories,
-    heroSlides: catalog.heroSlides,
-    siteContent: catalog.siteContent,
+    heroSlides: previewDraft?.heroSlides || catalog.heroSlides,
+    siteContent: previewDraft?.siteContent ? {
+      ...catalog.siteContent,
+      ...previewDraft.siteContent,
+      designSystem: { ...catalog.siteContent.designSystem, ...(previewDraft.siteContent.designSystem || {}), colors: { ...catalog.siteContent.designSystem?.colors, ...(previewDraft.siteContent.designSystem?.colors || {}) } },
+      toolsSection: { ...catalog.siteContent.toolsSection, ...(previewDraft.siteContent.toolsSection || {}) },
+      trustSection: { ...catalog.siteContent.trustSection, ...(previewDraft.siteContent.trustSection || {}) },
+    } : catalog.siteContent,
     status, reload: () => load(false),
     addReservation, placeOrder,
   };
