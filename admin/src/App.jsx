@@ -409,6 +409,28 @@ function HomepageBuilder({ onError }) {
   const [mediaTarget, setMediaTarget] = useState("");
   const [refresh, setRefresh] = useState(0);
   const [activeTab, setActiveTab] = useState("overview");
+  const [previewMode, setPreviewMode] = useState("");
+  const [draggedSection, setDraggedSection] = useState("");
+  const [layoutHistory, setLayoutHistory] = useState([]);
+  const [historyIndex, setHistoryIndex] = useState(-1);
+  function commitLayout(nextLayout) {
+    const snapshot = nextLayout.map(item => ({ ...item }));
+    setSiteContent(current => ({ ...current, homepageLayout: snapshot }));
+    setLayoutHistory(history => [...history.slice(0, historyIndex + 1), snapshot].slice(-30));
+    setHistoryIndex(index => Math.min(index + 1, 29));
+  }
+  function undoLayout() {
+    if (historyIndex <= 0) return;
+    const nextIndex = historyIndex - 1;
+    setHistoryIndex(nextIndex);
+    setSiteContent(current => ({ ...current, homepageLayout: layoutHistory[nextIndex].map(item => ({ ...item })) }));
+  }
+  function redoLayout() {
+    if (historyIndex < 0 || historyIndex >= layoutHistory.length - 1) return;
+    const nextIndex = historyIndex + 1;
+    setHistoryIndex(nextIndex);
+    setSiteContent(current => ({ ...current, homepageLayout: layoutHistory[nextIndex].map(item => ({ ...item })) }));
+  }
   const load = useCallback(async () => {
     setLoading(true);
     try {
@@ -429,16 +451,30 @@ function HomepageBuilder({ onError }) {
   }, [onError]);
   useEffect(() => { load(); }, [load, refresh]);
   function updateHomepageLayout(id, patch) {
-    setSiteContent(current => ({ ...current, homepageLayout: current.homepageLayout.map(item => item.id === id ? { ...item, ...patch } : item) }));
+    const items = siteContent.homepageLayout.map(item => item.id === id ? { ...item, ...patch } : item);
+    commitLayout(items);
   }
   function moveHomepageSection(index, direction) {
-    setSiteContent(current => {
-      const items = [...current.homepageLayout].sort((a, b) => a.order - b.order);
-      const target = index + direction;
-      if (target < 0 || target >= items.length) return current;
-      [items[index], items[target]] = [items[target], items[index]];
-      return { ...current, homepageLayout: items.map((item, i) => ({ ...item, order: i })) };
-    });
+    const items = [...siteContent.homepageLayout].sort((a, b) => a.order - b.order);
+    const target = index + direction;
+    if (target < 0 || target >= items.length) return;
+    [items[index], items[target]] = [items[target], items[index]];
+    commitLayout(items.map((item, i) => ({ ...item, order: i })));
+  }
+  function duplicateHomepageSection(item) {
+    const copy = { ...item, id: item.id + "-copy-" + Date.now(), type: item.type || item.id, label: (item.label || item.id) + " copy", order: siteContent.homepageLayout.length, visible: false };
+    commitLayout([...siteContent.homepageLayout, copy]);
+  }
+  function dropHomepageSection(targetId) {
+    if (!draggedSection || draggedSection === targetId) return;
+    const items = [...siteContent.homepageLayout].sort((a, b) => a.order - b.order);
+    const from = items.findIndex(item => item.id === draggedSection);
+    const to = items.findIndex(item => item.id === targetId);
+    if (from < 0 || to < 0) return;
+    const [moved] = items.splice(from, 1);
+    items.splice(to, 0, moved);
+    commitLayout(items.map((item, i) => ({ ...item, order: i })));
+    setDraggedSection("");
   }
   async function saveSiteSection(section, data) {
     setSaving(true);
@@ -567,17 +603,30 @@ function HomepageBuilder({ onError }) {
       <div className="panel-head"><div><h2>Homepage sections</h2><p>Edit the Tools and Trust content shown below your product collections.</p></div></div>
       <div style={{ padding: 22, display: "grid", gap: 24 }}>
         <div>
-          <div className="row-actions" style={{ justifyContent: "space-between", marginBottom: 14 }}>
-            <div><h3>Homepage section order</h3><p className="muted">Show, hide, and reorder the main homepage blocks.</p></div>
-            <button className="btn primary" disabled={saving} onClick={() => saveSiteSection("homepageLayout", siteContent.homepageLayout)}>{saving ? "Saving…" : "Save layout"}</button>
+          <div className="row-actions" style={{ justifyContent: "space-between", marginBottom: 14, flexWrap: "wrap" }}>
+            <div><h3>Homepage section order</h3><p className="muted">Drag sections to reorder, duplicate blocks, schedule visibility and preview before saving.</p></div>
+            <div className="row-actions">
+              <button type="button" className="btn secondary" onClick={undoLayout} disabled={historyIndex <= 0}>Undo</button>
+              <button type="button" className="btn secondary" onClick={redoLayout} disabled={historyIndex < 0 || historyIndex >= layoutHistory.length - 1}>Redo</button>
+              <button type="button" className="btn secondary" onClick={() => setPreviewMode("desktop")}>Live preview</button>
+              <button className="btn primary" disabled={saving} onClick={() => saveSiteSection("homepageLayout", siteContent.homepageLayout)}>{saving ? "Saving…" : "Save layout"}</button>
+            </div>
           </div>
-          <div style={{ display: "grid", gap: 8 }}>
+          <div style={{ display: "grid", gap: 10 }}>
             {[...siteContent.homepageLayout].sort((a, b) => a.order - b.order).map((item, index) => (
-              <div key={item.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, border: "1px solid #e5e7eb", borderRadius: 10, padding: "12px 14px" }}>
-                <label className="homepage-toggle"><input type="checkbox" checked={item.visible !== false} onChange={e => updateHomepageLayout(item.id, { visible: e.target.checked })}/><b>{item.label}</b></label>
-                <div className="row-actions">
-                  <button type="button" className="btn secondary small" disabled={index === 0} onClick={() => moveHomepageSection(index, -1)}>↑</button>
-                  <button type="button" className="btn secondary small" disabled={index === siteContent.homepageLayout.length - 1} onClick={() => moveHomepageSection(index, 1)}>↓</button>
+              <div key={item.id} draggable onDragStart={() => setDraggedSection(item.id)} onDragOver={e => e.preventDefault()} onDrop={() => dropHomepageSection(item.id)} onDragEnd={() => setDraggedSection("")} style={{ display: "grid", gap: 10, border: draggedSection === item.id ? "2px dashed #64748b" : "1px solid #e5e7eb", borderRadius: 12, padding: 14, background: "#fff" }}>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
+                  <label className="homepage-toggle"><input type="checkbox" checked={item.visible !== false} onChange={e => updateHomepageLayout(item.id, { visible: e.target.checked })}/><b>⠿ {item.label}</b></label>
+                  <div className="row-actions">
+                    <button type="button" className="btn secondary small" disabled={index === 0} onClick={() => moveHomepageSection(index, -1)}>↑</button>
+                    <button type="button" className="btn secondary small" disabled={index === siteContent.homepageLayout.length - 1} onClick={() => moveHomepageSection(index, 1)}>↓</button>
+                    <button type="button" className="btn secondary small" onClick={() => duplicateHomepageSection(item)}>Duplicate</button>
+                  </div>
+                </div>
+                <div style={{ display: "flex", gap: 12, flexWrap: "wrap", alignItems: "end" }}>
+                  <label style={{ display: "grid", gap: 5, fontSize: 12 }}>Publish from<input type="datetime-local" value={item.publishAt ? new Date(item.publishAt).toISOString().slice(0,16) : ""} onChange={e => updateHomepageLayout(item.id, { publishAt: e.target.value ? new Date(e.target.value).toISOString() : null })}/></label>
+                  <label style={{ display: "grid", gap: 5, fontSize: 12 }}>Unpublish at<input type="datetime-local" value={item.unpublishAt ? new Date(item.unpublishAt).toISOString().slice(0,16) : ""} onChange={e => updateHomepageLayout(item.id, { unpublishAt: e.target.value ? new Date(e.target.value).toISOString() : null })}/></label>
+                  <small className="muted">Leave dates empty for immediate, ongoing visibility.</small>
                 </div>
               </div>
             ))}
@@ -585,6 +634,14 @@ function HomepageBuilder({ onError }) {
         </div>
       </div>
     </section>}
+    {previewMode && <div className="modal-backdrop" onClick={() => setPreviewMode("")}><div className="editor-modal" onClick={e => e.stopPropagation()} style={{ width: "min(1100px,96vw)", maxHeight: "92vh", overflow: "auto" }}>
+      <div className="modal-head"><div><div className="eyebrow">PRE-PUBLISH CHECK</div><h2>Homepage preview</h2></div><div className="row-actions"><button type="button" className="btn secondary small" onClick={() => setPreviewMode("desktop")}>Desktop</button><button type="button" className="btn secondary small" onClick={() => setPreviewMode("mobile")}>Mobile</button><button type="button" className="icon-btn" onClick={() => setPreviewMode("")}><X size={18}/></button></div></div>
+      <div style={{ margin: "16px auto", width: previewMode === "mobile" ? 390 : "100%", maxWidth: "100%", border: "8px solid #202938", borderRadius: previewMode === "mobile" ? 28 : 12, overflow: "hidden", background: "#f8fafc" }}>
+        <div style={{ padding: 12, background: "#111827", color: "white", textAlign: "center", fontWeight: 700 }}>GO IPHONE</div>
+        {siteContent.homepageLayout.filter(item => item.visible !== false).sort((a,b)=>a.order-b.order).map(item => <div key={item.id} style={{ minHeight: item.type === "hero" || item.id === "hero" ? 190 : 90, padding: 20, margin: 10, borderRadius: 12, background: item.type === "hero" || item.id === "hero" ? "#1e293b" : "#fff", color: item.type === "hero" || item.id === "hero" ? "#fff" : "#1e293b", textAlign: "center", display: "grid", placeContent: "center", gap: 8 }}><b>{item.label || item.id}</b><span style={{ opacity: .8, fontSize: 12 }}>{item.type || item.id} · {item.publishAt ? "Scheduled" : "Visible"}</span></div>)}
+      </div>
+      <p className="muted">Structural preview of your current unsaved section order and visibility. Product imagery and live storefront data are not rendered in this preview.</p>
+    </div></div>}
     {activeTab === "categories" && <section className="category-image-manager">
       <div className="panel-head"><div><h2>Category images <span className="count-pill">{categories.length}</span></h2><p>Choose the image shown for each shopping category across the storefront.</p></div></div>
       {loading ? <div className="loading-panel"><span className="spinner"/> Loading categories…</div> : <div className="category-image-grid">
