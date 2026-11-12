@@ -595,7 +595,7 @@ function Products({ onError }) {
       </section>}
       {!(editing === "new" && ["iphone","watch","ipad","mac","airpods"].includes(form.categoryKey)) && <div className="editor-grid">
         <label className="field-wide">Product name<input required value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))}/></label>
-        <label>Category<select value={form.categoryKey} onChange={e => setForm(f => ({ ...f, categoryKey: e.target.value }))}>{["iphone","ipad","mac","watch","airpods","apple-accessory","other-accessory"].map(k => <option key={k} value={k}>{titleCase(k)}</option>)}</CustomSelect></label>
+        <label>Category<select value={form.categoryKey} onChange={e => setForm(f => ({ ...f, categoryKey: e.target.value }))}>{["iphone","ipad","mac","watch","airpods","apple-accessory","other-accessory"].map(k => <option key={k} value={k}>{titleCase(k)}</option>)}</select></label>
         <label>Product type<input required value={form.productType} onChange={e => setForm(f => ({ ...f, productType: e.target.value }))}/></label>
         <label className="field-wide">Description<input value={form.tagline} onChange={e => setForm(f => ({ ...f, tagline: e.target.value }))}/></label>
         <label>Sales mode<CustomSelect value={form.salesMode} onChange={e => setForm(f => ({ ...f, salesMode: e.target.value }))}><option value="for_sale">For sale</option><option value="reservation">Reservation</option></CustomSelect></label>
