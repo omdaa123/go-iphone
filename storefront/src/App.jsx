@@ -732,8 +732,15 @@ function heroProductFor(products, slide) {
 }
 
 function Hero({ go }) {
-  const { products, heroSlides: ALL_SLIDES } = useStoreData();
-  const HERO_SLIDES = ALL_SLIDES.filter((s) => s.active !== false);
+  const { products, heroSlides: ALL_SLIDES, siteContent } = useStoreData();
+  const schedules = siteContent?.heroSlideSchedules || {};
+  const now = Date.now();
+  const HERO_SLIDES = ALL_SLIDES.filter((s) => {
+    const schedule = schedules[s.id] || {};
+    return s.active !== false &&
+      (!schedule.publishAt || new Date(schedule.publishAt).getTime() <= now) &&
+      (!schedule.unpublishAt || new Date(schedule.unpublishAt).getTime() > now);
+  });
   const SLIDES = HERO_SLIDES.length ? HERO_SLIDES : [{
     id: "default-hero",
     eyebrow: "GO IPHONE",
