@@ -593,11 +593,31 @@ function Navbar({ go, cartCount, compareCount, onSearch, onCart }) {
                 <span className="absolute left-0 -bottom-0 h-px w-0 group-hover:w-full transition-all duration-300" style={{ backgroundColor: T.ink }} />
               </button>
             ))}
-            <button onClick={() => go("catalog", { category: "other-devices" })}
-              style={{ color: T.ink, fontSize: "13.5px" }} className="group relative font-medium py-1">
-              Other Devices
-              <span className="absolute left-0 -bottom-0 h-px w-0 group-hover:w-full transition-all duration-300" style={{ backgroundColor: T.ink }} />
-            </button>
+            <div className="relative group/other">
+              <button onClick={() => go("catalog", { category: "other-devices" })}
+                style={{ color: T.ink, fontSize: "13.5px" }} className="group relative font-medium py-1 inline-flex items-center gap-1">
+                Other Devices
+                <ChevronDown size={12} className="transition-transform duration-200 group-hover/other:rotate-180" style={{ color: T.graphite }} />
+                <span className="absolute left-0 -bottom-0 h-px w-0 group-hover:w-full transition-all duration-300" style={{ backgroundColor: T.ink }} />
+              </button>
+              <div className="absolute left-0 top-full pt-2 opacity-0 invisible translate-y-1 group-hover/other:opacity-100 group-hover/other:visible group-hover/other:translate-y-0 transition-all duration-150 z-20">
+                <div style={{ backgroundColor: T.paper, borderColor: T.line }} className="border shadow-sm min-w-[205px] py-1.5">
+                  {[
+                    { key: "smartphone", label: "Smartphones" },
+                    { key: "smartwatch", label: "Smart Watches" },
+                    { key: "tablet", label: "Tablets" },
+                    { key: "speakers", label: "Speakers" },
+                    { key: "headphones", label: "Headphones" },
+                    { key: "other-electronics", label: "Other Electronics" },
+                  ].map((branch) => (
+                    <button key={branch.key} onClick={() => go("catalog", { category: "other-devices", subcategory: branch.key })}
+                      style={{ color: T.ink }} className="block w-full text-left px-4 py-2.5 text-[13.5px] hover:bg-black/[0.03] transition-colors">
+                      {branch.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
             <div className="relative group/acc">
               <button onClick={() => go("catalog", { category: "apple-accessory" })}
                 style={{ color: T.ink, fontSize: "13.5px" }} className="group relative font-medium py-1 inline-flex items-center gap-1">
@@ -661,10 +681,27 @@ function Navbar({ go, cartCount, compareCount, onSearch, onCart }) {
                   style={{ color: T.graphite }} className="text-sm font-medium text-left">Other Accessories</button>
               </div>
             </div>
-            <button onClick={() => { go("catalog", { category: "other-devices" }); setMenuOpen(false); }}
-              style={{ color: T.ink, borderColor: T.line }} className="text-2xl font-medium tracking-tight py-4 border-b text-left">
-              Other Devices
-            </button>
+            <div style={{ borderColor: T.line }} className="border-b py-4">
+              <button onClick={() => { go("catalog", { category: "other-devices" }); setMenuOpen(false); }}
+                style={{ color: T.ink }} className="text-2xl font-medium tracking-tight text-left mb-3">
+                Other Devices
+              </button>
+              <div className="flex flex-col gap-3 pl-0.5">
+                {[
+                  { key: "smartphone", label: "Smartphones" },
+                  { key: "smartwatch", label: "Smart Watches" },
+                  { key: "tablet", label: "Tablets" },
+                  { key: "speakers", label: "Speakers" },
+                  { key: "headphones", label: "Headphones" },
+                  { key: "other-electronics", label: "Other Electronics" },
+                ].map((branch) => (
+                  <button key={branch.key} onClick={() => { go("catalog", { category: "other-devices", subcategory: branch.key }); setMenuOpen(false); }}
+                    style={{ color: T.graphite }} className="text-sm font-medium text-left">
+                    {branch.label}
+                  </button>
+                ))}
+              </div>
+            </div>
             <button onClick={() => { go("compare"); setMenuOpen(false); }} style={{ color: T.graphite, borderColor: T.line }} className="text-sm font-medium py-4 border-b text-left flex items-center justify-between">Compare devices <Scale size={15} /></button>
             <button onClick={() => { go("recommend"); setMenuOpen(false); }} style={{ color: T.graphite }} className="text-sm font-medium py-4 text-left">Find your perfect device</button>
           </div>
@@ -1258,7 +1295,7 @@ function buildFilterOptions(category) {
   return options;
 }
 
-function CatalogPage({ category, go, compareIds, onToggleCompare }) {
+function CatalogPage({ category, subcategory: initialSubcategory = "all", go, compareIds, onToggleCompare }) {
   const { products: allProducts } = useStoreData();
   const [active, setActive] = useState({});
   const [subcategory, setSubcategory] = useState("all");
@@ -1266,7 +1303,7 @@ function CatalogPage({ category, go, compareIds, onToggleCompare }) {
   const [sort, setSort] = useState("relevance");
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [filtersMounted, filtersVisible] = useMountTransition(filtersOpen, 260);
-  useEffect(() => { setActive({}); setSubcategory("all"); setDeviceSubcategory("all"); }, [category]);
+  useEffect(() => { setActive({}); setSubcategory(initialSubcategory || "all"); setDeviceSubcategory("all"); }, [category, initialSubcategory]);
 
   const options = useMemo(() => buildFilterOptions(category), [category, allProducts]);
   const keys = CATEGORY_FILTER_KEYS[category] || [];
@@ -2416,7 +2453,7 @@ function AppShell() {
       <Navbar go={go} cartCount={cart.reduce((s, i) => s + i.qty, 0)} compareCount={compareIds.length} onSearch={() => setSearchOpen(true)} onCart={() => setCartOpen(true)} />
 
       {view === "home" && <HomePage go={go} compareIds={compareIds} onToggleCompare={onToggleCompare} />}
-      {view === "catalog" && <CatalogPage category={params.category || "iphone"} go={go} compareIds={compareIds} onToggleCompare={onToggleCompare} />}
+      {view === "catalog" && <CatalogPage category={params.category || "iphone"} subcategory={params.subcategory || "all"} go={go} compareIds={compareIds} onToggleCompare={onToggleCompare} />}
       {view === "product" && <ProductDetailPage productId={params.id} go={go} onAddToCart={onAddToCart} compareIds={compareIds} onToggleCompare={onToggleCompare} />}
       {view === "compare" && <ComparePage compareIds={compareIds} onToggleCompare={onToggleCompare} onClear={() => setCompareIds([])} go={go} />}
       {view === "recommend" && <RecommendationWizard go={go} onAddToCart={onAddToCart} />}
