@@ -803,14 +803,12 @@ function CollectionsManager({ onError }) {
   const [selectedId, setSelectedId] = useState("");
   const [query, setQuery] = useState("");
   const [productQuery, setProductQuery] = useState("");
-  const [visibilityFilter, setVisibilityFilter] = useState("all");
   const [editing, setEditing] = useState(null);
   const [form, setForm] = useState({ id: "", name: "", description: "" });
   const selected = items.find(item => item.id === selectedId);
   const visibleItems = items.filter(item => {
     const matchesQuery = !query.trim() || [item.name, item.id, item.description].some(value => String(value || "").toLowerCase().includes(query.trim().toLowerCase()));
-    const matchesVisibility = visibilityFilter === "all" || (visibilityFilter === "visible" ? item.visible !== false : item.visible === false);
-    return matchesQuery && matchesVisibility;
+    return matchesQuery;
   });
   const filteredProducts = products.filter(p => !productQuery.trim() || [p.name,p.category_key,p.product_type].some(v => String(v || "").toLowerCase().includes(productQuery.toLowerCase())));
   const load = useCallback(async () => {
@@ -879,20 +877,6 @@ function CollectionsManager({ onError }) {
     } catch (e) { onError(e.message); }
     finally { setUploading(false); }
   }
-  async function toggleVisible(item) {
-    try {
-      await request("/collections/" + encodeURIComponent(item.id), { method: "PATCH", body: JSON.stringify({ visible: item.visible === false }) });
-      setItems(list => list.map(x => x.id === item.id ? { ...x, visible: item.visible === false } : x));
-    } catch (e) { onError(e.message); }
-  }
-  async function move(index, direction) {
-    const next = [...items]; const target = index + direction;
-    if (target < 0 || target >= next.length) return;
-    [next[index], next[target]] = [next[target], next[index]];
-    setItems(next);
-    try { await Promise.all(next.map((item, order) => request("/collections/" + encodeURIComponent(item.id), { method: "PATCH", body: JSON.stringify({ sortOrder: order }) }))); }
-    catch (e) { onError(e.message); load(); }
-  }
   async function remove(item) {
     if (item.is_system) return;
     if (!window.confirm("Delete collection \"" + item.name + "\"? Products will lose this collection tag.")) return;
@@ -901,16 +885,16 @@ function CollectionsManager({ onError }) {
   }
   const selectedDetails = selected ? (details[selected.id] || {}) : {};
   return <>
-    <div className="page-heading"><div><div className="eyebrow">STORE EXPERIENCE / MERCHANDISING</div><h1>Collections</h1><p>Build product groups here. Homepage Builder controls where those groups appear.</p></div><div className="heading-actions"><button className="btn secondary" onClick={() => setRefresh(v => v + 1)}><RefreshCw size={15}/> Refresh</button><button className="btn primary" onClick={startNew}><Plus size={15}/> New collection</button></div></div>
-    <div className="homepage-intro"><div className="homepage-intro-icon"><ShoppingBag size={22}/></div><div><b>Product merchandising</b><p>Choose products, set a collection cover and description. Display placement stays in Homepage Builder.</p></div><span className="homepage-live"><i/> Store connected</span></div>
-    <div className="collection-overview-grid"><div className="collection-overview-card"><span>Total collections</span><b>{items.length}</b><small>Curated product groups</small></div><div className="collection-overview-card"><span>Visible on store</span><b>{items.filter(x=>x.visible!==false).length}</b><small>Enabled collection tags</small></div><div className="collection-overview-card"><span>Hidden</span><b>{items.filter(x=>x.visible===false).length}</b><small>Disabled collection tags</small></div><div className="collection-overview-card"><span>Product assignments</span><b>{items.reduce((sum,x)=>sum+Number(x.product_count||0),0)}</b><small>Across all groups</small></div></div>
+    <div className="page-heading"><div><div className="eyebrow">STORE EXPERIENCE / MERCHANDISING</div><h1>Collections</h1><p>Manage product membership and collection content here. Homepage Builder controls visibility and placement on the homepage.</p></div><div className="heading-actions"><button className="btn secondary" onClick={() => setRefresh(v => v + 1)}><RefreshCw size={15}/> Refresh</button><button className="btn primary" onClick={startNew}><Plus size={15}/> New collection</button></div></div>
+    <div className="homepage-intro"><div className="homepage-intro-icon"><ShoppingBag size={22}/></div><div><b>Product merchandising</b><p>Choose products, set a cover image and storefront description. Homepage Builder controls which groups appear and in what order.</p></div><span className="homepage-live"><i/> Store connected</span></div>
+    <div className="collection-overview-grid"><div className="collection-overview-card"><span>Total collections</span><b>{items.length}</b><small>Curated product groups</small></div><div className="collection-overview-card"><span>Visible on store</span><b>{items.filter(x=>x.visible!==false && details[x.id]?.homepageVisible!==false).length}</b><small>Enabled collection tags</small></div><div className="collection-overview-card"><span>Hidden</span><b>{items.filter(x=>x.visible===false || details[x.id]?.homepageVisible===false).length}</b><small>Disabled collection tags</small></div><div className="collection-overview-card"><span>Product assignments</span><b>{items.reduce((sum,x)=>sum+Number(x.product_count||0),0)}</b><small>Across all groups</small></div></div>
     <div className="collections-workspace">
       <section className="panel collections-list-panel">
-        <div className="panel-head"><div><h2>All collections <span className="count-pill">{items.length}</span></h2><p>Select a collection to manage its products.</p></div></div>
-        <div className="collection-toolbar"><div className="search-box"><Search size={16}/><input value={query} onChange={e=>setQuery(e.target.value)} placeholder="Search collections…"/></div><select value={visibilityFilter} onChange={e=>setVisibilityFilter(e.target.value)}><option value="all">All visibility</option><option value="visible">Visible</option><option value="hidden">Hidden</option></select></div>
+        <div className="panel-head"><div><h2>All collections <span className="count-pill">{items.length}</span></h2><p>Select a collection to manage its products and content.</p></div></div>
+        <div className="collection-toolbar"><div className="search-box"><Search size={16}/><input value={query} onChange={e=>setQuery(e.target.value)} placeholder="Search collections…"/></div></div>
         {loading ? <div className="loading-panel"><span className="spinner"/> Loading collections…</div> : <div className="collection-admin-list">{visibleItems.map(item=><article className={"collection-admin-row collection-select-row "+(selectedId===item.id?"selected":"")} key={item.id}>
           <button type="button" className="collection-open-button" onClick={()=>setSelectedId(item.id)}><div className="collection-cover-thumb">{details[item.id]?.imageUrl?<img src={details[item.id].imageUrl} alt=""/>:<ShoppingBag size={20}/>}</div><div className="collection-admin-info"><div><b>{item.name}</b>{item.is_system&&<span className="count-pill">Built-in</span>}</div><span>{item.description||item.id}</span></div><div className="collection-admin-count"><b>{Number(item.product_count||0)}</b><span>products</span></div></button>
-          <div className="collection-row-tools"><button className="btn secondary small" onClick={()=>move(items.indexOf(item),-1)} disabled={items.indexOf(item)===0}>↑</button><button className="btn secondary small" onClick={()=>move(items.indexOf(item),1)} disabled={items.indexOf(item)===items.length-1}>↓</button><button className="btn secondary small" onClick={()=>startEdit(item)}>Edit</button><button className="btn secondary small" onClick={()=>toggleVisible(item)}>{item.visible===false?"Enable":"Disable"}</button>{!item.is_system&&<button className="btn danger small" onClick={()=>remove(item)}>Delete</button>}</div>
+          <div className="collection-row-tools"><button className="btn secondary small" onClick={()=>startEdit(item)}>Edit</button>{!item.is_system&&<button className="btn danger small" onClick={()=>remove(item)}>Delete</button>}</div>
         </article>)}</div>}
       </section>
       <section className="panel collection-detail-panel">
