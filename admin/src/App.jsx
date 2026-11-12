@@ -851,6 +851,46 @@ function DesignStudio({ onError }) {
   </>;
 }
 
+
+function Inventory({ onError }) {
+  const [products,setProducts]=useState([]),[units,setUnits]=useState([]),[loading,setLoading]=useState(true),[query,setQuery]=useState(""),[status,setStatus]=useState("all"),[refresh,setRefresh]=useState(0),[editing,setEditing]=useState(null),[saving,setSaving]=useState(false);
+  const [form,setForm]=useState({storage:"",color:"",batteryPct:"",condition:"New",sku:"",price:"",warranty:"",notes:""});
+  const localPreview=import.meta.env.DEV;
+  const load=useCallback(async()=>{setLoading(true);try{const d=await request("/products");const list=d.products||[];setProducts(list);const grouped=await Promise.all(list.map(async p=>{const x=await request("/products/"+p.id+"/units");return (x.units||[]).map(u=>({...u,product_name:p.name,product_image:p.image_url}));}));setUnits(grouped.flat());}catch(e){onError(e.message);}finally{setLoading(false);}},[onError]);
+  useEffect(()=>{load();},[load,refresh]);
+  const visible=units.filter(u=>(!query.trim()||[u.product_name,u.storage,u.color,u.sku].join(" ").toLowerCase().includes(query.trim().toLowerCase()))&&(status==="all"||u.status===status));
+  const count=s=>units.filter(u=>u.status===s).length;
+  function add(productId){setForm({storage:"",color:"",batteryPct:"",condition:"New",sku:"",price:"",warranty:"",notes:""});setEditing(productId);}
+  async function save(e){e.preventDefault();setSaving(true);try{await request("/products/"+editing+"/units",{method:"POST",body:JSON.stringify({storage:form.storage||null,color:form.color||null,batteryPct:form.batteryPct===""?null:Number(form.batteryPct),condition:form.condition,sku:form.sku||null,priceCents:Math.round(Number(form.price)*100),warranty:form.warranty||null,notes:form.notes||null})});setEditing(null);setRefresh(v=>v+1);}catch(e){onError(e.message);}finally{setSaving(false);}}
+  async function change(u,next){try{await request("/products/"+u.product_id+"/units/"+u.id+"/status",{method:"PATCH",body:JSON.stringify({status:next})});setUnits(xs=>xs.map(x=>x.id===u.id?{...x,status:next}:x));}catch(e){onError(e.message);}}
+  return <><div className="page-heading"><div><div className="eyebrow">COMMERCE / OPERATIONS</div><h1>Inventory</h1><p>Track every physical device, its condition, battery health and availability.</p></div><button className="btn secondary" onClick={()=>setRefresh(v=>v+1)}><RefreshCw size={15}/> Refresh stock</button></div>
+  {localPreview&&<div className="design-safety-note"><ShieldCheck size={17}/><div><b>Read-only local preview</b><span>Stock changes are blocked here to protect live inventory.</span></div></div>}
+  <div className="inventory-metrics"><div><span>ALL UNITS</span><b>{units.length}</b></div><div className="available"><span>AVAILABLE</span><b>{count("available")}</b></div><div className="reserved"><span>RESERVED</span><b>{count("reserved")}</b></div><div className="sold"><span>SOLD</span><b>{count("sold")}</b></div></div>
+  <section className="panel"><div className="toolbar"><div className="search-box"><Search size={16}/><input value={query} onChange={e=>setQuery(e.target.value)} placeholder="Search product, storage, color or SKU…"/></div><select value={status} onChange={e=>setStatus(e.target.value)}><option value="all">All statuses</option><option value="available">Available</option><option value="reserved">Reserved</option><option value="sold">Sold</option></select><span className="results-count">{visible.length} units</span></div>
+  {loading?<div className="loading-panel"><span className="spinner"/> Loading individual inventory…</div>:visible.length?<div className="table-wrap"><table><thead><tr><th>DEVICE</th><th>STORAGE / COLOR</th><th>BATTERY</th><th>CONDITION</th><th>SKU</th><th>PRICE</th><th>STATUS</th></tr></thead><tbody>{visible.map(u=><tr key={u.id}><td><div className="product-cell">{u.product_image?<img src={u.product_image} alt=""/>:<div className="product-avatar"><Smartphone size={17}/></div>}<b>{u.product_name}</b></div></td><td>{[u.storage,u.color].filter(Boolean).join(" · ")||"—"}</td><td>{u.battery_pct==null?"—":u.battery_pct+"%"}</td><td>{u.condition||"—"}</td><td className="mono">{u.sku||"—"}</td><td>{money(u.price_cents)}</td><td><select className="status-select" disabled={localPreview} value={u.status} onChange={e=>change(u,e.target.value)}><option value="available">Available</option><option value="reserved">Reserved</option><option value="sold">Sold</option></select></td></tr>)}</tbody></table></div>:<EmptyState icon={Boxes} title="No inventory units found" detail="Add individual devices to products to track each unit separately."/>}</section>
+  <section className="panel inventory-add-panel"><div className="panel-head"><div><h2>Add a physical device</h2><p>Create a trackable unit linked to a product.</p></div></div><div className="inventory-product-picks">{products.map(p=><div className="inventory-product-pick" key={p.id}><b>{p.name}</b><button className="btn secondary small" disabled={localPreview} onClick={()=>add(p.id)}><Plus size={13}/> Add unit</button></div>)}</div></section>
+  {editing&&<div className="modal-backdrop"><form className="editor-modal" onSubmit={save}><div className="modal-head"><div><div className="eyebrow">INVENTORY UNIT</div><h2>Add device details</h2></div><button type="button" className="icon-btn" onClick={()=>setEditing(null)}><X size={18}/></button></div><div className="editor-grid">
+  <label>Storage<input value={form.storage} onChange={e=>setForm(f=>({...f,storage:e.target.value}))} placeholder="256GB"/></label><label>Color<input value={form.color} onChange={e=>setForm(f=>({...f,color:e.target.value}))}/></label>
+  <label>Battery health (%)<input type="number" min="0" max="100" value={form.batteryPct} onChange={e=>setForm(f=>({...f,batteryPct:e.target.value}))}/></label><label>Condition<select value={form.condition} onChange={e=>setForm(f=>({...f,condition:e.target.value}))}><option>New</option><option>Like New</option><option>Excellent</option><option>Good</option><option>Fair</option></select></label>
+  <label>SKU / Serial<input value={form.sku} onChange={e=>setForm(f=>({...f,sku:e.target.value}))}/></label><label>Price (EGP)<input type="number" min="0" step="0.01" required value={form.price} onChange={e=>setForm(f=>({...f,price:e.target.value}))}/></label><label>Warranty<input value={form.warranty} onChange={e=>setForm(f=>({...f,warranty:e.target.value}))}/></label><label className="field-wide">Internal notes<input value={form.notes} onChange={e=>setForm(f=>({...f,notes:e.target.value}))}/></label>
+  </div><div className="modal-foot"><button type="button" className="btn secondary" onClick={()=>setEditing(null)}>Cancel</button><button className="btn primary" disabled={saving}>{saving?"Saving…":"Create inventory unit"}</button></div></form></div>}</>;
+}
+
+function Reservations({ onError }) {
+  const [items,setItems]=useState([]),[loading,setLoading]=useState(true),[filter,setFilter]=useState("all"),[refresh,setRefresh]=useState(0),[busyId,setBusyId]=useState("");
+  const localPreview=import.meta.env.DEV;
+  const load=useCallback(()=>{setLoading(true);request("/reservations").then(d=>setItems(d.reservations||[])).catch(e=>onError(e.message)).finally(()=>setLoading(false));},[onError]);
+  useEffect(()=>{load();},[load,refresh]);
+  const visible=filter==="all"?items:items.filter(r=>r.status===filter);
+  async function update(item,next){setBusyId(item.id);try{await request("/reservations/"+item.id+"/status",{method:"PATCH",body:JSON.stringify({status:next})});setItems(xs=>xs.map(r=>r.id===item.id?{...r,status:next}:r));}catch(e){onError(e.message);}finally{setBusyId("");}}
+  const count=s=>items.filter(r=>r.status===s).length;
+  return <><div className="page-heading"><div><div className="eyebrow">COMMERCE / CUSTOMER REQUESTS</div><h1>Reservations</h1><p>Follow up on device requests and move each reservation through its lifecycle.</p></div><button className="btn secondary" onClick={()=>setRefresh(v=>v+1)}><RefreshCw size={15}/> Refresh</button></div>
+  {localPreview&&<div className="design-safety-note"><ShieldCheck size={17}/><div><b>Read-only local preview</b><span>Status changes are disabled in this local workspace.</span></div></div>}
+  <div className="inventory-metrics"><div><span>TOTAL REQUESTS</span><b>{items.length}</b></div><div className="reserved"><span>NEW</span><b>{count("New")}</b></div><div className="available"><span>CONFIRMED</span><b>{count("Confirmed")}</b></div><div className="sold"><span>COMPLETED</span><b>{count("Completed")}</b></div></div>
+  <section className="panel"><div className="toolbar"><div className="filter-tabs">{["all","New","Contacted","Confirmed","Ready","Completed","Cancelled"].map(s=><button key={s} className={filter===s?"selected":""} onClick={()=>setFilter(s)}>{s==="all"?"All requests":s}</button>)}</div><span className="results-count">{visible.length} requests</span></div>
+  {loading?<div className="loading-panel"><span className="spinner"/> Loading reservations…</div>:visible.length?<div className="table-wrap"><table><thead><tr><th>REQUEST</th><th>CUSTOMER</th><th>PHONE</th><th>PRODUCT</th><th>DATE</th><th>STATUS</th></tr></thead><tbody>{visible.map(r=><tr key={r.id}><td className="mono">#{String(r.id).slice(-7).toUpperCase()}</td><td><b>{r.customer_name||"—"}</b></td><td>{r.customer_phone||"—"}</td><td>{r.product_name||"—"}</td><td>{date(r.created_at)}</td><td><select className="status-select" disabled={localPreview||busyId===r.id} value={r.status} onChange={e=>update(r,e.target.value)}>{["New","Contacted","Confirmed","Ready","Completed","Cancelled"].map(s=><option key={s}>{s}</option>)}</select></td></tr>)}</tbody></table></div>:<EmptyState icon={Clock3} title="No reservations found" detail="Customer reservation requests will appear here."/>}</section></>;
+}
+
 function Placeholder({ id, onNavigate }) {
   const content = {
     inventory: ["Inventory", "Track individual devices, stock levels and availability.", Boxes, "Inventory workspace is next in the build."],
@@ -937,11 +977,13 @@ export default function App() {
         {page === "dashboard" && <Dashboard stats={stats} loading={statsLoading} onRefresh={loadStats} onNavigate={navigate}/>}
         {page === "products" && <Products onError={showError}/>}
         {page === "orders" && <Orders onError={showError}/>}
+        {page === "inventory" && <Inventory onError={showError}/>}
+        {page === "reservations" && <Reservations onError={showError}/>}
         {page === "media" && <MediaLibrary onError={showError}/>}
         {page === "homepage" && <HomepageBuilder onError={showError}/>}
         {page === "collections" && <CollectionsManager onError={showError}/>}
         {page === "design" && <DesignStudio onError={showError}/>}
-        {!["dashboard","products","orders","media","homepage","collections","design"].includes(page) && <Placeholder id={page} onNavigate={navigate}/>}
+        {!["dashboard","products","orders","inventory","reservations","media","homepage","collections","design"].includes(page) && <Placeholder id={page} onNavigate={navigate}/>}
         <footer className="app-footer"><span>© {new Date().getFullYear()} GO iPhone</span><span>Admin workspace <i/> Built for your store</span></footer>
       </div>
     </main>
