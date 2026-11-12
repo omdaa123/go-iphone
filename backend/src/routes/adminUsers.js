@@ -78,3 +78,20 @@ adminUsersRouter.patch("/:id/active", async (req, res, next) => {
     res.json({ adminUser: rows[0] });
   } catch (err) { next(err); }
 });
+
+const permissionMapSchema = z.record(z.boolean());
+adminUsersRouter.patch("/roles/:name", async (req, res, next) => {
+  try {
+    const roleName = String(req.params.name || "").toUpperCase();
+    if (!["MANAGER", "STAFF", "CONTENT"].includes(roleName)) return res.status(400).json({ error: "This role cannot be edited." });
+    const requested = permissionMapSchema.parse(req.body);
+    const current = await pool.query(`SELECT permissions FROM roles WHERE name = $1`, [roleName]);
+    if (!current.rows[0]) return res.status(404).json({ error: "Role not found." });
+    const allowedKeys = Object.keys(current.rows[0].permissions || {});
+    if (Object.keys(requested).some(key => !allowedKeys.includes(key))) return res.status(400).json({ error: "Unknown permission." });
+    const permissions = Object.fromEntries(allowedKeys.map(key => [key, key === "admin.manage" ? false : requested[key] === true]));
+    const { rows } = await pool.query(`UPDATE roles SET permissions = $1 WHERE name = $2 RETURNING name, permissions`, [permissions, roleName]);
+    await logAudit({ adminUserId: req.admin.id, action: "admin_role.permissions_update", resourceType: "role", resourceId: roleName, after: rows[0], ip: req.ip });
+    res.json({ role: rows[0] });
+  } catch (err) { next(err); }
+});
