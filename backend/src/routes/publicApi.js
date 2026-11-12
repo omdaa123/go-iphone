@@ -22,7 +22,18 @@ const egp = (piastres) => Math.round(Number(piastres) / 100); // DB stores piast
 publicRouter.get("/catalog", async (req, res, next) => {
   try {
     await pool.query(`INSERT INTO categories (key, label, sort_order) VALUES ($1, $2, $3) ON CONFLICT (key) DO NOTHING`, ["other-devices", "Other Devices", 7]);
-    const [cats, cols, prods, variants, units, hero, content, settings, pcs] = await Promise.all([
+    // Restore missing built-in merchandising groups without changing any
+    // existing names, visibility choices, ordering, or product assignments.
+    await pool.query(
+      `INSERT INTO collections (id, name, description, is_system, visible, sort_order)
+       VALUES
+         ('featured', 'Featured', 'Hand-picked highlights from the store.', true, true, 0),
+         ('new-arrivals', 'New Arrivals', 'The latest products added to the store.', true, true, 1),
+         ('best-sellers', 'Best Sellers', 'Popular products customers have purchased.', true, true, 2),
+         ('certified-refurbished', 'Certified Refurbished', 'Individually checked pre-owned devices.', true, true, 3)
+       ON CONFLICT (id) DO NOTHING`
+    );
+    const [cats, cols, prods, variants, units, hero, content, settings, pcs, sales] = await Promise.all([
       pool.query(`SELECT c.key, c.label, c.sort_order, m.url AS image_url FROM categories c LEFT JOIN media m ON m.id = c.image_media_id ORDER BY c.sort_order`),
       pool.query(`SELECT id, name, description, is_system, visible, sort_order FROM collections ORDER BY sort_order`),
       pool.query(
@@ -47,8 +58,15 @@ publicRouter.get("/catalog", async (req, res, next) => {
       pool.query(`SELECT section_key, data FROM homepage_content`),
       pool.query(`SELECT key, value FROM site_settings`),
       pool.query(`SELECT product_id, collection_id FROM product_collections`),
+      pool.query(
+        `SELECT oi.product_id, SUM(oi.qty)::int AS sold_qty
+         FROM order_items oi JOIN orders o ON o.id = oi.order_id
+         WHERE o.status <> 'Cancelled'
+         GROUP BY oi.product_id`
+      ),
     ]);
 
+    const soldByProduct = Object.fromEntries(sales.rows.map((r) => [r.product_id, Number(r.sold_qty) || 0]));
     const collectionsByProduct = {};
     for (const r of pcs.rows) (collectionsByProduct[r.product_id] ||= []).push(r.collection_id);
 
@@ -76,6 +94,8 @@ publicRouter.get("/catalog", async (req, res, next) => {
         badges: p.badges,
         hasUnits: p.has_units,
         collections: collectionsByProduct[p.id] || [],
+        createdAt: p.created_at || null,
+        soldQty: soldByProduct[p.id] || 0,
         image: p.image_url || null,
         gallery: p.gallery_urls || [],
         // storefront-only extras (recommendation scores, screen size, launch date)
