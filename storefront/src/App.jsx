@@ -862,7 +862,7 @@ function CategoryGrid({ go }) {
   // Because col-span-2 always means "half the row" whether the row has 2
   // columns (mobile) or 4 (desktop), this single set of classes produces a
   // sensible layout at every breakpoint with no responsive span overrides.
-  const wide = new Set(["iphone", "apple-accessory"]);
+  const wide = new Set(["iphone", "apple-accessory", "other-devices"]);
 
   return (
     <section className="max-w-7xl mx-auto px-6 md:px-10 py-20 md:py-28">
@@ -1252,15 +1252,16 @@ function buildFilterOptions(category) {
 function CatalogPage({ category, go, compareIds, onToggleCompare }) {
   const { products: allProducts } = useStoreData();
   const [active, setActive] = useState({});
+  const [subcategory, setSubcategory] = useState("all");
   const [sort, setSort] = useState("relevance");
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [filtersMounted, filtersVisible] = useMountTransition(filtersOpen, 260);
-  useEffect(() => setActive({}), [category]);
+  useEffect(() => { setActive({}); setSubcategory("all"); }, [category]);
 
   const options = useMemo(() => buildFilterOptions(category), [category, allProducts]);
   const keys = CATEGORY_FILTER_KEYS[category] || [];
 
-  const items = allProducts.filter((p) => p.category === category && isPublished(p)).filter((p) => {
+  const items = allProducts.filter((p) => p.category === category && isPublished(p) && (category !== "other-devices" || subcategory === "all" || p.productType === subcategory)).filter((p) => {
     return keys.every((key) => {
       const chosen = active[key];
       if (!chosen || !chosen.length) return true;
@@ -1309,6 +1310,24 @@ function CatalogPage({ category, go, compareIds, onToggleCompare }) {
           </select>
         </div>
       </div>
+
+      {category === "other-devices" && (
+        <div className="flex flex-wrap gap-2 mb-8" aria-label="Other Devices categories">
+          {[
+            { key: "all", label: "All devices" },
+            { key: "smartphone", label: "Smartphones" },
+            { key: "smartwatch", label: "Smart Watches" },
+            { key: "tablet", label: "Tablets" },
+            { key: "other-electronics", label: "Other Electronics" },
+          ].map((branch) => (
+            <button key={branch.key} onClick={() => setSubcategory(branch.key)}
+              style={{ borderColor: subcategory === branch.key ? T.ink : T.line, backgroundColor: subcategory === branch.key ? T.ink : "transparent", color: subcategory === branch.key ? "#fff" : T.ink }}
+              className="border px-4 py-2.5 text-sm font-medium transition-colors">
+              {branch.label}
+            </button>
+          ))}
+        </div>
+      )}
 
       <div className="flex flex-col md:flex-row gap-10">
         {keys.length > 0 && (
