@@ -38,7 +38,7 @@ const WATCH_MODELS = [
   { name:"Apple Watch Series 4", year:2018, sizes:["40mm","44mm"], materials:["Aluminum","Stainless Steel"], connectivity:["GPS","GPS + Cellular"], colors:["Silver","Gold","Space Gray","Gold Stainless Steel","Silver Stainless Steel","Space Black Stainless Steel"], display:"Retina", chip:"S4", capacity:"16GB" },
   { name:"Apple Watch Series 3", year:2017, sizes:["38mm","42mm"], materials:["Aluminum","Stainless Steel","Ceramic"], connectivity:["GPS","GPS + Cellular"], colors:["Silver","Space Gray","Gold","White Ceramic","Gray Ceramic"], display:"Retina", chip:"S3", capacity:"8GB / 16GB (by version)" },
   { name:"Apple Watch Series 2", year:2016, sizes:["38mm","42mm"], materials:["Aluminum","Stainless Steel","Ceramic"], connectivity:["GPS"], colors:["Silver","Space Gray","Gold","Rose Gold","White Ceramic","Black Ceramic"], display:"Retina", chip:"S2", capacity:"8GB" },
-  { name:"Apple Watch Series 1", year:2016, sizes:["38mm","42mm"], materials:["Aluminum"], connectivity:["GPS"], colors:["Silver","Space Gray","Gold","Rose Gold"], display:"Retina", chip:"S1P", capacity:"8GB" },
+  { name:"Apple Watch Series 1", year:2016, sizes:["38mm","42mm"], materials:["Aluminum"], connectivity:["iPhone-connected"], colors:["Silver","Space Gray","Gold","Rose Gold"], display:"Retina", chip:"S1P", capacity:"8GB" },
   { name:"Apple Watch (1st generation)", year:2015, sizes:["38mm","42mm"], materials:["Stainless Steel","18-karat Gold"], connectivity:["GPS (iPhone-connected)"], colors:["Stainless Steel","Space Black Stainless Steel","18-karat Yellow Gold","18-karat Rose Gold"], display:"Retina", chip:"S1", capacity:"8GB" }
 ];
 
