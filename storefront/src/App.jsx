@@ -953,7 +953,15 @@ function CategoryGrid({ go }) {
    EDITORIAL FEATURE
    ============================================================ */
 function EditorialFeature({ product, go }) {
-  if (!product) return null;
+  if (!product) return (
+    <section className="max-w-7xl mx-auto px-6 md:px-10 py-16 md:py-24">
+      <div style={{ backgroundColor: T.stone, borderColor: T.line }} className="border px-6 py-12 md:px-12 text-center">
+        <p style={{ color: T.graphite, fontSize: "12.5px", letterSpacing: "0.08em" }} className="mb-3 uppercase">Featured</p>
+        <h2 style={{ color: T.ink, fontFamily: FONT_DISPLAY, fontWeight: 700, fontSize: "clamp(1.8rem, 3vw, 2.5rem)" }} className="mb-3">Featured devices coming soon</h2>
+        <p style={{ color: T.graphite }} className="text-sm">Our featured picks will appear here as soon as products are available.</p>
+      </div>
+    </section>
+  );
   return (
     <section className="max-w-7xl mx-auto px-6 md:px-10 py-16 md:py-24">
       <div className="grid md:grid-cols-[1.3fr_1fr] gap-0 md:gap-16 items-stretch">
@@ -1246,7 +1254,7 @@ function HomePage({ go, compareIds, onToggleCompare }) {
       }
       return { ...c, products };
     })
-    .filter((c) => c.products.length > 0 || ["best-sellers", "certified-refurbished"].includes(c.id));
+    .filter((c) => c.products.length > 0 || ["featured", "new-arrivals", "best-sellers", "certified-refurbished"].includes(c.id));
   const defaultLayout = [
     { id: "hero", visible: true, order: 0 },
     { id: "categories", visible: true, order: 1 },
