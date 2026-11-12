@@ -616,7 +616,7 @@ function HomepageBuilder({ onError }) {
     }
   }, [previewMode, siteContent, slides, media]);
   return <>
-    <div className="page-heading"><div><div className="eyebrow">STORE EXPERIENCE</div><h1>Homepage Builder</h1><p>Manage the images and banners customers see across your storefront.</p></div><div className="heading-actions"><button className="btn secondary" onClick={() => setRefresh(v => v + 1)}><RefreshCw size={15}/> Refresh</button><button className="btn primary" onClick={startNew}><Plus size={15}/> Add hero slide</button></div></div>
+    <div className="page-heading"><div><div className="eyebrow">STORE EXPERIENCE</div><h1>Homepage Builder</h1><p>Manage banners, page structure, category visuals and the collections featured on your storefront.</p></div><div className="heading-actions"><button className="btn secondary" onClick={() => setRefresh(v => v + 1)}><RefreshCw size={15}/> Refresh</button><button className="btn primary" onClick={startNew}><Plus size={15}/> Add hero slide</button></div></div>
     <div className="homepage-commandbar">
       <div className="homepage-commandbar-copy"><span className="homepage-kicker">STORE EXPERIENCE / CONTENT CONTROL</span><h2>Shape the first impression.</h2><p>Build, organize and refine every section of your storefront from one workspace.</p></div>
       <div className="homepage-commandbar-status"><span className="homepage-status-dot"/><div><b>Storefront connected</b><small>Content workspace</small></div></div>
