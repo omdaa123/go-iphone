@@ -10,12 +10,12 @@ customersRouter.get("/", async (req, res, next) => {
   try {
     const { rows } = await pool.query(`
       WITH activity AS (
-        SELECT COALESCE(NULLIF(lower(email), ''), regexp_replace(COALESCE(phone, ''), '\\D', '', 'g')) AS customer_key,
+        SELECT COALESCE(NULLIF(lower(email), ''), regexp_replace(COALESCE(phone, ''), '[^0-9]', '', 'g')) AS customer_key,
                customer_name AS name, phone, email, address, city, created_at,
                'order'::text AS activity_type, total_cents AS amount_cents, status
         FROM orders
         UNION ALL
-        SELECT COALESCE(NULLIF(lower(email), ''), regexp_replace(COALESCE(phone, ''), '\\D', '', 'g')) AS customer_key,
+        SELECT COALESCE(NULLIF(lower(email), ''), regexp_replace(COALESCE(phone, ''), '[^0-9]', '', 'g')) AS customer_key,
                customer_name AS name, phone, email, NULL::text AS address, NULL::text AS city, created_at,
                'reservation'::text AS activity_type, 0::bigint AS amount_cents, status
         FROM reservations
