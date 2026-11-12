@@ -682,3 +682,5 @@ table td{font-size:12px;padding:15px 16px}
 .media-card>div>b{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .media-card>div>span{display:block}
 @media(max-width:640px){.media-toolbar{align-items:stretch}.media-toolbar .search-box,.media-toolbar select{width:100%;min-width:0}.media-toolbar .results-count{width:100%}}
+
+.live-dot.preview-dot{background:#d97706;box-shadow:0 0 0 3px rgba(217,119,6,.12)}
