@@ -11,6 +11,7 @@ categoriesRouter.use(requireAuth);
 
 categoriesRouter.get("/", async (req, res, next) => {
   try {
+    await pool.query(`INSERT INTO categories (key, label, sort_order) VALUES ($1, $2, $3) ON CONFLICT (key) DO NOTHING`, ["other-devices", "Other Devices", 7]);
     const { rows } = await pool.query(
       `SELECT c.*, m.url AS image_url FROM categories c LEFT JOIN media m ON m.id = c.image_media_id ORDER BY c.sort_order`
     );
