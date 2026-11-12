@@ -593,6 +593,11 @@ function Navbar({ go, cartCount, compareCount, onSearch, onCart }) {
                 <span className="absolute left-0 -bottom-0 h-px w-0 group-hover:w-full transition-all duration-300" style={{ backgroundColor: T.ink }} />
               </button>
             ))}
+            <button onClick={() => go("catalog", { category: "other-devices" })}
+              style={{ color: T.ink, fontSize: "13.5px" }} className="group relative font-medium py-1">
+              Other Devices
+              <span className="absolute left-0 -bottom-0 h-px w-0 group-hover:w-full transition-all duration-300" style={{ backgroundColor: T.ink }} />
+            </button>
             <div className="relative group/acc">
               <button onClick={() => go("catalog", { category: "apple-accessory" })}
                 style={{ color: T.ink, fontSize: "13.5px" }} className="group relative font-medium py-1 inline-flex items-center gap-1">
@@ -613,11 +618,6 @@ function Navbar({ go, cartCount, compareCount, onSearch, onCart }) {
                 </div>
               </div>
             </div>
-            <button onClick={() => go("catalog", { category: "other-devices" })}
-              style={{ color: T.ink, fontSize: "13.5px" }} className="group relative font-medium py-1">
-              Other Devices
-              <span className="absolute left-0 -bottom-0 h-px w-0 group-hover:w-full transition-all duration-300" style={{ backgroundColor: T.ink }} />
-            </button>
           </nav>
 
           <div className="flex items-center gap-1 md:gap-2">
