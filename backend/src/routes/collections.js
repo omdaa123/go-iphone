@@ -11,6 +11,17 @@ collectionsRouter.use(requireAuth);
 
 collectionsRouter.get("/", async (req, res, next) => {
   try {
+    // Ensure the four built-in storefront groups exist; never overwrite
+    // an administrator's existing settings or remove product assignments.
+    await pool.query(
+      `INSERT INTO collections (id, name, description, is_system, visible, sort_order)
+       VALUES
+         ('featured', 'Featured', 'Hand-picked highlights from the store.', true, true, 0),
+         ('new-arrivals', 'New Arrivals', 'The latest products added to the store.', true, true, 1),
+         ('best-sellers', 'Best Sellers', 'Popular products customers have purchased.', true, true, 2),
+         ('certified-refurbished', 'Certified Refurbished', 'Individually checked pre-owned devices.', true, true, 3)
+       ON CONFLICT (id) DO NOTHING`
+    );
     const { rows } = await pool.query(
       `SELECT c.*, COUNT(pc.product_id)::int AS product_count
        FROM collections c LEFT JOIN product_collections pc ON pc.collection_id = c.id
