@@ -100,8 +100,10 @@ publicRouter.get("/catalog", async (req, res, next) => {
 
     const siteContent = Object.fromEntries(content.rows.map((r) => [r.section_key, r.data]));
     siteContent.categoryImages = Object.fromEntries(cats.rows.filter((c) => c.image_url).map((c) => [c.key, c.image_url]));
+    const collectionDetails = siteContent.collectionDetails || {};
     siteContent.collections = cols.rows.map((c) => ({
       id: c.id, name: c.name, description: c.description || "", visible: c.visible, order: c.sort_order, system: c.is_system,
+      ...(collectionDetails[c.id] || {}),
     }));
     siteContent.settings = Object.fromEntries(settings.rows.map((r) => [r.key, r.value]));
 
