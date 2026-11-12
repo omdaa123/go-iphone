@@ -503,11 +503,13 @@ function ProductCard({ product, onOpen, onToggleCompare, isComparing, compareDis
   );
 }
 
-function ProductRail({ title, action, products, onOpen, onToggleCompare, compareIds, onNavAction }) {
+function ProductRail({ title, action, products, onOpen, onToggleCompare, compareIds, onNavAction, coverImage, description }) {
   const ref = useRef(null);
   const scroll = (dir) => ref.current?.scrollBy({ left: dir * 300, behavior: "smooth" });
   return (
     <section className="max-w-7xl mx-auto px-6 md:px-10 py-16 md:py-32">
+      {coverImage && <div className="mb-8 overflow-hidden" style={{height:"clamp(120px,18vw,220px)",backgroundColor:T.stone}}><img src={coverImage} alt={title} className="w-full h-full object-cover"/></div>}
+      {description && <p style={{color:T.graphite}} className="text-sm mb-4 max-w-2xl">{description}</p>}
       <SectionHeading title={title} action={action} onAction={onNavAction} />
       {products.length ? (
         <div className="relative">
@@ -1090,9 +1092,11 @@ function CompareTray({ compareIds, onClear, go }) {
    horizontal rail, so the two sections don't read as the same
    component twice.
    ============================================================ */
-function ProductGrid({ title, action, products, onOpen, onToggleCompare, compareIds, onNavAction }) {
+function ProductGrid({ title, action, products, onOpen, onToggleCompare, compareIds, onNavAction, coverImage, description }) {
   return (
     <section className="max-w-7xl mx-auto px-6 md:px-10 py-20 md:py-28">
+      {coverImage && <div className="mb-8 overflow-hidden" style={{height:"clamp(120px,18vw,220px)",backgroundColor:T.stone}}><img src={coverImage} alt={title} className="w-full h-full object-cover"/></div>}
+      {description && <p style={{color:T.graphite}} className="text-sm mb-4 max-w-2xl">{description}</p>}
       <SectionHeading title={title} action={action} onAction={onNavAction} />
       {products.length ? (
         <div className="grid grid-cols-2 md:grid-cols-3 gap-x-6 gap-y-12 md:gap-x-8 md:gap-y-16">
@@ -1159,7 +1163,7 @@ function HomePage({ go, compareIds, onToggleCompare }) {
   const preowned = PRODUCTS.filter((p) => p.hasUnits);
   const featured = PRODUCTS.find((p) => hasCollection(p, "featured") && p.category === "iphone");
   const merchandisingSections = collectionSettings
-    .filter((c) => c.visible !== false)
+    .filter((c) => c.visible !== false && c.homepageVisible !== false)
     .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
     .map((c) => ({
       ...c,
@@ -1191,7 +1195,7 @@ function HomePage({ go, compareIds, onToggleCompare }) {
     if (section.id === "featured") return <EditorialFeature key={section.id} product={section.products[0]} go={go} />;
     if (section.id === "certified-refurbished") return <CertifiedPreownedSection key={section.id} products={section.products} go={go} onOpen={(id) => go("product", { id })} onToggleCompare={onToggleCompare} compareIds={compareIds} />;
     const onNavAction = () => go("catalog", { category: section.products[0]?.category || "iphone" });
-    const props = { title: section.name, action: "View all", onNavAction, products: section.products, onOpen: (id) => go("product", { id }), onToggleCompare, compareIds };
+    const props = { title: section.name, action: "View all", onNavAction, products: section.products, onOpen: (id) => go("product", { id }), onToggleCompare, compareIds, coverImage: section.imageUrl || null, description: section.storeDescription || "" };
     if (section.id === "best-sellers") return <ProductGrid key={section.id} {...props} />;
     if (section.id === "new-arrivals") return <ProductRail key={section.id} {...props} />;
     const RailOrGrid = index % 2 === 0 ? ProductRail : ProductGrid;
