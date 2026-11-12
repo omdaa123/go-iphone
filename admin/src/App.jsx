@@ -347,8 +347,8 @@ function Products({ onError }) {
         <label>Stock qty<input type="number" min="0" step="1" value={v.stockQty} onChange={e => changeVariant(i, "stockQty", e.target.value)}/></label>
         <button type="button" className="icon-btn danger-icon" title="Remove variant" disabled={form.variants.length === 1} onClick={() => setForm(f => ({ ...f, variants: f.variants.filter((_, j) => j !== i) }))}><X size={15}/></button>
       </div>)}
+      </>}
       {!(editing === "new" && form.categoryKey === "iphone") && <div className="modal-foot"><button type="button" className="btn secondary" onClick={() => setEditing(null)}>Cancel</button><button className="btn primary" disabled={saving}>{saving ? "Saving…" : "Save product"}</button></div>}
-      {editing === "new" && form.categoryKey === "iphone" && iphoneStep === 3 && <div className="modal-foot"><button type="button" className="btn primary" disabled={saving}>{saving ? "Creating…" : "Create product & stock unit"}</button></div>}
     </form></div>}
     {deleteId && <div className="modal-backdrop"><div className="confirm-modal"><div className="eyebrow">CONFIRM ACTION</div><h2>Delete this product?</h2><p>This permanently removes the product and its linked variants and inventory units.</p><div className="modal-foot"><button className="btn secondary" onClick={() => setDeleteId("")}>Cancel</button><button className="btn danger" onClick={removeProduct}>Delete product</button></div></div></div>}
   </>;
