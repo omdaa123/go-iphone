@@ -3,7 +3,7 @@ import "dotenv/config";
 import { pool } from "../db.js";
 
 // Seeds the minimum needed to log in and start using the Admin app:
-// the storefront's 7 categories, the 5 default collections, and your
+// the storefront's 8 categories, the 5 default collections, and your
 // first OWNER account. Credentials come from environment variables —
 // never hardcode a real password into a file that might get committed.
 
