@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Activity, ArrowDownRight, ArrowUpRight, Bell, Box, Boxes, ChevronDown,
   ChevronLeft, ChevronRight, CircleHelp, Command, CreditCard, ExternalLink,
@@ -410,6 +410,7 @@ function HomepageBuilder({ onError }) {
   const [refresh, setRefresh] = useState(0);
   const [activeTab, setActiveTab] = useState("overview");
   const [previewMode, setPreviewMode] = useState("");
+  const previewFrameRef = useRef(null);
   const [draggedSection, setDraggedSection] = useState("");
   const [layoutHistory, setLayoutHistory] = useState([]);
   const [historyIndex, setHistoryIndex] = useState(-1);
@@ -592,6 +593,31 @@ function HomepageBuilder({ onError }) {
     catch (e) { onError(e.message); load(); }
   }
   const selectedImage = id => media.find(m => m.id === id)?.url || "";
+  function sendPreviewDraft() {
+    const frame = previewFrameRef.current;
+    if (!frame?.contentWindow) return;
+    const draftSlides = slides.map(slide => ({
+      id: slide.id, eyebrow: slide.eyebrow || "", title: slide.title || "",
+      sub: slide.subtitle || "", cta: slide.cta_text || "Shop now",
+      badge: slide.badge || "", active: slide.active !== false,
+      duration: Number(slide.duration_ms || 6500),
+      image: selectedImage(slide.image_media_id) || slide.image_url || "",
+      mobileImage: selectedImage(slide.mobile_image_media_id) || slide.mobile_image_url || "",
+      target: slide.link_product_id
+        ? { view: "product", params: { id: slide.link_product_id } }
+        : { view: "catalog", params: { category: slide.link_category_key || "iphone" } },
+    }));
+    frame.contentWindow.postMessage({
+      type: "GO_IPHONE_ADMIN_PREVIEW",
+      payload: { siteContent, heroSlides: draftSlides },
+    }, "https://go-iphone-storefront1.vercel.app");
+  }
+  useEffect(() => {
+    if (previewMode) {
+      const timer = window.setTimeout(sendPreviewDraft, 500);
+      return () => window.clearTimeout(timer);
+    }
+  }, [previewMode, siteContent, slides, media]);
   return <>
     <div className="page-heading"><div><div className="eyebrow">STORE EXPERIENCE</div><h1>Homepage Builder</h1><p>Manage the images and banners customers see across your storefront.</p></div><div className="heading-actions"><button className="btn secondary" onClick={() => setRefresh(v => v + 1)}><RefreshCw size={15}/> Refresh</button><button className="btn primary" onClick={startNew}><Plus size={15}/> Add hero slide</button></div></div>
     <div className="homepage-commandbar">
@@ -642,14 +668,22 @@ function HomepageBuilder({ onError }) {
         </div>
       </div>
     </section>}
-    {previewMode && <div className="modal-backdrop" onClick={() => setPreviewMode("")}><div className="editor-modal" onClick={e => e.stopPropagation()} style={{ width: "min(1100px,96vw)", maxHeight: "92vh", overflow: "auto" }}>
-      <div className="modal-head"><div><div className="eyebrow">PRE-PUBLISH CHECK</div><h2>Homepage preview</h2></div><div className="row-actions"><button type="button" className="btn secondary small" onClick={() => setPreviewMode("desktop")}>Desktop</button><button type="button" className="btn secondary small" onClick={() => setPreviewMode("mobile")}>Mobile</button><button type="button" className="icon-btn" onClick={() => setPreviewMode("")}><X size={18}/></button></div></div>
-      <div style={{ margin: "16px auto", width: previewMode === "mobile" ? 390 : "100%", maxWidth: "100%", border: "8px solid #202938", borderRadius: previewMode === "mobile" ? 28 : 12, overflow: "hidden", background: "#f8fafc" }}>
-        <div style={{ padding: 12, background: "#111827", color: "white", textAlign: "center", fontWeight: 700 }}>GO IPHONE</div>
-        {siteContent.homepageLayout.filter(item => item.visible !== false).sort((a,b)=>a.order-b.order).map(item => <div key={item.id} style={{ minHeight: item.type === "hero" || item.id === "hero" ? 190 : 90, padding: 20, margin: 10, borderRadius: 12, background: item.type === "hero" || item.id === "hero" ? "#1e293b" : "#fff", color: item.type === "hero" || item.id === "hero" ? "#fff" : "#1e293b", textAlign: "center", display: "grid", placeContent: "center", gap: 8 }}><b>{item.label || item.id}</b><span style={{ opacity: .8, fontSize: 12 }}>{item.type || item.id} · {item.publishAt ? "Scheduled" : "Visible"}</span></div>)}
+    {previewMode && <div className="modal-backdrop" onClick={() => setPreviewMode("")}>
+      <div className="editor-modal" onClick={e => e.stopPropagation()} style={{ width: "min(1500px,98vw)", height: "94vh", maxHeight: "94vh", display: "flex", flexDirection: "column", overflow: "hidden" }}>
+        <div className="modal-head" style={{ flexShrink: 0 }}>
+          <div><div className="eyebrow">REAL STOREFRONT PREVIEW</div><h2>Unpublished draft · {previewMode === "mobile" ? "Mobile" : "Desktop"}</h2></div>
+          <div className="row-actions">
+            <button type="button" className="btn secondary small" onClick={() => setPreviewMode("desktop")}>Desktop</button>
+            <button type="button" className="btn secondary small" onClick={() => setPreviewMode("mobile")}>Mobile</button>
+            <button type="button" className="icon-btn" onClick={() => setPreviewMode("")}><X size={18}/></button>
+          </div>
+        </div>
+        <div style={{ flex: 1, minHeight: 0, display: "flex", justifyContent: "center", overflow: "auto", background: "#e5e7eb", padding: 12 }}>
+          <iframe ref={previewFrameRef} title="GO iPhone real storefront preview" src="https://go-iphone-storefront1.vercel.app/?adminPreview=1" onLoad={sendPreviewDraft} style={{ width: previewMode === "mobile" ? 390 : "100%", maxWidth: "100%", height: "100%", minHeight: 500, border: previewMode === "mobile" ? "8px solid #202938" : "0", borderRadius: previewMode === "mobile" ? 28 : 8, background: "#fff" }} />
+        </div>
+        <p className="muted" style={{ padding: "8px 14px", margin: 0, flexShrink: 0 }}>This is the actual storefront with your unsaved draft applied. Preview mode blocks checkout and reservation submissions and does not publish changes.</p>
       </div>
-      <p className="muted">Structural preview of your current unsaved section order and visibility. Product imagery and live storefront data are not rendered in this preview.</p>
-    </div></div>}
+    </div>}
     {activeTab === "categories" && <section className="category-image-manager">
       <div className="panel-head"><div><h2>Category images <span className="count-pill">{categories.length}</span></h2><p>Choose the image shown for each shopping category across the storefront.</p></div></div>
       {loading ? <div className="loading-panel"><span className="spinner"/> Loading categories…</div> : <div className="category-image-grid">
