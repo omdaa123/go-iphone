@@ -259,6 +259,7 @@ function Products({ onError }) {
     if (!files.length) return;
     setUploading(true);
     try {
+      const hadPrimaryImage = Boolean(primaryImageMediaId);
       const uploaded = [];
       for (const file of files) {
         const dataUrl = await compressImage(file);
@@ -266,8 +267,8 @@ function Products({ onError }) {
         uploaded.push(d.media);
       }
       setMedia(current => [...uploaded, ...current]);
-      setPrimaryImageMediaId(current => current || uploaded[0]?.id || "");
-      setGalleryMediaIds(current => [...new Set([...current, ...uploaded.slice(current.length ? 0 : 1).map(item => item.id)])]);
+      if (!hadPrimaryImage && uploaded[0]) setPrimaryImageMediaId(uploaded[0].id);
+      setGalleryMediaIds(current => [...new Set([...current, ...uploaded.slice(hadPrimaryImage ? 0 : 1).map(item => item.id)])]);
     } catch (e) { onError(e.message); }
     finally { setUploading(false); }
   }
