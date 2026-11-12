@@ -765,46 +765,92 @@ function HomepageBuilder({ onError }) {
 
 function CollectionsManager({ onError }) {
   const [items, setItems] = useState([]);
+  const [products, setProducts] = useState([]);
+  const [assigned, setAssigned] = useState([]);
+  const [details, setDetails] = useState({});
   const [loading, setLoading] = useState(true);
-  const [refresh, setRefresh] = useState(0);
+  const [productsLoading, setProductsLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [refresh, setRefresh] = useState(0);
+  const [selectedId, setSelectedId] = useState("");
+  const [query, setQuery] = useState("");
+  const [productQuery, setProductQuery] = useState("");
+  const [visibilityFilter, setVisibilityFilter] = useState("all");
   const [editing, setEditing] = useState(null);
   const [form, setForm] = useState({ id: "", name: "", description: "" });
-  const [query, setQuery] = useState("");
-  const [visibilityFilter, setVisibilityFilter] = useState("all");
+  const selected = items.find(item => item.id === selectedId);
   const visibleItems = items.filter(item => {
     const matchesQuery = !query.trim() || [item.name, item.id, item.description].some(value => String(value || "").toLowerCase().includes(query.trim().toLowerCase()));
     const matchesVisibility = visibilityFilter === "all" || (visibilityFilter === "visible" ? item.visible !== false : item.visible === false);
     return matchesQuery && matchesVisibility;
   });
-  const visibleCount = items.filter(item => item.visible !== false).length;
-  const hiddenCount = items.length - visibleCount;
-  const productTotal = items.reduce((sum, item) => sum + Number(item.product_count || 0), 0);
+  const filteredProducts = products.filter(p => !productQuery.trim() || [p.name,p.category_key,p.product_type].some(v => String(v || "").toLowerCase().includes(productQuery.toLowerCase())));
   const load = useCallback(async () => {
     setLoading(true);
-    try { const d = await request("/collections"); setItems(d.collections || []); }
-    catch (e) { onError(e.message); }
+    try {
+      const [collectionData, contentData, productData] = await Promise.all([request("/collections"), request("/site-content"), request("/products")]);
+      setItems(collectionData.collections || []);
+      setDetails(contentData.siteContent?.collectionDetails || {});
+      setProducts(productData.products || []);
+    } catch (e) { onError(e.message); }
     finally { setLoading(false); }
   }, [onError]);
   useEffect(() => { load(); }, [load, refresh]);
+  useEffect(() => {
+    if (!selectedId) return;
+    let active = true;
+    setProductsLoading(true);
+    Promise.all([request("/collections/" + encodeURIComponent(selectedId) + "/products"), request("/site-content")])
+      .then(([d, content]) => {
+        if (!active) return;
+        setAssigned((d.products || []).map(p => p.id));
+        setDetails(content.siteContent?.collectionDetails || {});
+      })
+      .catch(e => onError(e.message))
+      .finally(() => { if (active) setProductsLoading(false); });
+    return () => { active = false; };
+  }, [selectedId, refresh, onError]);
   function startNew() { setForm({ id: "", name: "", description: "" }); setEditing("new"); }
   function startEdit(item) { setForm({ id: item.id, name: item.name || "", description: item.description || "" }); setEditing(item.id); }
   async function save(event) {
     event.preventDefault(); setSaving(true);
     try {
       if (editing === "new") {
-        await request("/collections", { method: "POST", body: JSON.stringify({
-          id: form.id.trim().toLowerCase().replace(/[^a-z0-9-]+/g, "-").replace(/^-|-$/g, ""),
-          name: form.name.trim(), description: form.description.trim() || null,
-        }) });
+        await request("/collections", { method: "POST", body: JSON.stringify({ id: form.id.trim().toLowerCase().replace(/[^a-z0-9-]+/g, "-").replace(/^-|-$/g, ""), name: form.name.trim(), description: form.description.trim() || null }) });
       } else {
-        await request("/collections/" + encodeURIComponent(editing), { method: "PATCH", body: JSON.stringify({
-          name: form.name.trim(), description: form.description.trim() || null,
-        }) });
+        await request("/collections/" + encodeURIComponent(editing), { method: "PATCH", body: JSON.stringify({ name: form.name.trim(), description: form.description.trim() || null }) });
       }
       setEditing(null); setRefresh(v => v + 1);
     } catch (e) { onError(e.message); }
     finally { setSaving(false); }
+  }
+  async function saveProducts() {
+    if (!selected) return;
+    setSaving(true);
+    try {
+      await request("/collections/" + encodeURIComponent(selected.id) + "/products", { method: "PUT", body: JSON.stringify({ productIds: assigned }) });
+      setItems(list => list.map(item => item.id === selected.id ? { ...item, product_count: assigned.length } : item));
+    } catch (e) { onError(e.message); }
+    finally { setSaving(false); }
+  }
+  async function saveDetails(patch) {
+    const next = { ...details, [selected.id]: { ...(details[selected.id] || {}), ...patch } };
+    setDetails(next);
+    setSaving(true);
+    try { await request("/site-content/collectionDetails", { method: "PUT", body: JSON.stringify(next) }); }
+    catch (e) { onError(e.message); }
+    finally { setSaving(false); }
+  }
+  async function uploadCover(file) {
+    if (!file || !selected) return;
+    setUploading(true);
+    try {
+      const dataUrl = await compressImage(file);
+      const result = await request("/media", { method: "POST", body: JSON.stringify({ dataUrl, fileName: file.name, usageTag: "collection" }) });
+      await saveDetails({ imageUrl: result.media.url });
+    } catch (e) { onError(e.message); }
+    finally { setUploading(false); }
   }
   async function toggleVisible(item) {
     try {
@@ -817,45 +863,44 @@ function CollectionsManager({ onError }) {
     if (target < 0 || target >= next.length) return;
     [next[index], next[target]] = [next[target], next[index]];
     setItems(next);
-    try {
-      await Promise.all(next.map((item, order) => request("/collections/" + encodeURIComponent(item.id), {
-        method: "PATCH", body: JSON.stringify({ sortOrder: order }),
-      })));
-    } catch (e) { onError(e.message); load(); }
+    try { await Promise.all(next.map((item, order) => request("/collections/" + encodeURIComponent(item.id), { method: "PATCH", body: JSON.stringify({ sortOrder: order }) }))); }
+    catch (e) { onError(e.message); load(); }
   }
   async function remove(item) {
     if (item.is_system) return;
     if (!window.confirm("Delete collection \"" + item.name + "\"? Products will lose this collection tag.")) return;
-    try { await request("/collections/" + encodeURIComponent(item.id), { method: "DELETE" }); setItems(list => list.filter(x => x.id !== item.id)); }
+    try { await request("/collections/" + encodeURIComponent(item.id), { method: "DELETE" }); setItems(list => list.filter(x => x.id !== item.id)); if (selectedId === item.id) setSelectedId(""); }
     catch (e) { onError(e.message); }
   }
+  const selectedDetails = selected ? (details[selected.id] || {}) : {};
   return <>
-    <div className="page-heading"><div><div className="eyebrow">STORE EXPERIENCE</div><h1>Collections</h1><p>Build and organize the product sections that appear across your storefront.</p></div><div className="heading-actions"><button className="btn secondary" onClick={() => setRefresh(v => v + 1)}><RefreshCw size={15}/> Refresh</button><button className="btn primary" onClick={startNew}><Plus size={15}/> New collection</button></div></div>
-    <div className="homepage-intro"><div className="homepage-intro-icon"><ShoppingBag size={22}/></div><div><b>Merchandising sections</b><p>Collections group products into storefront sections. Add products to a collection from the product editor, then control its title and visibility here.</p></div><span className="homepage-live"><i/> Store connected</span></div>
-    <div className="collection-overview-grid"><div className="collection-overview-card"><span>Total collections</span><b>{items.length}</b><small>Curated storefront groups</small></div><div className="collection-overview-card"><span>Visible on store</span><b>{visibleCount}</b><small>Available to shoppers</small></div><div className="collection-overview-card"><span>Hidden</span><b>{hiddenCount}</b><small>Saved but not displayed</small></div><div className="collection-overview-card"><span>Product assignments</span><b>{productTotal}</b><small>Across all collections</small></div></div>
-    <section className="panel">
-      <div className="panel-head"><div><h2>All collections <span className="count-pill">{items.length}</span></h2><p>Use the arrows to change display order. Built-in collections are protected from deletion.</p></div></div>
-      <div className="collection-toolbar"><div className="search-box"><Search size={16}/><input value={query} onChange={e => setQuery(e.target.value)} placeholder="Search collections by name or ID…"/></div><select value={visibilityFilter} onChange={e => setVisibilityFilter(e.target.value)}><option value="all">All visibility</option><option value="visible">Visible only</option><option value="hidden">Hidden only</option></select><span className="results-count">{visibleItems.length} shown</span></div>
-      {loading ? <div className="loading-panel"><span className="spinner"/> Loading collections…</div> : visibleItems.length ? <div className="collection-admin-list">{visibleItems.map((item) => <article className="collection-admin-row" key={item.id}>
-        <div className="collection-admin-order"><button className="btn secondary small" disabled={items.indexOf(item) === 0} onClick={() => move(items.indexOf(item), -1)} aria-label="Move collection up"><ArrowUpRight size={14}/></button><button className="btn secondary small" disabled={items.indexOf(item) === items.length - 1} onClick={() => move(items.indexOf(item), 1)} aria-label="Move collection down"><ArrowDownRight size={14}/></button></div>
-        <div className="collection-admin-info"><div><b>{item.name}</b>{item.is_system && <span className="count-pill">Built-in</span>}</div><span>{item.description || item.id}</span></div>
-        <div className="collection-admin-count"><b>{Number(item.product_count || 0)}</b><span>products</span></div>
-        <span className={item.visible === false ? "status hidden" : "status published"}>{item.visible === false ? "Hidden" : "Visible"}</span>
-        <div className="row-actions"><button className="btn secondary small" onClick={() => startEdit(item)}>Edit</button><button className="btn secondary small" onClick={() => toggleVisible(item)}>{item.visible === false ? "Show" : "Hide"}</button>{!item.is_system && <button className="btn danger small" onClick={() => remove(item)}>Delete</button>}</div>
-      </article>)}</div> : <EmptyState icon={ShoppingBag} title={items.length ? "No matching collections" : "No collections yet"} detail={items.length ? "Try a different search or visibility filter." : "Create your first collection to build a custom product section."}/>}
-    </section>
-    {editing && <div className="modal-backdrop"><form className="editor-modal" onSubmit={save}>
-      <div className="modal-head"><div><div className="eyebrow">MERCHANDISING</div><h2>{editing === "new" ? "Create collection" : "Edit collection"}</h2></div><button type="button" className="icon-btn" onClick={() => setEditing(null)}><X size={19}/></button></div>
-      <div className="editor-grid">
-        {editing === "new" && <label className="field-wide">Collection ID<input required pattern="[a-z0-9-]+" value={form.id} onChange={e => setForm(f => ({ ...f, id: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, "-") }))} placeholder="e.g. student-deals"/><span className="field-hint">Use lowercase letters, numbers and hyphens. This ID is permanent.</span></label>}
-        <label className="field-wide">Section title<input required maxLength={100} value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} placeholder="e.g. Student deals"/></label>
-        <label className="field-wide">Description (optional)<textarea maxLength={300} rows={3} value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} placeholder="A short internal description for this collection"/></label>
-      </div>
-      <div className="modal-foot"><button type="button" className="btn secondary" onClick={() => setEditing(null)}>Cancel</button><button className="btn primary" disabled={saving}>{saving ? "Saving…" : editing === "new" ? "Create collection" : "Save changes"}</button></div>
-    </form></div>}
+    <div className="page-heading"><div><div className="eyebrow">STORE EXPERIENCE / MERCHANDISING</div><h1>Collections</h1><p>Build product groups here. Homepage Builder controls where those groups appear.</p></div><div className="heading-actions"><button className="btn secondary" onClick={() => setRefresh(v => v + 1)}><RefreshCw size={15}/> Refresh</button><button className="btn primary" onClick={startNew}><Plus size={15}/> New collection</button></div></div>
+    <div className="homepage-intro"><div className="homepage-intro-icon"><ShoppingBag size={22}/></div><div><b>Product merchandising</b><p>Choose products, set a collection cover and description. Display placement stays in Homepage Builder.</p></div><span className="homepage-live"><i/> Store connected</span></div>
+    <div className="collection-overview-grid"><div className="collection-overview-card"><span>Total collections</span><b>{items.length}</b><small>Curated product groups</small></div><div className="collection-overview-card"><span>Visible on store</span><b>{items.filter(x=>x.visible!==false).length}</b><small>Enabled collection tags</small></div><div className="collection-overview-card"><span>Hidden</span><b>{items.filter(x=>x.visible===false).length}</b><small>Disabled collection tags</small></div><div className="collection-overview-card"><span>Product assignments</span><b>{items.reduce((sum,x)=>sum+Number(x.product_count||0),0)}</b><small>Across all groups</small></div></div>
+    <div className="collections-workspace">
+      <section className="panel collections-list-panel">
+        <div className="panel-head"><div><h2>All collections <span className="count-pill">{items.length}</span></h2><p>Select a collection to manage its products.</p></div></div>
+        <div className="collection-toolbar"><div className="search-box"><Search size={16}/><input value={query} onChange={e=>setQuery(e.target.value)} placeholder="Search collections…"/></div><select value={visibilityFilter} onChange={e=>setVisibilityFilter(e.target.value)}><option value="all">All visibility</option><option value="visible">Visible</option><option value="hidden">Hidden</option></select></div>
+        {loading ? <div className="loading-panel"><span className="spinner"/> Loading collections…</div> : <div className="collection-admin-list">{visibleItems.map(item=><article className={"collection-admin-row collection-select-row "+(selectedId===item.id?"selected":"")} key={item.id}>
+          <button type="button" className="collection-open-button" onClick={()=>setSelectedId(item.id)}><div className="collection-cover-thumb">{details[item.id]?.imageUrl?<img src={details[item.id].imageUrl} alt=""/>:<ShoppingBag size={20}/>}</div><div className="collection-admin-info"><div><b>{item.name}</b>{item.is_system&&<span className="count-pill">Built-in</span>}</div><span>{item.description||item.id}</span></div><div className="collection-admin-count"><b>{Number(item.product_count||0)}</b><span>products</span></div></button>
+          <div className="collection-row-tools"><button className="btn secondary small" onClick={()=>move(items.indexOf(item),-1)} disabled={items.indexOf(item)===0}>↑</button><button className="btn secondary small" onClick={()=>move(items.indexOf(item),1)} disabled={items.indexOf(item)===items.length-1}>↓</button><button className="btn secondary small" onClick={()=>startEdit(item)}>Edit</button><button className="btn secondary small" onClick={()=>toggleVisible(item)}>{item.visible===false?"Enable":"Disable"}</button>{!item.is_system&&<button className="btn danger small" onClick={()=>remove(item)}>Delete</button>}</div>
+        </article>)}</div>}
+      </section>
+      <section className="panel collection-detail-panel">
+        {!selected ? <div className="collection-empty-detail"><ShoppingBag size={34}/><h2>Choose a collection</h2><p>Open any collection on the left to manage its products, image and storefront description.</p></div> : <>
+          <div className="panel-head collection-detail-heading"><div><div className="eyebrow">COLLECTION WORKSPACE</div><h2>{selected.name}</h2><p>{selected.id} · {assigned.length} selected products</p></div><span className={selected.visible===false?"status hidden":"status published"}>{selected.visible===false?"Disabled":"Enabled"}</span></div>
+          <div className="collection-cover-editor">{selectedDetails.imageUrl?<img src={selectedDetails.imageUrl} alt={selected.name}/>:<div className="collection-cover-placeholder"><Image size={28}/><span>No collection cover yet</span></div>}<div><b>Collection cover</b><p>Upload an image to use as the collection's visual identity.</p><label className="btn secondary small upload-label">{uploading?"Uploading…":"Upload cover image"}<input type="file" accept="image/jpeg,image/png,image/webp,image/gif" disabled={uploading} onChange={e=>{uploadCover(e.target.files?.[0]);e.target.value="";}}/></label>{selectedDetails.imageUrl&&<button className="text-btn" onClick={()=>saveDetails({imageUrl:null})}>Remove cover</button>}</div></div>
+          <label className="collection-description-field">Storefront description<textarea rows="3" maxLength={300} value={selectedDetails.storeDescription??selected.description??""} onChange={e=>setDetails(d=>({...d,[selected.id]:{...(d[selected.id]||{}),storeDescription:e.target.value}}))} placeholder="Describe what shoppers will find in this collection."/></label>
+          <div className="collection-products-heading"><div><h3>Products in this collection</h3><p>Choose the products that belong to this group.</p></div><button className="btn primary" onClick={()=>saveDetails({storeDescription:selectedDetails.storeDescription??selected.description??""})} disabled={saving}>Save description</button></div>
+          <div className="collection-toolbar"><div className="search-box"><Search size={16}/><input value={productQuery} onChange={e=>setProductQuery(e.target.value)} placeholder="Search products…"/></div><span className="results-count">{assigned.length} selected</span></div>
+          {productsLoading?<div className="loading-panel"><span className="spinner"/> Loading products…</div>:<div className="collection-product-picker">{filteredProducts.map(p=><label className="collection-product-option" key={p.id}><input type="checkbox" checked={assigned.includes(p.id)} onChange={e=>setAssigned(ids=>e.target.checked?[...ids,p.id]:ids.filter(id=>id!==p.id))}/>{p.image_url?<img src={p.image_url} alt=""/>:<span className="product-avatar"><Smartphone size={16}/></span>}<span><b>{p.name}</b><small>{titleCase(p.category_key)} · {p.visibility}</small></span><span className={"status "+p.visibility}>{p.visibility}</span></label>)}</div>}
+          <div className="modal-foot"><span className="muted">Changes to product membership are saved separately.</span><button className="btn primary" onClick={saveProducts} disabled={saving||productsLoading}>{saving?"Saving…":"Save product selection"}</button></div>
+        </>}
+      </section>
+    </div>
+    {editing&&<div className="modal-backdrop"><form className="editor-modal" onSubmit={save}><div className="modal-head"><div><div className="eyebrow">MERCHANDISING</div><h2>{editing==="new"?"Create collection":"Edit collection"}</h2></div><button type="button" className="icon-btn" onClick={()=>setEditing(null)}><X size={19}/></button></div><div className="editor-grid">{editing==="new"&&<label className="field-wide">Collection ID<input required pattern="[a-z0-9-]+" value={form.id} onChange={e=>setForm(f=>({...f,id:e.target.value.toLowerCase().replace(/[^a-z0-9-]/g,"-")}))} placeholder="e.g. student-deals"/><span className="field-hint">Lowercase letters, numbers and hyphens.</span></label>}<label className="field-wide">Collection name<input required maxLength={100} value={form.name} onChange={e=>setForm(f=>({...f,name:e.target.value}))}/></label><label className="field-wide">Internal description<input maxLength={300} value={form.description} onChange={e=>setForm(f=>({...f,description:e.target.value}))}/></label></div><div className="modal-foot"><button type="button" className="btn secondary" onClick={()=>setEditing(null)}>Cancel</button><button className="btn primary" disabled={saving}>{saving?"Saving…":editing==="new"?"Create collection":"Save changes"}</button></div></form></div>}
   </>;
 }
-
 
 const DESIGN_DEFAULTS = {
   preset: "signature",
