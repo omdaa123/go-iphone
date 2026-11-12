@@ -384,6 +384,7 @@ function HomepageBuilder({ onError }) {
   const blank = { eyebrow: "GO IPHONE", title: "", subtitle: "", badge: "", ctaText: "Shop now", linkCategoryKey: "iphone", linkProductId: "", imageMediaId: "", mobileImageMediaId: "", active: true, durationMs: 6500 };
   const [slides, setSlides] = useState([]);
   const [categories, setCategories] = useState([]);
+  const [collections, setCollections] = useState([]);
   const [siteContent, setSiteContent] = useState({
     homepageLayout: [
       { id: "hero", label: "Hero banner", visible: true, order: 0 },
@@ -436,10 +437,11 @@ function HomepageBuilder({ onError }) {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const results = await Promise.all([request("/hero-slides"), request("/media"), request("/categories"), request("/site-content")]);
+      const results = await Promise.all([request("/hero-slides"), request("/media"), request("/categories"), request("/site-content"), request("/collections")]);
       setSlides(results[0].heroSlides || []);
       setMedia(results[1].media || []);
       setCategories(results[2].categories || []);
+      setCollections(results[4].collections || []);
       const saved = results[3].siteContent || {};
       setSiteContent(current => ({
         ...current,
@@ -632,7 +634,7 @@ function HomepageBuilder({ onError }) {
       <div><span>MEDIA ASSETS</span><b>{media.length}</b><small>Available in your library</small></div>
     </div>
     <nav className="homepage-tabs" aria-label="Homepage builder sections">
-      {[["overview","Hero & banners"],["layout","Page structure"],["categories","Category visuals"],["content","Content & trust"]].map(([id,label],index)=><button type="button" key={id} className={activeTab===id?"active":""} onClick={()=>setActiveTab(id)}><span>0{index+1}</span>{label}</button>)}
+      {[["overview","Hero & banners"],["layout","Page structure"],["collections","Collections"],["categories","Category visuals"],["content","Content & trust"]].map(([id,label],index)=><button type="button" key={id} className={activeTab===id?"active":""} onClick={()=>setActiveTab(id)}><span>0{index+1}</span>{label}</button>)}
     </nav>
     {activeTab === "layout" && <section className="panel homepage-editor-panel" style={{ marginBottom: 24 }}>
       <div className="panel-head"><div><h2>Homepage sections</h2><p>Edit the Tools and Trust content shown below your product collections.</p></div></div>
@@ -701,6 +703,31 @@ function HomepageBuilder({ onError }) {
         <p className="muted" style={{ padding: "8px 14px", margin: 0, flexShrink: 0 }}>This is the actual storefront with your unsaved draft applied. Preview mode blocks checkout and reservation submissions and does not publish changes.</p>
       </div>
     </div>}
+    {activeTab === "collections" && <section className="panel homepage-editor-panel">
+      <div className="panel-head"><div><h2>Collections on the homepage</h2><p>Choose which product groups appear. Manage their products and cover images in Collections.</p></div></div>
+      <div className="homepage-collection-control-list">
+        {collections.map((item,index)=>{
+          const config=siteContent.collectionDetails?.[item.id]||{};
+          const enabled=config.homepageVisible!==false;
+          return <article className="homepage-collection-control" key={item.id}>
+            <div className="homepage-collection-control-info">{config.imageUrl?<img src={config.imageUrl} alt=""/>:<span><ShoppingBag size={18}/></span>}<div><b>{item.name}</b><small>{item.product_count||0} products · {item.id}</small></div></div>
+            <label className="homepage-toggle"><input type="checkbox" checked={enabled} onChange={async e=>{
+              const next={...(siteContent.collectionDetails||{}),[item.id]:{...config,homepageVisible:e.target.checked}};
+              setSiteContent(current=>({...current,collectionDetails:next}));
+              await saveSiteSection("collectionDetails",next);
+            }}/> Show on homepage</label>
+            <div className="row-actions"><button className="btn secondary small" disabled={index===0} onClick={async()=>{
+              const next=[...collections];[next[index-1],next[index]]=[next[index],next[index-1]];setCollections(next);
+              try{await Promise.all(next.map((entry,order)=>request("/collections/"+encodeURIComponent(entry.id),{method:"PATCH",body:JSON.stringify({sortOrder:order})})));}catch(e){onError(e.message);load();}
+            }}>↑</button><button className="btn secondary small" disabled={index===collections.length-1} onClick={async()=>{
+              const next=[...collections];[next[index+1],next[index]]=[next[index],next[index+1]];setCollections(next);
+              try{await Promise.all(next.map((entry,order)=>request("/collections/"+encodeURIComponent(entry.id),{method:"PATCH",body:JSON.stringify({sortOrder:order})})));}catch(e){onError(e.message);load();}
+            }}>↓</button></div>
+          </article>;
+        })}
+        {!collections.length&&<EmptyState icon={ShoppingBag} title="No collections yet" detail="Create a collection first, then choose it here to feature it on the homepage."/>}
+      </div>
+    </section>}
     {activeTab === "categories" && <section className="category-image-manager">
       <div className="panel-head"><div><h2>Category images <span className="count-pill">{categories.length}</span></h2><p>Choose the image shown for each shopping category across the storefront.</p></div></div>
       {loading ? <div className="loading-panel"><span className="spinner"/> Loading categories…</div> : <div className="category-image-grid">
