@@ -446,6 +446,9 @@ function HomepageBuilder({ onError }) {
         toolsSection: { ...current.toolsSection, ...(saved.toolsSection || {}) },
         trustSection: { ...current.trustSection, ...(saved.trustSection || {}), points: Array.isArray(saved.trustSection?.points) ? saved.trustSection.points : current.trustSection.points },
       }));
+      const initialLayout = Array.isArray(saved.homepageLayout) ? saved.homepageLayout : siteContent.homepageLayout;
+      setLayoutHistory([initialLayout.map(item => ({ ...item }))]);
+      setHistoryIndex(0);
     } catch (e) { onError(e.message); }
     finally { setLoading(false); }
   }, [onError]);
@@ -475,6 +478,11 @@ function HomepageBuilder({ onError }) {
     items.splice(to, 0, moved);
     commitLayout(items.map((item, i) => ({ ...item, order: i })));
     setDraggedSection("");
+  }
+  async function saveHeroSchedule(slideId, key, value) {
+    const schedules = { ...(siteContent.heroSlideSchedules || {}), [slideId]: { ...(siteContent.heroSlideSchedules?.[slideId] || {}), [key]: value || null } };
+    setSiteContent(current => ({ ...current, heroSlideSchedules: schedules }));
+    await saveSiteSection("heroSlideSchedules", schedules);
   }
   async function saveSiteSection(section, data) {
     setSaving(true);
@@ -663,7 +671,12 @@ function HomepageBuilder({ onError }) {
       <div className="panel-head"><div><h2>Hero slides <span className="count-pill">{slides.length}</span></h2><p>Desktop and mobile imagery, headline, CTA and visibility.</p></div></div>
       {loading ? <div className="loading-panel"><span className="spinner"/> Loading homepage content…</div> : slides.length ? <div className="hero-slide-list">{slides.map((slide, index) => <article className="hero-slide-card" key={slide.id}>
         <div className="hero-slide-preview">{slide.image_url ? <img src={slide.image_url} alt=""/> : <div className="hero-preview-empty"><Image size={27}/><span>No desktop image</span></div>}<span className={slide.active ? "hero-state active" : "hero-state"}>{slide.active ? "LIVE" : "HIDDEN"}</span><span className="hero-order">#{index + 1}</span></div>
-        <div className="hero-slide-info"><div className="eyebrow">{slide.eyebrow || "GO IPHONE"}</div><h3>{slide.title}</h3><p>{slide.subtitle || "No supporting text added."}</p><div className="hero-slide-meta"><span>{slide.cta_text || "No CTA"}</span><span>{Math.round(Number(slide.duration_ms || 6500) / 100) / 10}s duration</span><span>{slide.mobile_image_url ? "Mobile image set" : "No mobile image"}</span></div></div>
+        <div className="hero-slide-info"><div className="eyebrow">{slide.eyebrow || "GO IPHONE"}</div><h3>{slide.title}</h3><p>{slide.subtitle || "No supporting text added."}</p><div className="hero-slide-meta"><span>{slide.cta_text || "No CTA"}</span><span>{Math.round(Number(slide.duration_ms || 6500) / 100) / 10}s duration</span><span>{slide.mobile_image_url ? "Mobile image set" : "No mobile image"}</span></div>
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 10 }}>
+          <label style={{ display: "grid", gap: 4, fontSize: 11 }}>Banner starts<input type="datetime-local" value={siteContent.heroSlideSchedules?.[slide.id]?.publishAt ? new Date(siteContent.heroSlideSchedules[slide.id].publishAt).toISOString().slice(0,16) : ""} onChange={e => setSiteContent(current => ({ ...current, heroSlideSchedules: { ...(current.heroSlideSchedules || {}), [slide.id]: { ...(current.heroSlideSchedules?.[slide.id] || {}), publishAt: e.target.value ? new Date(e.target.value).toISOString() : null } } }))}/></label>
+          <label style={{ display: "grid", gap: 4, fontSize: 11 }}>Banner ends<input type="datetime-local" value={siteContent.heroSlideSchedules?.[slide.id]?.unpublishAt ? new Date(siteContent.heroSlideSchedules[slide.id].unpublishAt).toISOString().slice(0,16) : ""} onChange={e => setSiteContent(current => ({ ...current, heroSlideSchedules: { ...(current.heroSlideSchedules || {}), [slide.id]: { ...(current.heroSlideSchedules?.[slide.id] || {}), unpublishAt: e.target.value ? new Date(e.target.value).toISOString() : null } } }))}/></label>
+          <button type="button" className="btn secondary small" onClick={() => saveSiteSection("heroSlideSchedules", siteContent.heroSlideSchedules || {})}>Save banner schedule</button>
+        </div></div>
         <div className="hero-slide-actions"><button className="btn secondary small" disabled={index === 0} onClick={() => move(index, -1)} title="Move up"><ArrowUpRight size={14}/></button><button className="btn secondary small" disabled={index === slides.length - 1} onClick={() => move(index, 1)} title="Move down"><ArrowDownRight size={14}/></button><button className="btn secondary small" onClick={() => startEdit(slide)}>Edit</button><button className="btn danger small" onClick={() => remove(slide.id)}>Delete</button></div>
       </article>)}</div> : <EmptyState icon={Image} title="No custom hero slides yet" detail="Your storefront is still showing its default hero. Add a slide whenever you are ready to publish your own banner."/>}
     </section>}
