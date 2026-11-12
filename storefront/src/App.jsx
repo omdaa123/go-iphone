@@ -1328,6 +1328,8 @@ function CatalogPage({ category, go, compareIds, onToggleCompare }) {
             { key: "smartphone", label: "Smartphones" },
             { key: "smartwatch", label: "Smart Watches" },
             { key: "tablet", label: "Tablets" },
+            { key: "speakers", label: "Speakers" },
+            { key: "headphones", label: "Headphones" },
             { key: "other-electronics", label: "Other Electronics" },
           ].map((branch) => (
             <button key={branch.key} onClick={() => { setSubcategory(branch.key); setDeviceSubcategory("all"); }}
@@ -1340,20 +1342,7 @@ function CatalogPage({ category, go, compareIds, onToggleCompare }) {
       )}
 
       {category === "other-devices" && subcategory === "other-electronics" && (
-        <div className="flex flex-wrap gap-2 mb-8" aria-label="Other electronics types">
-          {[
-            { key: "all", label: "All electronics" },
-            { key: "speakers", label: "Speakers" },
-            { key: "headphones", label: "Headphones" },
-            { key: "other-electronics", label: "Other Electronics" },
-          ].map((branch) => (
-            <button key={branch.key} onClick={() => setDeviceSubcategory(branch.key)}
-              style={{ borderColor: deviceSubcategory === branch.key ? T.ink : T.line, backgroundColor: deviceSubcategory === branch.key ? T.ink : "transparent", color: deviceSubcategory === branch.key ? "#fff" : T.ink }}
-              className="border px-4 py-2.5 text-sm font-medium transition-colors">
-              {branch.label}
-            </button>
-          ))}
-        </div>
+        <div className="mb-8 text-sm" style={{ color: T.graphite }}>Browse additional electronics and accessories in this branch.</div>
       )}
 
       <div className="flex flex-col md:flex-row gap-10">
