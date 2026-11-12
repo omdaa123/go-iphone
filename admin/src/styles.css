@@ -671,3 +671,14 @@ table td{font-size:12px;padding:15px 16px}
 .homepage-content-card:nth-child(2){border-left:4px solid #36a58c}
 .category-image-card{border-top:3px solid #9674d2}
 .hero-slide-card{border-left:4px solid #e2a13c}
+
+
+/* Media Library controls */
+.media-toolbar{display:flex;align-items:center;gap:12px;padding:16px 20px;border-bottom:1px solid #e8ebf0;flex-wrap:wrap}
+.media-toolbar .search-box{flex:1;min-width:240px}
+.media-toolbar select{min-width:170px}
+.media-upload-progress{display:flex;align-items:center;gap:10px;padding:12px 20px;background:#eff6ff;color:#1d4ed8;font-size:13px;font-weight:650}
+.media-card>div{min-width:0}
+.media-card>div>b{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.media-card>div>span{display:block}
+@media(max-width:640px){.media-toolbar{align-items:stretch}.media-toolbar .search-box,.media-toolbar select{width:100%;min-width:0}.media-toolbar .results-count{width:100%}}
