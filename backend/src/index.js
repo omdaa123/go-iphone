@@ -15,6 +15,7 @@ import { heroSlidesRouter } from "./routes/heroSlides.js";
 import { siteContentRouter, settingsRouter } from "./routes/siteContent.js";
 import { mediaRouter } from "./routes/media.js";
 import { adminUsersRouter } from "./routes/adminUsers.js";
+import { customersRouter } from "./routes/customers.js";
 import { statsRouter } from "./routes/stats.js";
 import { auditRouter } from "./routes/audit.js";
 import { publicRouter } from "./routes/publicApi.js";
@@ -64,6 +65,7 @@ app.use("/admin/media", mediaRouter);
 app.use("/admin/stats", statsRouter);
 app.use("/admin", auditRouter); // /admin/audit-logs, /admin/login-events (OWNER only)
 app.use("/admin/users", adminUsersRouter); // OWNER only, enforced inside the router itself
+app.use("/admin/customers", customersRouter);
 
 // Local-dev only: serve files saved by the local-disk storage adapter.
 // In production, media lives in object storage/CDN and this is unused.
