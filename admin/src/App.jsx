@@ -67,7 +67,7 @@ const WATCH_TECH_SPECS = {
 };
 const WATCH_EDITIONS = {
   hermes:["Apple Watch Series 12","Apple Watch Series 11","Apple Watch Ultra 3","Apple Watch Ultra 2","Apple Watch Series 9","Apple Watch Series 6","Apple Watch Series 5","Apple Watch Series 4","Apple Watch Series 2","Apple Watch (1st generation)"],
-  nike:["Apple Watch Series 11","Apple Watch Series 7","Apple Watch Series 6","Apple Watch Series 5","Apple Watch Series 4","Apple Watch Series 3","Apple Watch Series 2"]
+  nike:["Apple Watch Series 12","Apple Watch SE 3","Apple Watch Series 11","Apple Watch Series 7","Apple Watch Series 6","Apple Watch Series 5","Apple Watch Series 4","Apple Watch Series 3","Apple Watch Series 2"]
 };
 
 async function request(path, options = {}) {
@@ -296,7 +296,7 @@ function Products({ onError }) {
   const watchConnectivityOptions = selectedWatchModel?.connectivityByMaterial?.[watchMaterial] || selectedWatchModel?.connectivity || [];
   const watchColorOptions = selectedWatchModel?.colorsByMaterial?.[watchMaterial] || selectedWatchModel?.colors || [];
   const watchTech = WATCH_TECH_SPECS[watchModel] || {};
-  const watchEditionOptions = ["Standard", ...(WATCH_EDITIONS.hermes.includes(watchModel) ? ["Hermès"] : []), ...(WATCH_EDITIONS.nike.includes(watchModel) ? ["Nike"] : [])];
+  const watchEditionOptions = ["Standard", ...(WATCH_EDITIONS.hermes.includes(watchModel) ? ["Hermès"] : []), ...(WATCH_EDITIONS.nike.includes(watchModel) ? ["Nike band"] : [])];
 
   useEffect(() => {
     let active = true; setLoading(true);
@@ -362,8 +362,8 @@ function Products({ onError }) {
         if (!watchSpec) { onError("Choose a valid Apple Watch model from the catalog."); return; }
         const created = await request("/products", { method: "POST", body: JSON.stringify({
           name, categoryKey: "watch", productType: "smartwatch", tagline: form.tagline || null,
-          specs: { Model: name, Edition: watchEdition, "Release year": String(watchSpec.year), "Case size": watchSize, Connectivity: watchConnectivity, "Case material": watchMaterial, Color: watchColor, Display: watchTech.displayType || watchSpec.display, "Peak brightness": watchTech.brightness || "Not specified", Resolution: watchTech.resolution?.[watchSize] || "See exact model number", Chip: watchSpec.chip, Capacity: watchSpec.capacity, "Water resistance": watchTech.water || "Check exact model", "Dust resistance": watchTech.dust || "Not specified", Battery: watchTech.battery || "Up to 18 hours (Apple estimate; varies by use)", Glass: watchTech.glass || "Varies by case material", GPS: watchTech.gps || "GPS / GPS + Cellular by variant", Wireless: watchTech.wireless || "See exact model", Sensors: watchTech.sensors || "See exact model", ...(watchTech.dimensions?.[watchSize] ? { Dimensions: watchTech.dimensions[watchSize] } : {}), ...(watchBand ? { "Band style": watchBand } : {}) },
-          storageOptions: [watchSize], colors: [watchColor], meta: { modelName: name, edition: watchEdition, releaseYear: watchSpec.year, caseSize: watchSize, connectivity: watchConnectivity, caseMaterial: watchMaterial, color: watchColor, display: watchTech.displayType || watchSpec.display, brightness: watchTech.brightness || null, resolution: watchTech.resolution?.[watchSize] || null, chip: watchSpec.chip, capacity: watchSpec.capacity, waterResistance: watchTech.water || null, dustResistance: watchTech.dust || null, batteryLife: watchTech.battery || null, glass: watchTech.glass || null, gps: watchTech.gps || null, wireless: watchTech.wireless || null, sensors: watchTech.sensors || null, dimensions: watchTech.dimensions?.[watchSize] || null, ...(watchBand ? { bandStyle: watchBand } : {}) },
+          specs: { Model: name, Collection: watchEdition, "Release year": String(watchSpec.year), "Case size": watchSize, Connectivity: watchConnectivity, "Case material": watchMaterial, Color: watchColor, Display: watchTech.displayType || watchSpec.display, "Peak brightness": watchTech.brightness || "Not specified", Resolution: watchTech.resolution?.[watchSize] || "See exact model number", Chip: watchSpec.chip, Capacity: watchSpec.capacity, "Water resistance": watchTech.water || "Check exact model", "Dust resistance": watchTech.dust || "Not specified", Battery: watchTech.battery || "Up to 18 hours (Apple estimate; varies by use)", Glass: watchTech.glass || "Varies by case material", GPS: watchTech.gps || "GPS / GPS + Cellular by variant", Wireless: watchTech.wireless || "See exact model", Sensors: watchTech.sensors || "See exact model", ...(watchTech.dimensions?.[watchSize] ? { Dimensions: watchTech.dimensions[watchSize] } : {}), ...(watchBand ? { "Band style": watchBand } : {}) },
+          storageOptions: [watchSize], colors: [watchColor], meta: { modelName: name, bandCollection: watchEdition, releaseYear: watchSpec.year, caseSize: watchSize, connectivity: watchConnectivity, caseMaterial: watchMaterial, color: watchColor, display: watchTech.displayType || watchSpec.display, brightness: watchTech.brightness || null, resolution: watchTech.resolution?.[watchSize] || null, chip: watchSpec.chip, capacity: watchSpec.capacity, waterResistance: watchTech.water || null, dustResistance: watchTech.dust || null, batteryLife: watchTech.battery || null, glass: watchTech.glass || null, gps: watchTech.gps || null, wireless: watchTech.wireless || null, sensors: watchTech.sensors || null, dimensions: watchTech.dimensions?.[watchSize] || null, ...(watchBand ? { bandStyle: watchBand } : {}) },
           hasUnits: true, visibility: form.visibility, salesMode: form.salesMode, availability: "in_stock",
           variants: [], primaryImageMediaId: primaryImageMediaId || null, galleryMediaIds, collectionIds
         }) });
@@ -371,7 +371,7 @@ function Products({ onError }) {
           storage: watchSize, color: [watchMaterial, watchColor].filter(Boolean).join(" · "), batteryPct: watchCondition === "New" || watchBattery === "" ? null : Number(watchBattery),
           condition: watchCondition === "New" ? "New" : watchGrade, sku: watchSku || null,
           priceCents: Math.round(Number(watchPrice) * 100), warranty: null,
-          notes: [watchEdition !== "Standard" ? `${watchEdition} edition` : null, watchBand || null, watchCondition === "New" ? null : watchNotes].filter(Boolean).join(" · ") || null
+          notes: [watchEdition !== "Standard" ? `${watchEdition} collection` : null, watchBand || null, watchCondition === "New" ? null : watchNotes].filter(Boolean).join(" · ") || null
         }) });
         setEditing(null); setRefresh(v => v + 1);
       } catch (e) { onError(e.message); }
@@ -454,11 +454,11 @@ function Products({ onError }) {
             <label>Connectivity<select value={watchConnectivity} onChange={e=>setWatchConnectivity(e.target.value)}>{watchConnectivityOptions.map(v=><option key={v}>{v}</option>)}</select></label>
             <label>Case material<select value={watchMaterial} onChange={e=>{const material=e.target.value;setWatchMaterial(material);setWatchConnectivity((selectedWatchModel?.connectivityByMaterial?.[material]||selectedWatchModel?.connectivity||[])[0]||"");setWatchColor((selectedWatchModel?.colorsByMaterial?.[material]||selectedWatchModel?.colors||[])[0]||"");}}>{(selectedWatchModel?.materials||[]).map(v=><option key={v}>{v}</option>)}</select></label>
             <label>Official color<select value={watchColor} onChange={e=>setWatchColor(e.target.value)}>{watchColorOptions.map(v=><option key={v}>{v}</option>)}</select></label>
-            <label>Edition<select value={watchEdition} onChange={e=>setWatchEdition(e.target.value)}>{watchEditionOptions.map(v=><option key={v}>{v}</option>)}</select></label>
-            <label>Band style / size<input value={watchBand} onChange={e=>setWatchBand(e.target.value)} placeholder={watchEdition==="Hermès"?"e.g. Grand H / Single Tour / Double Tour":watchEdition==="Nike"?"e.g. Nike Sport Band / Nike Sport Loop":"e.g. Sport Band / M-L"}/></label>
+            <label>Special collection / band<select value={watchEdition} onChange={e=>setWatchEdition(e.target.value)}>{watchEditionOptions.map(v=><option key={v}>{v}</option>)}</select></label>
+            <label>Band style / size<input value={watchBand} onChange={e=>setWatchBand(e.target.value)} placeholder={watchEdition==="Hermès"?"e.g. Grand H / Single Tour / Double Tour":watchEdition==="Nike band"?"e.g. Nike Sport Band / Nike Sport Loop":"e.g. Sport Band / M-L"}/></label>
             <div className="field-wide watch-spec-panel"><strong>Technical specifications · {watchModel}</strong><div className="watch-spec-grid">
               {[
-                ["Display",watchTech.displayType||selectedWatchModel?.display],["Brightness",watchTech.brightness],["Resolution",watchTech.resolution?.[watchSize]||"Check model number"],["Chip",selectedWatchModel?.chip],["Storage",selectedWatchModel?.capacity],["Battery",watchTech.battery],["Water resistance",watchTech.water],["Dust resistance",watchTech.dust],["Glass",watchTech.glass],["GPS",watchTech.gps],["Wireless",watchTech.wireless],["Sensors",watchTech.sensors],["Key features",watchTech.features],["Dimensions",watchTech.dimensions?.[watchSize]]
+                ["Collection",watchEdition],["Display",watchTech.displayType||selectedWatchModel?.display],["Brightness",watchTech.brightness],["Resolution",watchTech.resolution?.[watchSize]||"Check model number"],["Chip",selectedWatchModel?.chip],["Storage",selectedWatchModel?.capacity],["Battery",watchTech.battery],["Water resistance",watchTech.water],["Dust resistance",watchTech.dust],["Glass",watchTech.glass],["GPS",watchTech.gps],["Wireless",watchTech.wireless],["Sensors",watchTech.sensors],["Key features",watchTech.features],["Dimensions",watchTech.dimensions?.[watchSize]]
               ].filter(([,v])=>v).map(([k,v])=><div key={k}><small>{k}</small><span>{v}</span></div>)}
             </div><p>Battery figures are Apple's estimates. Actual performance depends on settings, network and usage. Confirm regional model number for cellular bands and exact compatibility.</p></div>
           </div>}
