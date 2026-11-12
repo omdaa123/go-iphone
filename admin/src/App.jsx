@@ -227,6 +227,18 @@ function Products({ onError }) {
   const [iphonePrice, setIphonePrice] = useState("");
   const [iphoneSku, setIphoneSku] = useState("");
   const [iphoneStep, setIphoneStep] = useState(1);
+  const [watchModel, setWatchModel] = useState("");
+  const [watchSize, setWatchSize] = useState("42mm");
+  const [watchConnectivity, setWatchConnectivity] = useState("GPS");
+  const [watchMaterial, setWatchMaterial] = useState("Aluminum");
+  const [watchBand, setWatchBand] = useState("");
+  const [watchCondition, setWatchCondition] = useState("New");
+  const [watchBattery, setWatchBattery] = useState("");
+  const [watchGrade, setWatchGrade] = useState("Like New");
+  const [watchNotes, setWatchNotes] = useState("");
+  const [watchPrice, setWatchPrice] = useState("");
+  const [watchSku, setWatchSku] = useState("");
+  const [watchStep, setWatchStep] = useState(1);
 
   useEffect(() => {
     let active = true; setLoading(true);
@@ -242,6 +254,8 @@ function Products({ onError }) {
     setIphoneModel(""); setIphoneCondition("New"); setIphoneStorage("128GB"); setIphoneColor("");
     setIphoneRegion(""); setIphoneSim("Physical SIM + eSIM"); setIphoneBattery("");
     setIphoneGrade("Like New"); setIphoneNotes(""); setIphonePrice(""); setIphoneSku(""); setIphoneStep(1);
+    setWatchModel(""); setWatchSize("42mm"); setWatchConnectivity("GPS"); setWatchMaterial("Aluminum"); setWatchBand("");
+    setWatchCondition("New"); setWatchBattery(""); setWatchGrade("Like New"); setWatchNotes(""); setWatchPrice(""); setWatchSku(""); setWatchStep(1);
   }
   async function startEdit(id) {
     try {
@@ -280,6 +294,30 @@ function Products({ onError }) {
   }
   async function save(event) {
     event.preventDefault();
+    if (editing === "new" && form.categoryKey === "watch") {
+      if (!watchModel.trim() || !watchPrice) { onError("Choose the Apple Watch model and enter its selling price."); return; }
+      if (watchCondition === "Used" && watchBattery !== "" && (Number(watchBattery) < 1 || Number(watchBattery) > 100)) { onError("Battery health must be between 1 and 100."); return; }
+      setSaving(true);
+      try {
+        const name = watchModel.trim();
+        const created = await request("/products", { method: "POST", body: JSON.stringify({
+          name, categoryKey: "watch", productType: "smartwatch", tagline: form.tagline || null,
+          specs: { Model: name, "Case size": watchSize, Connectivity: watchConnectivity, "Case material": watchMaterial, ...(watchBand ? { "Band style": watchBand } : {}) },
+          storageOptions: [watchSize], colors: [], meta: { modelName: name, caseSize: watchSize, connectivity: watchConnectivity, caseMaterial: watchMaterial, ...(watchBand ? { bandStyle: watchBand } : {}) },
+          hasUnits: true, visibility: form.visibility, salesMode: form.salesMode, availability: "in_stock",
+          variants: [], primaryImageMediaId: primaryImageMediaId || null, galleryMediaIds, collectionIds
+        }) });
+        await request("/products/" + created.product.id + "/units", { method: "POST", body: JSON.stringify({
+          storage: watchSize, color: watchMaterial, batteryPct: watchCondition === "New" || watchBattery === "" ? null : Number(watchBattery),
+          condition: watchCondition === "New" ? "New" : watchGrade, sku: watchSku || null,
+          priceCents: Math.round(Number(watchPrice) * 100), warranty: null,
+          notes: watchCondition === "New" ? null : [watchBand, watchNotes].filter(Boolean).join(" · ") || null
+        }) });
+        setEditing(null); setRefresh(v => v + 1);
+      } catch (e) { onError(e.message); }
+      finally { setSaving(false); }
+      return;
+    }
     if (editing === "new" && form.categoryKey === "iphone") {
       if (!iphoneModel || !iphonePrice) { onError("Choose an iPhone model and enter its selling price."); return; }
       setSaving(true);
@@ -321,6 +359,7 @@ function Products({ onError }) {
     </section>
     {editing && <div className="modal-backdrop"><form className="editor-modal" onSubmit={save}>
       <div className="modal-head"><div><div className="eyebrow">CATALOGUE</div><h2>{editing === "new" ? "Add product" : "Edit product"}</h2></div><button type="button" className="icon-btn" onClick={() => setEditing(null)}><X size={19}/></button></div>
+      {editing === "new" && <label className="field-wide product-category-choice">Product category<select value={form.categoryKey} onChange={e => setForm(f => ({ ...f, categoryKey: e.target.value }))}>{["iphone","watch","ipad","mac","airpods","apple-accessory","other-accessory"].map(k => <option key={k} value={k}>{titleCase(k)}</option>)}</select></label>}
       {editing === "new" && form.categoryKey === "iphone" && <section className="iphone-wizard">
         <div className="iphone-wizard-steps"><span className={iphoneStep===1?"active":""}>01 · Model</span><span className={iphoneStep===2?"active":""}>02 · Version</span><span className={iphoneStep===3?"active":""}>03 · Condition & price</span></div>
         {iphoneStep===1 && <div className="editor-grid"><label className="field-wide">Choose iPhone model<select required value={iphoneModel} onChange={e=>setIphoneModel(e.target.value)}><option value="">Select model…</option>{IPHONE_MODELS.map(m=><option key={m}>{m}</option>)}</select></label><p className="field-wide muted">Choose the exact model, starting from iPhone X.</p></div>}
@@ -344,7 +383,25 @@ function Products({ onError }) {
         </div>}
         <div className="modal-foot"><button type="button" className="btn secondary" onClick={()=>iphoneStep===1?setEditing(null):setIphoneStep(v=>v-1)}>{iphoneStep===1?"Cancel":"Back"}</button>{iphoneStep<3?<button type="button" className="btn primary" disabled={iphoneStep===1&&!iphoneModel} onClick={()=>setIphoneStep(v=>v+1)}>Continue <ArrowRight size={14}/></button>:<button type="submit" className="btn primary" disabled={saving}>{saving?"Creating…":"Create product & stock unit"}</button>}</div>
       </section>}
-      {!(editing === "new" && form.categoryKey === "iphone") && <div className="editor-grid">
+      {editing === "new" && form.categoryKey === "watch" && <section className="iphone-wizard watch-wizard">
+        <div className="iphone-wizard-steps"><span className={watchStep===1?"active":""}>01 · Model</span><span className={watchStep===2?"active":""}>02 · Configuration</span><span className={watchStep===3?"active":""}>03 · Condition & price</span></div>
+        {watchStep===1 && <div className="editor-grid"><label className="field-wide">Apple Watch model<input required value={watchModel} onChange={e=>setWatchModel(e.target.value)} placeholder="e.g. Apple Watch Series 11, SE, Ultra 3"/></label><p className="field-wide muted">Enter the exact model name printed on the box or device. This avoids missing or outdated model options.</p></div>}
+        {watchStep===2 && <div className="editor-grid">
+          <label>Case size<select value={watchSize} onChange={e=>setWatchSize(e.target.value)}>{["38mm","40mm","41mm","42mm","44mm","45mm","46mm","49mm"].map(v=><option key={v}>{v}</option>)}</select></label>
+          <label>Connectivity<select value={watchConnectivity} onChange={e=>setWatchConnectivity(e.target.value)}>{["GPS","GPS + Cellular"].map(v=><option key={v}>{v}</option>)}</select></label>
+          <label>Case material<select value={watchMaterial} onChange={e=>setWatchMaterial(e.target.value)}>{["Aluminum","Stainless Steel","Titanium","Ceramic","Other"].map(v=><option key={v}>{v}</option>)}</select></label>
+          <label>Band style / size (optional)<input value={watchBand} onChange={e=>setWatchBand(e.target.value)} placeholder="e.g. Sport Band / M-L"/></label>
+        </div>}
+        {watchStep===3 && <div className="editor-grid">
+          <label>Device condition<select value={watchCondition} onChange={e=>setWatchCondition(e.target.value)}><option>New</option><option>Used</option></select></label>
+          {watchCondition==="Used" && <><label>Battery health (%)<input type="number" min="1" max="100" value={watchBattery} onChange={e=>setWatchBattery(e.target.value)} placeholder="e.g. 92"/></label><label>Condition grade<select value={watchGrade} onChange={e=>setWatchGrade(e.target.value)}>{["Like New","Excellent","Good","Fair"].map(v=><option key={v}>{v}</option>)}</select></label><label className="field-wide">Defects / repairs / notes<input value={watchNotes} onChange={e=>setWatchNotes(e.target.value)} placeholder="Scratches, replaced parts, repairs…"/></label></>}
+          <label>Selling price (EGP)<input type="number" min="0" step="0.01" required value={watchPrice} onChange={e=>setWatchPrice(e.target.value)}/></label>
+          <label>SKU (optional)<input value={watchSku} onChange={e=>setWatchSku(e.target.value)}/></label>
+          <label>Visibility<select value={form.visibility} onChange={e=>setForm(f=>({...f,visibility:e.target.value}))}><option value="draft">Draft</option><option value="published">Published</option><option value="hidden">Hidden</option></select></label>
+        </div>}
+        <div className="modal-foot"><button type="button" className="btn secondary" onClick={()=>watchStep===1?setEditing(null):setWatchStep(v=>v-1)}>{watchStep===1?"Cancel":"Back"}</button>{watchStep<3?<button type="button" className="btn primary" disabled={watchStep===1&&!watchModel.trim()} onClick={()=>setWatchStep(v=>v+1)}>Continue <ArrowRight size={14}/></button>:<button type="submit" className="btn primary" disabled={saving}>{saving?"Creating…":"Create Apple Watch & stock unit"}</button>}</div>
+      </section>}
+      {!(editing === "new" && (form.categoryKey === "iphone" || form.categoryKey === "watch")) && <div className="editor-grid">
         <label className="field-wide">Product name<input required value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))}/></label>
         <label>Category<select value={form.categoryKey} onChange={e => setForm(f => ({ ...f, categoryKey: e.target.value }))}>{["iphone","ipad","mac","watch","airpods","apple-accessory","other-accessory"].map(k => <option key={k} value={k}>{titleCase(k)}</option>)}</select></label>
         <label>Product type<input required value={form.productType} onChange={e => setForm(f => ({ ...f, productType: e.target.value }))}/></label>
@@ -360,7 +417,7 @@ function Products({ onError }) {
         })}
       </div>}</div>
       {mediaOpen && <div className="media-picker-backdrop"><div className="media-picker"><div className="modal-head"><div><div className="eyebrow">MEDIA LIBRARY</div><h2>Choose product images</h2></div><button type="button" className="icon-btn" onClick={() => setMediaOpen(false)}><X size={18}/></button></div>{media.length ? <div className="media-picker-grid">{media.map(m => <div key={m.id} className={primaryImageMediaId === m.id || galleryMediaIds.includes(m.id) ? "media-choice selected" : "media-choice"}><img src={m.url} alt={m.file_name || "Store media"}/><span>{m.file_name || "Image"}</span><div className="media-choice-actions"><button type="button" onClick={() => setPrimaryImageMediaId(m.id)}>{primaryImageMediaId === m.id ? "Main image ✓" : "Set main"}</button><button type="button" onClick={() => setGalleryMediaIds(ids => ids.includes(m.id) ? ids.filter(id => id !== m.id) : [...ids, m.id])}>{galleryMediaIds.includes(m.id) ? "Remove gallery" : "Add to gallery"}</button></div></div>)}</div> : <p className="muted">No images uploaded yet. Upload an image to get started.</p>}<div className="modal-foot"><button type="button" className="btn secondary" onClick={() => setMediaOpen(false)}>Done</button></div></div></div>}
-      {!(editing === "new" && form.categoryKey === "iphone") && <>
+      {!(editing === "new" && (form.categoryKey === "iphone" || form.categoryKey === "watch")) && <>
       <div className="variant-heading"><div><h3>Pricing & variants</h3><p>Enter prices in Egyptian pounds. Add every storage and color option.</p></div><button type="button" className="btn secondary small" onClick={addVariant}><Plus size={13}/> Add variant</button></div>
       {form.variants.map((v, i) => <div className="variant-row" key={i}>
         <label>Storage<input value={v.storage} onChange={e => changeVariant(i, "storage", e.target.value)}/></label>
@@ -370,7 +427,7 @@ function Products({ onError }) {
         <button type="button" className="icon-btn danger-icon" title="Remove variant" disabled={form.variants.length === 1} onClick={() => setForm(f => ({ ...f, variants: f.variants.filter((_, j) => j !== i) }))}><X size={15}/></button>
       </div>)}
       </>}
-      {!(editing === "new" && form.categoryKey === "iphone") && <div className="modal-foot"><button type="button" className="btn secondary" onClick={() => setEditing(null)}>Cancel</button><button className="btn primary" disabled={saving}>{saving ? "Saving…" : "Save product"}</button></div>}
+      {!(editing === "new" && (form.categoryKey === "iphone" || form.categoryKey === "watch")) && <div className="modal-foot"><button type="button" className="btn secondary" onClick={() => setEditing(null)}>Cancel</button><button className="btn primary" disabled={saving}>{saving ? "Saving…" : "Save product"}</button></div>}
     </form></div>}
     {deleteId && <div className="modal-backdrop"><div className="confirm-modal"><div className="eyebrow">CONFIRM ACTION</div><h2>Delete this product?</h2><p>This permanently removes the product and its linked variants and inventory units.</p><div className="modal-foot"><button className="btn secondary" onClick={() => setDeleteId("")}>Cancel</button><button className="btn danger" onClick={removeProduct}>Delete product</button></div></div></div>}
   </>;
