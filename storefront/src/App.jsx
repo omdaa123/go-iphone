@@ -2294,6 +2294,11 @@ function StoreDataProvider({ children }) {
         heroSlides: data.heroSlides || [],
         siteContent: {
           ...d, ...sc,
+          // Keep homepage merchandising collections available even when the
+          // catalog endpoint returns them beside siteContent rather than inside it.
+          collections: Array.isArray(sc.collections)
+            ? sc.collections
+            : Array.isArray(data.collections) ? data.collections : d.collections,
           announcement: { ...d.announcement, ...(sc.announcement || {}) },
           comparisonSection: { ...d.comparisonSection, ...(sc.comparisonSection || {}) },
           recommendationSection: { ...d.recommendationSection, ...(sc.recommendationSection || {}) },
