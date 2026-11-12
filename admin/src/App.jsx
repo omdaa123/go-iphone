@@ -886,6 +886,21 @@ function DesignStudio({ onError }) {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const localPreview = import.meta.env.DEV;
+  const [realPreviewMode, setRealPreviewMode] = useState("");
+  const previewFrameRef = useRef(null);
+  function sendDesignPreview() {
+    const frame = previewFrameRef.current;
+    if (!frame?.contentWindow) return;
+    frame.contentWindow.postMessage({
+      type: "GO_IPHONE_ADMIN_PREVIEW",
+      payload: { siteContent: { designSystem: design } },
+    }, new URL(PREVIEW_STOREFRONT_URL).origin);
+  }
+  useEffect(() => {
+    if (!realPreviewMode) return;
+    const timer = window.setTimeout(sendDesignPreview, 350);
+    return () => window.clearTimeout(timer);
+  }, [realPreviewMode, design]);
   useEffect(() => {
     request("/site-content").then(({ siteContent = {} }) => {
       const current = siteContent.designSystem || {};
@@ -913,7 +928,7 @@ function DesignStudio({ onError }) {
   return <>
     <div className="page-heading design-heading">
       <div><div className="eyebrow">STORE EXPERIENCE / VISUAL IDENTITY</div><h1>Design Studio</h1><p>Build a consistent visual identity for every part of your storefront.</p></div>
-      <div className="heading-actions"><button className="btn secondary" onClick={reset}><RefreshCw size={15}/> Reset</button><button className="btn primary" onClick={save} disabled={loading || saving || localPreview}>{localPreview ? <><Eye size={15}/> Preview mode</> : saving ? "Saving…" : saved ? <><CheckCircle2 size={15}/> Saved</> : "Save design system"}</button></div>
+      <div className="heading-actions"><button className="btn secondary" onClick={() => setRealPreviewMode("desktop")}><Eye size={15}/> Real storefront preview</button><button className="btn secondary" onClick={reset}><RefreshCw size={15}/> Reset</button><button className="btn primary" onClick={save} disabled={loading || saving || localPreview}>{localPreview ? <><Eye size={15}/> Preview mode</> : saving ? "Saving…" : saved ? <><CheckCircle2 size={15}/> Saved</> : "Save design system"}</button></div>
     </div>
     {localPreview && <div className="design-safety-note"><ShieldCheck size={17}/><div><b>Safe local preview</b><span>Your local workspace can read the current theme, but saving is disabled so test changes cannot overwrite live store settings.</span></div></div>}
     {loading ? <div className="loading-panel"><span className="spinner"/> Loading your design system…</div> : <>
@@ -969,6 +984,22 @@ function DesignStudio({ onError }) {
         </aside>
       </div>
     </>}
+    {realPreviewMode && <div className="modal-backdrop" onClick={() => setRealPreviewMode("")}>
+      <div className="editor-modal" onClick={e => e.stopPropagation()} style={{ width: "min(1500px,98vw)", height: "94vh", maxHeight: "94vh", display: "flex", flexDirection: "column", overflow: "hidden" }}>
+        <div className="modal-head" style={{ flexShrink: 0 }}>
+          <div><div className="eyebrow">REAL STOREFRONT PREVIEW</div><h2>Design draft · {realPreviewMode === "mobile" ? "Mobile" : "Desktop"}</h2></div>
+          <div className="row-actions">
+            <button type="button" className="btn secondary small" onClick={() => setRealPreviewMode("desktop")}>Desktop</button>
+            <button type="button" className="btn secondary small" onClick={() => setRealPreviewMode("mobile")}>Mobile</button>
+            <button type="button" className="icon-btn" onClick={() => setRealPreviewMode("")}><X size={18}/></button>
+          </div>
+        </div>
+        <div style={{ flex: 1, minHeight: 0, display: "flex", justifyContent: "center", overflow: "auto", background: "#e5e7eb", padding: 12 }}>
+          <iframe ref={previewFrameRef} title="GO iPhone design system live preview" src={PREVIEW_STOREFRONT_URL} onLoad={sendDesignPreview} style={{ width: realPreviewMode === "mobile" ? 390 : "100%", maxWidth: "100%", height: "100%", minHeight: 500, border: realPreviewMode === "mobile" ? "8px solid #202938" : "0", borderRadius: realPreviewMode === "mobile" ? 28 : 8, background: "#fff" }} />
+        </div>
+        <p className="muted" style={{ padding: "8px 14px", margin: 0, flexShrink: 0 }}>Actual storefront with your unsaved colors, typography and corner style applied. Preview does not save or publish changes.</p>
+      </div>
+    </div>}
   </>;
 }
 
