@@ -18,6 +18,10 @@ const date = (value) => value ? new Date(value).toLocaleDateString("en-GB", {
 const titleCase = (value = "") => String(value).replaceAll("_", " ").replace(/\b\w/g, c => c.toUpperCase());
 
 async function request(path, options = {}) {
+  const method = String(options.method || "GET").toUpperCase();
+  if (import.meta.env.DEV && method !== "GET" && !path.startsWith("/auth/")) {
+    throw new Error("Local preview is read-only. Changes are blocked to protect your live store.");
+  }
   const response = await fetch(`${API}${path}`, {
     credentials: "include",
     ...options,
@@ -320,22 +324,55 @@ function MediaLibrary({ onError }) {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState("");
   const [refresh, setRefresh] = useState(0);
   const [deleting, setDeleting] = useState("");
+  const [query, setQuery] = useState("");
+  const [usageFilter, setUsageFilter] = useState("all");
+  const localPreview = import.meta.env.DEV;
   useEffect(() => { let active = true; request("/media").then(d => { if(active) setItems(d.media || []); }).catch(e => onError(e.message)).finally(() => { if(active) setLoading(false); }); return () => { active = false; }; }, [refresh, onError]);
-  async function upload(file) {
-    if (!file) return; setUploading(true);
-    try { const dataUrl = await compressImage(file); await request("/media", { method: "POST", body: JSON.stringify({ dataUrl, fileName: file.name, usageTag: "store" }) }); setRefresh(v => v + 1); }
-    catch (e) { onError(e.message); } finally { setUploading(false); }
+
+  async function uploadFiles(fileList) {
+    const files = Array.from(fileList || []);
+    if (!files.length) return;
+    setUploading(true);
+    let completed = 0;
+    const failures = [];
+    for (const file of files) {
+      setUploadProgress(`Uploading ${completed + 1} of ${files.length}: ${file.name}`);
+      try {
+        const dataUrl = await compressImage(file);
+        const d = await request("/media", { method: "POST", body: JSON.stringify({ dataUrl, fileName: file.name, usageTag: "store" }) });
+        setItems(current => [d.media, ...current]);
+      } catch (e) { failures.push(`${file.name}: ${e.message}`); }
+      completed += 1;
+    }
+    setUploading(false);
+    setUploadProgress("");
+    if (failures.length) onError(`${completed - failures.length} uploaded; ${failures.length} failed. ${failures[0]}`);
   }
+
   async function remove(id) {
     try { await request(`/media/${id}`, { method: "DELETE" }); setItems(list => list.filter(x => x.id !== id)); setDeleting(""); }
     catch (e) { onError(e.message); }
   }
+
+  const usageTags = [...new Set(items.map(item => item.usage_tag || "uncategorized"))].sort();
+  const filtered = items.filter(item => {
+    const name = String(item.file_name || "").toLowerCase();
+    const tag = String(item.usage_tag || "uncategorized").toLowerCase();
+    const matchesQuery = !query.trim() || name.includes(query.trim().toLowerCase()) || tag.includes(query.trim().toLowerCase());
+    return matchesQuery && (usageFilter === "all" || tag === usageFilter);
+  });
+
   return <>
-    <div className="page-heading"><div><div className="eyebrow">STORE EXPERIENCE</div><h1>Media Library</h1><p>Upload and organize product photography and store assets.</p></div><label className="btn primary upload-label">{uploading ? "Uploading…" : <><Plus size={15}/> Upload image</>}<input type="file" accept="image/jpeg,image/png,image/webp,image/gif" disabled={uploading} onChange={e => upload(e.target.files?.[0])}/></label></div>
-    <section className="panel"><div className="panel-head"><div><h2>All media</h2><p>Images are compressed before upload. Maximum 8MB per file.</p></div><button className="btn secondary" onClick={() => setRefresh(v => v + 1)}><RefreshCw size={14}/> Refresh</button></div>
-      {loading ? <div className="loading-panel"><span className="spinner"/> Loading media…</div> : items.length ? <div className="media-library-grid">{items.map(m => <article className="media-card" key={m.id}><img src={m.url} alt={m.file_name || "Store asset"}/><div><b title={m.file_name}>{m.file_name || "Image asset"}</b><span>{m.usage_tag || "Uncategorized"} · {Math.max(1, Math.round((m.bytes || 0) / 1024))} KB</span><button className="text-btn danger-text" onClick={() => setDeleting(m.id)}>Delete asset</button></div></article>)}</div> : <div className="empty-state"><div className="empty-icon"><Image size={22}/></div><b>Your media library is empty</b><p>Upload your first product image to get started.</p></div>}
+    <div className="page-heading"><div><div className="eyebrow">STORE EXPERIENCE</div><h1>Media Library</h1><p>Upload, search and organize product photography and store assets.</p></div><label className="btn primary upload-label">{uploading ? "Uploading…" : <><Plus size={15}/> Upload images</>}<input type="file" multiple accept="image/jpeg,image/png,image/webp,image/gif" disabled={uploading || localPreview} onChange={e => { uploadFiles(e.target.files); e.target.value = ""; }}/></label></div>
+    {localPreview && <div className="design-safety-note"><ShieldCheck size={17}/><div><b>Safe local preview</b><span>Uploads and deletes are disabled in development so this workspace cannot change live store media.</span></div></div>}
+    <section className="panel">
+      <div className="panel-head"><div><h2>All media <span className="count-pill">{items.length} assets</span></h2><p>Images are compressed before upload. Maximum 8MB per image.</p></div><button className="btn secondary" onClick={() => setRefresh(v => v + 1)}><RefreshCw size={14}/> Refresh</button></div>
+      {uploadProgress && <div className="media-upload-progress"><span className="spinner"/>{uploadProgress}</div>}
+      <div className="media-toolbar"><div className="search-box"><Search size={16}/><input value={query} onChange={e => setQuery(e.target.value)} placeholder="Search file names or tags…"/></div><select value={usageFilter} onChange={e => setUsageFilter(e.target.value)}><option value="all">All asset types</option>{usageTags.map(tag => <option key={tag} value={tag}>{titleCase(tag)}</option>)}</select><span className="results-count">{filtered.length} shown</span></div>
+      {loading ? <div className="loading-panel"><span className="spinner"/> Loading media…</div> : filtered.length ? <div className="media-library-grid">{filtered.map(m => <article className="media-card" key={m.id}><img src={m.url} alt={m.file_name || "Store asset"}/><div><b title={m.file_name}>{m.file_name || "Image asset"}</b><span>{m.usage_tag || "Uncategorized"} · {Math.max(1, Math.round((m.bytes || 0) / 1024))} KB</span><button className="text-btn danger-text" disabled={localPreview} onClick={() => setDeleting(m.id)}>Delete asset</button></div></article>)}</div> : <div className="empty-state"><div className="empty-icon"><Image size={22}/></div><b>{items.length ? "No matching assets" : "Your media library is empty"}</b><p>{items.length ? "Try another search or asset type." : "Upload your first product image to get started."}</p></div>}
     </section>
     {deleting && <div className="modal-backdrop"><div className="confirm-modal"><h2>Delete this image?</h2><p>If this image is used by a product or category, the database may prevent deletion or clear its reference.</p><div className="modal-foot"><button className="btn secondary" onClick={() => setDeleting("")}>Cancel</button><button className="btn danger" onClick={() => remove(deleting)}>Delete image</button></div></div></div>}
   </>;
