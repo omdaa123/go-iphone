@@ -591,3 +591,83 @@ table td{font-size:12px;padding:15px 16px}
  .main-area .homepage-commandbar h2{font-size:30px!important}
  .main-area .homepage-tabs button{font-size:13px!important}
 }
+
+
+/* Balanced typography + purposeful section color coding */
+.main-area .content-area{font-size:14px}
+.main-area .content-area p,.main-area .content-area label,.main-area .content-area .muted,.main-area .content-area .field-hint{font-size:13px!important;line-height:1.55}
+.main-area .page-heading h1{font-size:30px!important}
+.main-area .page-heading p{font-size:14px!important}
+.main-area .panel-head h2,.main-area .homepage-editor-panel .panel-head h2,.main-area .homepage-content-card .panel-head h2{font-size:17px!important}
+.main-area .panel-head p,.main-area .homepage-editor-panel .panel-head p,.main-area .homepage-content-card .panel-head p{font-size:12px!important}
+.main-area .btn,.main-area button.btn{font-size:13px!important;padding:10px 14px}
+.main-area .btn.small{font-size:12px!important;padding:8px 11px}
+.main-area input:not([type=checkbox]):not([type=color]),.main-area select,.main-area textarea{font-size:14px!important;padding:10px 12px}
+.main-area table th{font-size:11px!important}
+.main-area table td{font-size:12px!important}
+.main-area .status{font-size:11px!important}
+.main-area .filter-tabs button,.main-area .homepage-tabs button{font-size:13px!important;padding:11px 14px}
+.main-area .homepage-tabs button span{font-size:10px!important}
+.main-area .homepage-commandbar h2{font-size:clamp(27px,3vw,35px)!important}
+.main-area .homepage-commandbar p{font-size:14px!important}
+.main-area .homepage-kicker{font-size:10px!important}
+.main-area .homepage-commandbar-status b{font-size:13px!important}
+.main-area .homepage-commandbar-status small{font-size:11px!important}
+.main-area .homepage-metrics span{font-size:11px!important}
+.main-area .homepage-metrics b{font-size:28px!important}
+.main-area .homepage-metrics small{font-size:12px!important}
+.main-area .hero-slide-info h3{font-size:19px!important}
+.main-area .hero-slide-info>p{font-size:13px!important}
+.main-area .hero-slide-meta{font-size:12px!important}
+.main-area .homepage-content-image>b{font-size:14px!important}
+.main-area .homepage-trust-item>label:not(.homepage-toggle):not(.btn){font-size:13px!important}
+.main-area .homepage-toggle{font-size:13px!important}
+.main-area .design-section-heading h2{font-size:18px!important}
+.main-area .design-section-heading p{font-size:12px!important}
+.sidebar .nav-item{font-size:13px!important;padding:11px 12px}
+.sidebar .nav-label{font-size:10px!important}
+.sidebar .store-switch b{font-size:13px!important}
+.sidebar .store-switch span{font-size:11px!important}
+.topbar .breadcrumb{font-size:13px!important}
+@media(max-width:760px){
+ .main-area .page-heading h1{font-size:27px!important}
+ .main-area .content-area p,.main-area .content-area label{font-size:13px!important}
+ .main-area .homepage-commandbar h2{font-size:27px!important}
+ .main-area .homepage-tabs button{font-size:12px!important}
+}
+
+/* Distinct but coordinated accents: navigation groups */
+.sidebar .nav-group:nth-child(1) .nav-item.active{background:#e9a23b18;color:#9a641b;box-shadow:inset 3px 0 #e9a23b}
+.sidebar .nav-group:nth-child(1) .nav-item.active svg{color:#d58a24}
+.sidebar .nav-group:nth-child(2) .nav-item.active{background:#3986d518;color:#2868a9;box-shadow:inset 3px 0 #3986d5}
+.sidebar .nav-group:nth-child(2) .nav-item.active svg{color:#3986d5}
+.sidebar .nav-group:nth-child(3) .nav-item.active{background:#8a68c918;color:#7150ad;box-shadow:inset 3px 0 #9875d8}
+.sidebar .nav-group:nth-child(3) .nav-item.active svg{color:#9875d8}
+.sidebar .nav-group:nth-child(4) .nav-item.active{background:#249b8318;color:#187b69;box-shadow:inset 3px 0 #35aa91}
+.sidebar .nav-group:nth-child(4) .nav-item.active svg{color:#249b83}
+.sidebar .nav-group:nth-child(5) .nav-item.active{background:#d16b7818;color:#a74756;box-shadow:inset 3px 0 #d16b78}
+.sidebar .nav-group:nth-child(5) .nav-item.active svg{color:#d16b78}
+.sidebar .nav-item{transition:background .16s,color .16s,box-shadow .16s}
+.sidebar .nav-item:hover{background:#ffffff0b}
+
+/* Homepage workspace: each tab and metric gets its own semantic accent */
+.homepage-tabs button:nth-child(1).active{background:#fff8ed;border-color:#f0d9b4;color:#98631d}
+.homepage-tabs button:nth-child(1).active span{color:#d28b2b}
+.homepage-tabs button:nth-child(2).active{background:#eef5ff;border-color:#d4e4fa;color:#285f9d}
+.homepage-tabs button:nth-child(2).active span{color:#4387cf}
+.homepage-tabs button:nth-child(3).active{background:#f4efff;border-color:#e2d7fb;color:#6846a5}
+.homepage-tabs button:nth-child(3).active span{color:#9471d1}
+.homepage-tabs button:nth-child(4).active{background:#eaf7f3;border-color:#cfece2;color:#207966}
+.homepage-tabs button:nth-child(4).active span{color:#36a58c}
+.homepage-metrics>div:nth-child(1){border-top:3px solid #e2a13c}
+.homepage-metrics>div:nth-child(2){border-top:3px solid #4b91d6}
+.homepage-metrics>div:nth-child(3){border-top:3px solid #9674d2}
+.homepage-metrics>div:nth-child(4){border-top:3px solid #36a58c}
+.homepage-metrics>div:nth-child(1) span{color:#a66b20}
+.homepage-metrics>div:nth-child(2) span{color:#3979b7}
+.homepage-metrics>div:nth-child(3) span{color:#7655ae}
+.homepage-metrics>div:nth-child(4) span{color:#25816f}
+.homepage-content-card:nth-child(1){border-left:4px solid #4b91d6}
+.homepage-content-card:nth-child(2){border-left:4px solid #36a58c}
+.category-image-card{border-top:3px solid #9674d2}
+.hero-slide-card{border-left:4px solid #e2a13c}
