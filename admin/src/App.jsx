@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 
 const API = "/admin";
+const PREVIEW_STOREFRONT_URL = import.meta.env.DEV ? "http://127.0.0.1:5174/?adminPreview=1" : "https://go-iphone-storefront1.vercel.app/?adminPreview=1";
 const money = (cents = 0) => new Intl.NumberFormat("en-EG", {
   style: "currency", currency: "EGP", maximumFractionDigits: 0
 }).format(Number(cents || 0) / 100);
@@ -610,7 +611,7 @@ function HomepageBuilder({ onError }) {
     frame.contentWindow.postMessage({
       type: "GO_IPHONE_ADMIN_PREVIEW",
       payload: { siteContent, heroSlides: draftSlides },
-    }, "https://go-iphone-storefront1.vercel.app");
+    }, new URL(PREVIEW_STOREFRONT_URL).origin);
   }
   useEffect(() => {
     if (previewMode) {
@@ -679,7 +680,7 @@ function HomepageBuilder({ onError }) {
           </div>
         </div>
         <div style={{ flex: 1, minHeight: 0, display: "flex", justifyContent: "center", overflow: "auto", background: "#e5e7eb", padding: 12 }}>
-          <iframe ref={previewFrameRef} title="GO iPhone real storefront preview" src="https://go-iphone-storefront1.vercel.app/?adminPreview=1" onLoad={sendPreviewDraft} style={{ width: previewMode === "mobile" ? 390 : "100%", maxWidth: "100%", height: "100%", minHeight: 500, border: previewMode === "mobile" ? "8px solid #202938" : "0", borderRadius: previewMode === "mobile" ? 28 : 8, background: "#fff" }} />
+          <iframe ref={previewFrameRef} title="GO iPhone real storefront preview" src={PREVIEW_STOREFRONT_URL} onLoad={sendPreviewDraft} style={{ width: previewMode === "mobile" ? 390 : "100%", maxWidth: "100%", height: "100%", minHeight: 500, border: previewMode === "mobile" ? "8px solid #202938" : "0", borderRadius: previewMode === "mobile" ? 28 : 8, background: "#fff" }} />
         </div>
         <p className="muted" style={{ padding: "8px 14px", margin: 0, flexShrink: 0 }}>This is the actual storefront with your unsaved draft applied. Preview mode blocks checkout and reservation submissions and does not publish changes.</p>
       </div>
