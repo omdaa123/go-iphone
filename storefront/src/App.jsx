@@ -1330,7 +1330,7 @@ function CatalogPage({ category, go, compareIds, onToggleCompare }) {
             { key: "tablet", label: "Tablets" },
             { key: "other-electronics", label: "Other Electronics" },
           ].map((branch) => (
-            <button key={branch.key} onClick={() => setSubcategory(branch.key)}
+            <button key={branch.key} onClick={() => { setSubcategory(branch.key); setDeviceSubcategory("all"); }}
               style={{ borderColor: subcategory === branch.key ? T.ink : T.line, backgroundColor: subcategory === branch.key ? T.ink : "transparent", color: subcategory === branch.key ? "#fff" : T.ink }}
               className="border px-4 py-2.5 text-sm font-medium transition-colors">
               {branch.label}
