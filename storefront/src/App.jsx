@@ -1212,7 +1212,22 @@ function HomePage({ go, compareIds, onToggleCompare }) {
   const featured = PRODUCTS.find((p) => hasCollection(p, "featured") && p.category === "iphone")
     || PRODUCTS.find((p) => p.category === "iphone")
     || PRODUCTS[0];
-  const merchandisingSections = collectionSettings
+  // Always provide the four core storefront sections, even if an older
+  // database or saved homepage configuration omitted their collection rows.
+  const builtInCollections = [
+    { id: "featured", name: "Featured", order: 0, visible: true, homepageVisible: true, system: true },
+    { id: "new-arrivals", name: "New Arrivals", order: 1, visible: true, homepageVisible: true, system: true },
+    { id: "best-sellers", name: "Best Sellers", order: 2, visible: true, homepageVisible: true, system: true },
+    { id: "certified-refurbished", name: "Certified Refurbished", order: 3, visible: true, homepageVisible: true, system: true },
+  ];
+  const mergedCollections = builtInCollections.map((base) => ({
+    ...base,
+    ...(collectionSettings.find((c) => c.id === base.id) || {}),
+    // These core sections are intentionally kept on the homepage.
+    visible: true,
+    homepageVisible: true,
+  })).concat(collectionSettings.filter((c) => !builtInCollections.some((base) => base.id === c.id)));
+  const merchandisingSections = mergedCollections
     .filter((c) => c.visible !== false && c.homepageVisible !== false)
     .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
     .map((c) => {
@@ -1220,9 +1235,9 @@ function HomePage({ go, compareIds, onToggleCompare }) {
       let products = assigned;
       if (c.id === "featured") products = featured ? [featured] : [];
       else if (c.id === "certified-refurbished") products = preowned;
-      else if (c.id === "new-arrivals" && !assigned.length) {
-        products = [...PRODUCTS]
-          .sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime())
+      else if (c.id === "new-arrivals") {
+        products = (assigned.length ? assigned : [...PRODUCTS]
+          .sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime()))
           .slice(0, 8);
       } else if (c.id === "best-sellers" && !assigned.length) {
         products = PRODUCTS.filter((p) => Number(p.soldQty) > 0)
@@ -1231,8 +1246,7 @@ function HomePage({ go, compareIds, onToggleCompare }) {
       }
       return { ...c, products };
     })
-    // Keep built-in sections visible even before products are assigned.
-    .filter((c) => c.products.length > 0 || c.id === "best-sellers" || c.id === "certified-refurbished");
+    .filter((c) => c.products.length > 0 || ["best-sellers", "certified-refurbished"].includes(c.id));
   const defaultLayout = [
     { id: "hero", visible: true, order: 0 },
     { id: "categories", visible: true, order: 1 },
@@ -1244,10 +1258,14 @@ function HomePage({ go, compareIds, onToggleCompare }) {
   const normalizedSavedLayout = savedLayout.map(item => ({ ...item, type: item.type || item.id }));
   const hasCollectionsBlock = normalizedSavedLayout.some(item => (item.type || item.id) === "collections");
   const homepageLayout = (savedLayout.length
-    ? (hasCollectionsBlock ? normalizedSavedLayout : [
-        ...normalizedSavedLayout,
-        { id: "collections", type: "collections", visible: true, order: normalizedSavedLayout.length },
-      ])
+    ? (hasCollectionsBlock
+        ? normalizedSavedLayout.map(item =>
+            (item.type || item.id) === "collections" ? { ...item, visible: true } : item
+          )
+        : [
+            ...normalizedSavedLayout,
+            { id: "collections", type: "collections", visible: true, order: normalizedSavedLayout.length },
+          ])
     : defaultLayout.map(item => ({ ...item, type: item.id }))
   ).sort((a, b) => a.order - b.order);
   const now = Date.now();
