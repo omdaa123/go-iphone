@@ -823,3 +823,10 @@ table td{font-size:12px;padding:15px 16px}
 .collections-area-tabs button.active{background:var(--surface,#fff);color:var(--ink,#17191d);box-shadow:0 2px 8px #10182812}
 .category-move-select{max-width:155px;min-width:120px;border:1px solid var(--line,#ddd);border-radius:9px;padding:8px;background:var(--surface,#fff);color:var(--ink,#222);font:inherit}
 @media(max-width:640px){.collections-area-tabs{width:100%}.collections-area-tabs button{flex:1;justify-content:center;padding:10px 8px;font-size:12px}}
+
+.iphone-wizard{margin:12px 0 18px;padding:16px;border:1px solid #e5e8ee;border-radius:12px;background:#fafbfc}
+.iphone-wizard-steps{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-bottom:18px}
+.iphone-wizard-steps span{padding:10px 8px;border:1px solid #e5e8ee;background:#fff;border-radius:8px;color:#7a8390;font-size:11px;font-weight:800;text-align:center}
+.iphone-wizard-steps span.active{border-color:#c7a56e;background:#f7f1e7;color:#876535}
+.iphone-wizard .muted{font-size:11px;line-height:1.6;color:#737c89;margin:0}
+@media(max-width:600px){.iphone-wizard-steps{grid-template-columns:1fr}.iphone-wizard-steps span{text-align:left}}
