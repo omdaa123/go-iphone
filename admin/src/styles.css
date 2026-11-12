@@ -815,3 +815,11 @@ table td{font-size:12px;padding:15px 16px}
 .collection-picker-empty{padding:38px 20px;text-align:center;color:#7e8794;font-size:12px}
 @media(max-width:1000px){.collection-detail-layout{grid-template-columns:1fr}}
 @media(max-width:620px){.collection-library-grid{grid-template-columns:1fr;padding:12px}.collection-library-cover{height:175px}.collection-picker-search{align-items:stretch;flex-direction:column}.collection-save-bar{align-items:stretch;flex-direction:column}.collection-save-bar .btn{width:100%}.collection-settings-footer .btn{width:100%}}
+
+
+/* Store categories / custom collections switcher */
+.collections-area-tabs{display:flex;gap:8px;padding:6px;background:var(--surface-2,#f2f3f5);border:1px solid var(--line,#e5e7eb);border-radius:14px;width:max-content;max-width:100%;margin-bottom:22px}
+.collections-area-tabs button{display:inline-flex;align-items:center;gap:8px;border:0;border-radius:10px;padding:11px 17px;background:transparent;color:var(--muted,#737984);font:inherit;font-weight:700;cursor:pointer;white-space:nowrap}
+.collections-area-tabs button.active{background:var(--surface,#fff);color:var(--ink,#17191d);box-shadow:0 2px 8px #10182812}
+.category-move-select{max-width:155px;min-width:120px;border:1px solid var(--line,#ddd);border-radius:9px;padding:8px;background:var(--surface,#fff);color:var(--ink,#222);font:inherit}
+@media(max-width:640px){.collections-area-tabs{width:100%}.collections-area-tabs button{flex:1;justify-content:center;padding:10px 8px;font-size:12px}}
