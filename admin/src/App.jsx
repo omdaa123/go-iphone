@@ -73,7 +73,7 @@ const WATCH_EDITIONS = {
 async function request(path, options = {}) {
   const method = String(options.method || "GET").toUpperCase();
   if (import.meta.env.DEV && method !== "GET" && !path.startsWith("/auth/")) {
-    throw new Error("Local preview is read-only. Changes are blocked to protect your live store.");
+    throw new Error("Local preview is read-only. Changes are blocked to protect your live store.");,dimensions:{"38mm":"38.6 × 33.3 × 10.5 mm","42mm":"42.5 × 36.4 × 10.5 mm"},features:"Activity tracking, heart-rate sensor, notifications, Force Touch",resolution:{"38mm":"272 × 340 px","42mm":"312 × 390 px"}
   }
   const response = await fetch(`${API}${path}`, {
     credentials: "include",
@@ -458,7 +458,7 @@ function Products({ onError }) {
             <label>Band style / size<input value={watchBand} onChange={e=>setWatchBand(e.target.value)} placeholder={watchEdition==="Hermès"?"e.g. Grand H / Single Tour / Double Tour":watchEdition==="Nike"?"e.g. Nike Sport Band / Nike Sport Loop":"e.g. Sport Band / M-L"}/></label>
             <div className="field-wide watch-spec-panel"><strong>Technical specifications · {watchModel}</strong><div className="watch-spec-grid">
               {[
-                ["Display",watchTech.displayType||watchSpec?.display],["Brightness",watchTech.brightness],["Resolution",watchTech.resolution?.[watchSize]||"Check model number"],["Chip",selectedWatchModel?.chip],["Storage",selectedWatchModel?.capacity],["Battery",watchTech.battery],["Water resistance",watchTech.water],["Dust resistance",watchTech.dust],["Glass",watchTech.glass],["GPS",watchTech.gps],["Wireless",watchTech.wireless],["Sensors",watchTech.sensors],["Dimensions",watchTech.dimensions?.[watchSize]]
+                ["Display",watchTech.displayType||selectedWatchModel?.display],["Brightness",watchTech.brightness],["Resolution",watchTech.resolution?.[watchSize]||"Check model number"],["Chip",selectedWatchModel?.chip],["Storage",selectedWatchModel?.capacity],["Battery",watchTech.battery],["Water resistance",watchTech.water],["Dust resistance",watchTech.dust],["Glass",watchTech.glass],["GPS",watchTech.gps],["Wireless",watchTech.wireless],["Sensors",watchTech.sensors],["Key features",watchTech.features],["Dimensions",watchTech.dimensions?.[watchSize]]
               ].filter(([,v])=>v).map(([k,v])=><div key={k}><small>{k}</small><span>{v}</span></div>)}
             </div><p>Battery figures are Apple's estimates. Actual performance depends on settings, network and usage. Confirm regional model number for cellular bands and exact compatibility.</p></div>
           </div>}
