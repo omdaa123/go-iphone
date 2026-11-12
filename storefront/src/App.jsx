@@ -301,12 +301,14 @@ function getAvailability(p) {
    breaks, and every product is automatically already a member of
    the right built-in collections. */
 function getCollections(p) {
-  if (p.collections && p.collections.length) return p.collections;
+  // Preserve explicit assignments and merge any legacy product flags. This
+  // keeps older products visible in their original merchandising groups.
+  const assigned = Array.isArray(p.collections) ? p.collections : [];
   const legacy = [];
   if (p.featured) legacy.push("featured");
   if (p.bestSeller) legacy.push("best-sellers");
   if (p.newArrival) legacy.push("new-arrivals");
-  return legacy;
+  return Array.from(new Set([...assigned, ...legacy]));
 }
 function hasCollection(p, id) {
   return getCollections(p).includes(id);
@@ -1205,21 +1207,32 @@ function CertifiedPreownedSection({ products, go, onOpen, onToggleCompare, compa
 function HomePage({ go, compareIds, onToggleCompare }) {
   const { products: allProducts, siteContent } = useStoreData();
   const PRODUCTS = allProducts.filter(isPublished);
-  const collectionSettings = siteContent.collections || [];
+  const collectionSettings = Array.isArray(siteContent.collections) ? siteContent.collections : [];
   const preowned = PRODUCTS.filter((p) => p.hasUnits);
-  const featured = PRODUCTS.find((p) => hasCollection(p, "featured") && p.category === "iphone");
+  const featured = PRODUCTS.find((p) => hasCollection(p, "featured") && p.category === "iphone")
+    || PRODUCTS.find((p) => p.category === "iphone")
+    || PRODUCTS[0];
   const merchandisingSections = collectionSettings
     .filter((c) => c.visible !== false && c.homepageVisible !== false)
     .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
-    .map((c) => ({
-      ...c,
-      products: c.id === "featured"
-        ? (featured ? [featured] : [])
-        : c.id === "certified-refurbished"
-          ? preowned
-          : PRODUCTS.filter((p) => hasCollection(p, c.id)),
-    }))
-    .filter((c) => c.products.length > 0);
+    .map((c) => {
+      const assigned = PRODUCTS.filter((p) => hasCollection(p, c.id));
+      let products = assigned;
+      if (c.id === "featured") products = featured ? [featured] : [];
+      else if (c.id === "certified-refurbished") products = preowned;
+      else if (c.id === "new-arrivals" && !assigned.length) {
+        products = [...PRODUCTS]
+          .sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime())
+          .slice(0, 8);
+      } else if (c.id === "best-sellers" && !assigned.length) {
+        products = PRODUCTS.filter((p) => Number(p.soldQty) > 0)
+          .sort((a, b) => Number(b.soldQty) - Number(a.soldQty))
+          .slice(0, 8);
+      }
+      return { ...c, products };
+    })
+    // Keep built-in sections visible even before products are assigned.
+    .filter((c) => c.products.length > 0 || c.id === "best-sellers" || c.id === "certified-refurbished");
   const defaultLayout = [
     { id: "hero", visible: true, order: 0 },
     { id: "categories", visible: true, order: 1 },
@@ -1228,8 +1241,13 @@ function HomePage({ go, compareIds, onToggleCompare }) {
     { id: "trust", visible: true, order: 4 },
   ];
   const savedLayout = Array.isArray(siteContent.homepageLayout) ? siteContent.homepageLayout : [];
+  const normalizedSavedLayout = savedLayout.map(item => ({ ...item, type: item.type || item.id }));
+  const hasCollectionsBlock = normalizedSavedLayout.some(item => (item.type || item.id) === "collections");
   const homepageLayout = (savedLayout.length
-    ? savedLayout.map(item => ({ ...item, type: item.type || item.id }))
+    ? (hasCollectionsBlock ? normalizedSavedLayout : [
+        ...normalizedSavedLayout,
+        { id: "collections", type: "collections", visible: true, order: normalizedSavedLayout.length },
+      ])
     : defaultLayout.map(item => ({ ...item, type: item.id }))
   ).sort((a, b) => a.order - b.order);
   const now = Date.now();
