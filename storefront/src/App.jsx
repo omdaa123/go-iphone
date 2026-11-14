@@ -2427,7 +2427,7 @@ function StoreDataProvider({ children }) {
       });
     };
     const selectSection = event => {
-      if (event.target?.closest?.("[data-admin-insert-after],.go-admin-section-grip")) return;
+      if (event.target?.closest?.("[data-admin-insert-after],.go-admin-section-grip,.go-admin-section-remove")) return;
       const section = sectionAt(event.target);
       if (!section) return;
       event.preventDefault();
