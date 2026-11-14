@@ -1227,7 +1227,10 @@ function CertifiedPreownedSection({ products, go, onOpen, onToggleCompare, compa
 function HomePage({ go, compareIds, onToggleCompare }) {
   const { products: allProducts, siteContent } = useStoreData();
   const PRODUCTS = allProducts.filter(isPublished);
-  const collectionSettings = Array.isArray(siteContent.collections) ? siteContent.collections : [];
+  const collectionDetails = siteContent.collectionDetails && typeof siteContent.collectionDetails === "object" ? siteContent.collectionDetails : {};
+  const collectionSettings = Array.isArray(siteContent.collections)
+    ? siteContent.collections.map(collection => ({ ...collection, ...(collectionDetails[collection.id] || {}) }))
+    : [];
   const preowned = PRODUCTS.filter((p) => p.hasUnits);
   const featured = PRODUCTS.find((p) => hasCollection(p, "featured") && p.category === "iphone")
     || PRODUCTS.find((p) => p.category === "iphone")
@@ -1243,9 +1246,7 @@ function HomePage({ go, compareIds, onToggleCompare }) {
   const mergedCollections = builtInCollections.map((base) => ({
     ...base,
     ...(collectionSettings.find((c) => c.id === base.id) || {}),
-    // These core sections are intentionally kept on the homepage.
-    visible: true,
-    homepageVisible: true,
+    ...(collectionDetails[base.id] || {}),
   })).concat(collectionSettings.filter((c) => !builtInCollections.some((base) => base.id === c.id)));
   const merchandisingSections = mergedCollections
     .filter((c) => c.visible !== false && c.homepageVisible !== false)
@@ -1289,9 +1290,12 @@ function HomePage({ go, compareIds, onToggleCompare }) {
     : defaultLayout.map(item => ({ ...item, type: item.id }))
   ).sort((a, b) => a.order - b.order);
   const now = Date.now();
-  const isInPublishWindow = item =>
-    (!item.publishAt || new Date(item.publishAt).getTime() <= now) &&
-    (!item.unpublishAt || new Date(item.unpublishAt).getTime() > now);
+  const isInPublishWindow = item => {
+    const scheduleEnabled = item.scheduleEnabled ?? Boolean(item.publishAt || item.unpublishAt);
+    if (!scheduleEnabled) return true;
+    return (!item.publishAt || new Date(item.publishAt).getTime() <= now) &&
+      (!item.unpublishAt || new Date(item.unpublishAt).getTime() > now);
+  };
 
   function renderCollection(section, index) {
     if (section.id === "featured") return <EditorialFeature key={section.id} product={section.products[0]} go={go} />;
