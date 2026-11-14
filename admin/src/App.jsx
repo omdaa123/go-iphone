@@ -1167,8 +1167,7 @@ function StoreCategoriesManager({ onError }) {
   async function createCategory(event){
     event.preventDefault();
     const labelText=newLabel.trim();
-    const key=labelText.toLowerCase().normalize("NFKD").replace(/[\\u0300-\\u036f]/g,"").replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"");
-    if(!key){onError("Use a category name with English letters or numbers so it can be used in product URLs.");return;}
+    const key=labelText.toLowerCase().normalize("NFKD").replace(/[\u0300-\u036f]/g,"").replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"") || `category-${Date.now()}`;
     setCreatingBusy(true);
     try{
       await request("/categories",{method:"POST",body:JSON.stringify({key,label:labelText})});
