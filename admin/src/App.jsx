@@ -877,6 +877,17 @@ function HomepageBuilder({ onError }) {
     } catch (e) { onError(e.message); }
     finally { setUploading(false); }
   }
+  async function uploadSectionImage(file) {
+    if (!file) return;
+    setUploading(true);
+    try {
+      const dataUrl = await compressImage(file);
+      const result = await request("/media", { method: "POST", body: JSON.stringify({ dataUrl, fileName: file.name, usageTag: "homepage-section" }) });
+      setMedia(list => [result.media, ...list]);
+      updateSelectedSection({ imageUrl: result.media.url });
+    } catch (e) { onError(e.message); }
+    finally { setUploading(false); }
+  }
   async function uploadTrustImage(file, index) {
     if (!file) return;
     setUploading(true);
@@ -1059,6 +1070,11 @@ function HomepageBuilder({ onError }) {
             <label>Eyebrow<input value={selected.eyebrow||""} onChange={e=>updateSelectedSection({eyebrow:e.target.value})}/></label>
             <label>Button text<input value={selected.ctaText||""} onChange={e=>updateSelectedSection({ctaText:e.target.value})}/></label>
             <label>Image URL<input value={selected.imageUrl||""} onChange={e=>updateSelectedSection({imageUrl:e.target.value})}/></label>
+            <label className="btn secondary small upload-label">{uploading ? "Uploading…" : "Upload section image"}<input type="file" accept="image/jpeg,image/png,image/webp,image/gif" disabled={uploading} onChange={e=>{uploadSectionImage(e.target.files?.[0]);e.target.value="";}}/></label>
+            <label>Image position<select value={selected.imagePosition||"left"} onChange={e=>updateSelectedSection({imagePosition:e.target.value})}><option value="left">Left</option><option value="right">Right</option></select></label>
+            <label>Layout<select value={selected.layout||"grid"} onChange={e=>updateSelectedSection({layout:e.target.value})}><option value="grid">Grid</option><option value="centered">Centered</option><option value="split">Split</option></select></label>
+            <label>Vertical spacing (px)<input type="number" min="0" max="180" value={selected.paddingY??64} onChange={e=>updateSelectedSection({paddingY:Number(e.target.value)})}/></label>
+            <label>Button destination<input value={selected.linkCategoryKey||"iphone"} onChange={e=>updateSelectedSection({linkCategoryKey:e.target.value})} placeholder="iphone, ipad, mac…"/></label>
             <label>Background color<input type="color" value={selected.backgroundColor||"#f5f3ef"} onChange={e=>updateSelectedSection({backgroundColor:e.target.value})}/></label>
             <label>Text color<input type="color" value={selected.textColor||"#20242b"} onChange={e=>updateSelectedSection({textColor:e.target.value})}/></label>
             <button type="button" className="btn primary" onClick={()=>saveSiteSection("homepageLayout",siteContent.homepageLayout)}>Save section settings</button>
