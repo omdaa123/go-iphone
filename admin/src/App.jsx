@@ -5,7 +5,7 @@ import {
   Eye, FileText, Gauge, Image, LayoutDashboard, LogOut, Menu, Package,
   Plus, RefreshCw, Search, Settings, ShieldCheck, ShoppingBag, ShoppingCart,
   SlidersHorizontal, Sparkles, Users, X, AlertTriangle, CheckCircle2,
-  Clock3, Smartphone, Layers3
+  Clock3, Smartphone, Layers3, Monitor
 , ArrowRight , ArrowLeft , Pencil } from "lucide-react";
 
 function CustomSelect({value,onChange,children,...props}) {
@@ -1765,7 +1765,7 @@ export default function App() {
         {page === "media" && <MediaLibrary onError={showError}/>}
         {page === "homepage" && <HomepageBuilder onError={showError}/>}
         {page === "collections" && <CollectionsManager onError={showError}/>}
-        {page === "design" && <DesignStudio onError={showError}/>}
+        
         {!["dashboard","products","orders","inventory","reservations","customers","team","settings","media","homepage","collections"].includes(page) && <Placeholder id={page} onNavigate={navigate}/>}
         <footer className="app-footer"><span>© {new Date().getFullYear()} GO iPhone</span><span>Admin workspace <i/> Built for your store</span></footer>
       </div>
