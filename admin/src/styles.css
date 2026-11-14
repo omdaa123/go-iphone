@@ -1026,3 +1026,13 @@ table td{font-size:12px;padding:15px 16px}
 .canvas-layer-actions button:not(:disabled):hover{background:#eef2f6;border-color:#cbd5e1}
 .canvas-add-section{width:100%;justify-content:center}
 @media(max-width:1050px){.canvas-layer-panel{max-height:280px;overflow:auto}}
+
+
+/* Live section picker */
+.section-picker-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.section-picker-option{display:grid;grid-template-columns:42px 1fr;grid-template-rows:auto auto;align-items:center;gap:3px 12px;text-align:left;padding:15px;border:1px solid #e2e8f0;border-radius:13px;background:#fff;color:#1e293b;cursor:pointer;transition:border-color .15s,box-shadow .15s,transform .15s}
+.section-picker-option:hover{border-color:#7294bd;box-shadow:0 7px 20px rgba(30,64,110,.09);transform:translateY(-1px)}
+.section-picker-option b{font-size:13px;align-self:end}
+.section-picker-option small{grid-column:2;color:#718096;font-size:11px;line-height:1.45;align-self:start}
+.section-picker-icon{grid-row:1 / span 2;width:40px;height:40px;display:grid;place-items:center;border-radius:11px;background:#eef3f9;color:#456b98}
+@media(max-width:640px){.section-picker-grid{grid-template-columns:1fr}}
