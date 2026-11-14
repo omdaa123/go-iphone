@@ -996,7 +996,7 @@ function HomepageBuilder({ onError }) {
       {[["overview","Hero & banners"],["layout","Page structure"],["collections","Collections"],["categories","Category visuals"],["content","Content & trust"]].map(([id,label],index)=><button type="button" key={id} className={activeTab===id?"active":""} onClick={()=>setActiveTab(id)}><span>0{index+1}</span>{label}</button>)}
     </nav>
     {activeTab === "layout" && <section className="panel homepage-editor-panel" style={{ marginBottom: 24 }}>
-      <div className="panel-head"><div><h2>Homepage sections</h2><p>Edit the Tools and Trust content shown below your product collections.</p></div></div>
+      <div className="panel-head"><div><h2>Homepage sections</h2><p>Control which storefront blocks appear, their order, and optional publishing schedules. Changes here are reflected by the live storefront renderer.</p></div></div>
       <div style={{ padding: 22, display: "grid", gap: 24 }}>
         <div>
           <div className="row-actions" style={{ justifyContent: "space-between", marginBottom: 14, flexWrap: "wrap" }}>
@@ -1027,7 +1027,7 @@ function HomepageBuilder({ onError }) {
                           : { scheduleEnabled: true });
                       }}
                     >
-                      {Boolean(item.scheduleEnabled ?? (item.publishAt || item.unpublishAt)) ? "Turn schedule off" : "Always visible"}
+                      {Boolean(item.scheduleEnabled ?? (item.publishAt || item.unpublishAt)) ? "Turn schedule off" : "Add schedule"}
                     </button>
                   </div>
                 </div>
