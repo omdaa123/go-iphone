@@ -2354,13 +2354,53 @@ function StoreDataProvider({ children }) {
   useEffect(() => {
     if (!adminPreview || !previewDraft) return;
     let draggedSectionId = "";
+    let observer;
     const sectionAt = target => target?.closest?.("[data-homepage-section]");
+    const post = payload => window.parent.postMessage(payload, "*");
+    const mountSectionControls = () => {
+      const sections = [...document.querySelectorAll("[data-homepage-section]")];
+      sections.forEach((section,index) => {
+        section.style.outline = "1px solid rgba(92,116,145,.22)";
+        section.style.outlineOffset = "-1px";
+        section.style.position = section.style.position || "relative";
+        section.style.cursor = "pointer";
+        section.title = "Select section · Drag to move";
+        if (!section.querySelector(":scope > .go-admin-section-grip")) {
+          const grip = document.createElement("button");
+          grip.type = "button"; grip.className = "go-admin-section-grip";
+          grip.textContent = "⠿  MOVE";
+          grip.draggable = true;
+          grip.title = "Drag this section to move it";
+          grip.addEventListener("dragstart", event => {
+            draggedSectionId = section.dataset.homepageSection;
+            event.dataTransfer?.setData("text/plain", draggedSectionId);
+            if (event.dataTransfer) event.dataTransfer.effectAllowed = "move";
+          });
+          section.appendChild(grip);
+        }
+        if (index < sections.length - 1) {
+          const next = section.nextElementSibling;
+          if (!next?.matches?.("[data-admin-insert-after='"+section.dataset.homepageSection+"']")) {
+            const add = document.createElement("button");
+            add.type = "button"; add.className = "go-admin-insert-section";
+            add.dataset.adminInsertAfter = section.dataset.homepageSection;
+            add.innerHTML = "<span>+</span><small>ADD SECTION HERE</small>";
+            add.addEventListener("click", event => {
+              event.preventDefault(); event.stopPropagation();
+              post({type:"GO_IPHONE_ADD_SECTION_AFTER",afterId:section.dataset.homepageSection});
+            });
+            section.after(add);
+          }
+        }
+      });
+    };
     const selectSection = event => {
+      if (event.target?.closest?.("[data-admin-insert-after],.go-admin-section-grip")) return;
       const section = sectionAt(event.target);
       if (!section) return;
       event.preventDefault();
       event.stopPropagation();
-      window.parent.postMessage({ type: "GO_IPHONE_SELECT_SECTION", sectionId: section.dataset.homepageSection }, "*");
+      post({ type: "GO_IPHONE_SELECT_SECTION", sectionId: section.dataset.homepageSection });
     };
     const startDrag = event => {
       const section = sectionAt(event.target);
@@ -2378,11 +2418,16 @@ function StoreDataProvider({ children }) {
       window.parent.postMessage({ type: "GO_IPHONE_REORDER_SECTION", fromId: draggedSectionId, toId: target.dataset.homepageSection }, "*");
       draggedSectionId = "";
     };
+    mountSectionControls();
+    observer = new MutationObserver(() => mountSectionControls());
+    observer.observe(document.querySelector("[data-homepage-section]")?.parentElement || document.body,{childList:true,subtree:true});
     document.addEventListener("click", selectSection, true);
     document.addEventListener("dragstart", startDrag, true);
     document.addEventListener("dragover", allowDrop, true);
     document.addEventListener("drop", dropSection, true);
     return () => {
+      observer?.disconnect();
+      document.querySelectorAll(".go-admin-insert-section,.go-admin-section-grip").forEach(node=>node.remove());
       document.removeEventListener("click", selectSection, true);
       document.removeEventListener("dragstart", startDrag, true);
       document.removeEventListener("dragover", allowDrop, true);
