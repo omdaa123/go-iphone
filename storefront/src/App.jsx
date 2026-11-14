@@ -2357,8 +2357,27 @@ function StoreDataProvider({ children }) {
     let observer;
     const sectionAt = target => target?.closest?.("[data-homepage-section]");
     const post = payload => window.parent.postMessage(payload, "*");
+    if (!document.getElementById("go-admin-canvas-styles")) {
+      const style = document.createElement("style");
+      style.id = "go-admin-canvas-styles";
+      style.textContent = `
+        [data-homepage-section]{position:relative!important;outline:1px solid rgba(92,116,145,.24)!important;outline-offset:-1px;transition:outline .15s,box-shadow .15s;cursor:pointer}
+        [data-homepage-section]:hover{outline:2px solid #6886aa!important;outline-offset:-2px;box-shadow:inset 0 0 0 2px rgba(104,134,170,.08)}
+        [data-homepage-section].go-admin-selected{outline:3px solid #4778b8!important;outline-offset:-3px;box-shadow:inset 0 0 0 3px rgba(71,120,184,.10)}
+        .go-admin-section-grip{position:absolute!important;top:8px!important;left:8px!important;z-index:99999!important;border:1px solid #d6dfeb!important;border-radius:7px!important;padding:6px 9px!important;background:#fff!important;color:#30445d!important;font:800 9px/1.2 Arial,sans-serif!important;letter-spacing:.08em!important;box-shadow:0 2px 9px rgba(15,23,42,.14)!important;cursor:grab!important}
+        .go-admin-section-grip:active{cursor:grabbing!important}
+        .go-admin-insert-section{display:flex!important;align-items:center!important;justify-content:center!important;gap:9px!important;width:100%!important;min-height:38px!important;margin:0!important;padding:3px 12px!important;border:0!important;background:transparent!important;color:#61758d!important;cursor:pointer!important;position:relative!important;z-index:100000!important}
+        .go-admin-insert-section:before,.go-admin-insert-section:after{content:""!important;height:1px!important;flex:1!important;background:#cbd5e1!important}
+        .go-admin-insert-section span{display:grid!important;place-items:center!important;width:25px!important;height:25px!important;border:1px solid #aabbd0!important;border-radius:50%!important;background:#fff!important;color:#385d86!important;font:600 19px/1 Arial,sans-serif!important;box-shadow:0 2px 6px rgba(15,23,42,.10)!important}
+        .go-admin-insert-section small{font:800 8px Arial,sans-serif!important;letter-spacing:.12em!important;color:#728198!important}
+        .go-admin-insert-section:hover span{background:#385d86!important;color:#fff!important;border-color:#385d86!important;transform:scale(1.08)}
+      `;
+      document.head.appendChild(style);
+    }
     const mountSectionControls = () => {
       const sections = [...document.querySelectorAll("[data-homepage-section]")];
+      const validIds = new Set(sections.slice(0,-1).map(section=>section.dataset.homepageSection));
+      document.querySelectorAll(".go-admin-insert-section").forEach(button=>{if(!validIds.has(button.dataset.adminInsertAfter))button.remove();});
       sections.forEach((section,index) => {
         section.style.outline = "1px solid rgba(92,116,145,.22)";
         section.style.outlineOffset = "-1px";
@@ -2400,6 +2419,8 @@ function StoreDataProvider({ children }) {
       if (!section) return;
       event.preventDefault();
       event.stopPropagation();
+      document.querySelectorAll("[data-homepage-section].go-admin-selected").forEach(node=>node.classList.remove("go-admin-selected"));
+      section.classList.add("go-admin-selected");
       post({ type: "GO_IPHONE_SELECT_SECTION", sectionId: section.dataset.homepageSection });
     };
     const startDrag = event => {
