@@ -821,6 +821,13 @@ function HomepageBuilder({ onError }) {
     const items = siteContent.homepageLayout.map(item => item.id === id ? { ...item, ...patch } : item);
     commitLayout(items);
   }
+  const sectionPresets = [{type:"announcement",label:"Announcement bar"},{type:"image-text",label:"Image & text"},{type:"promo-banners",label:"Promotional banners"},{type:"featured-product",label:"Featured product"},{type:"testimonials",label:"Testimonials"},{type:"rich-text",label:"Rich text"}];
+  function addHomepageSection(type) {
+    const preset=sectionPresets.find(x=>x.type===type); if(!preset)return;
+    const item={...preset,id:type+"-"+Date.now(),visible:true,order:siteContent.homepageLayout.length,title:"Your new section",description:"Add your message here.",eyebrow:"GO IPHONE",ctaText:"Explore now",imageUrl:"",backgroundColor:"#f5f3ef",textColor:"#20242b",paddingY:64,linkCategoryKey:"iphone",testimonials:[{quote:"Excellent experience from start to finish.",name:"A happy customer"}]};
+    commitLayout([...siteContent.homepageLayout,item]); setSelectedSectionId(item.id);
+  }
+  function updateSelectedSection(patch) { const items=siteContent.homepageLayout.map(x=>x.id===selectedSectionId?{...x,...patch}:x); commitLayout(items); }
   function moveHomepageSection(index, direction) {
     const items = [...siteContent.homepageLayout].sort((a, b) => a.order - b.order);
     const target = index + direction;
