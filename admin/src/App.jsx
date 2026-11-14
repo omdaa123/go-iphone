@@ -1095,13 +1095,35 @@ function HomepageBuilder({ onError }) {
               {(selected.id==="collections" || selected.type==="collections") && (() => {
                 const builtIns=[{id:"featured",name:"Featured"},{id:"new-arrivals",name:"New Arrivals"},{id:"best-sellers",name:"Best Sellers"},{id:"certified-refurbished",name:"Certified Refurbished"}];
                 const collectionItems=[...builtIns,...collections.filter(c=>!builtIns.some(b=>b.id===c.id))];
+                const defaultOrder=new Map(collectionItems.map((item,index)=>[item.id,index]));
+                const orderedItems=[...collectionItems].sort((a,b)=>
+                  Number(siteContent.collectionDetails?.[a.id]?.homepageOrder ?? defaultOrder.get(a.id))-
+                  Number(siteContent.collectionDetails?.[b.id]?.homepageOrder ?? defaultOrder.get(b.id))
+                );
                 const activeId=collectionItems.some(c=>c.id===liveCollectionId)?liveCollectionId:(collectionItems[0]?.id||"");
                 const config=siteContent.collectionDetails?.[activeId]||{};
                 const updateConfig=patch=>setSiteContent(current=>({...current,collectionDetails:{...(current.collectionDetails||{}),[activeId]:{...(current.collectionDetails?.[activeId]||{}),...patch}}}));
+                const moveCollection=(id,direction)=>{
+                  const index=orderedItems.findIndex(item=>item.id===id);
+                  const target=index+direction;
+                  if(index<0||target<0||target>=orderedItems.length)return;
+                  const next=[...orderedItems];[next[index],next[target]]=[next[target],next[index]];
+                  setSiteContent(current=>({...current,collectionDetails:{...(current.collectionDetails||{}),...Object.fromEntries(next.map((item,position)=>[item.id,{...(current.collectionDetails?.[item.id]||{}),homepageOrder:position}]))}}));
+                };
                 const saveConfig=async()=>{await saveSiteSection("collectionDetails",siteContent.collectionDetails||{});};
                 return <div className="live-collection-inspector">
                   <div className="live-collection-inspector-title"><b>Product collections inside this section</b><small>Select each collection and customize it separately. The preview updates as you edit.</small></div>
                   <label>Choose collection<select value={activeId} onChange={e=>setLiveCollectionId(e.target.value)}>{collectionItems.map(item=><option key={item.id} value={item.id}>{item.name}</option>)}</select></label>
+                  <div className="live-collection-order">
+                    <b>Homepage order</b><small>Move collections up or down to change their order on the storefront.</small>
+                    {orderedItems.map((item,index)=><div className={item.id===activeId?"live-collection-order-row active": "live-collection-order-row"} key={item.id}>
+                      <button type="button" className="text-btn" onClick={()=>setLiveCollectionId(item.id)}>{index+1}. {item.name}</button>
+                      <span className="live-collection-order-actions">
+                        <button type="button" className="icon-btn" title="Move up" aria-label={"Move "+item.name+" up"} disabled={index===0} onClick={()=>moveCollection(item.id,-1)}>↑</button>
+                        <button type="button" className="icon-btn" title="Move down" aria-label={"Move "+item.name+" down"} disabled={index===orderedItems.length-1} onClick={()=>moveCollection(item.id,1)}>↓</button>
+                      </span>
+                    </div>)}
+                  </div>
                   <label>Collection heading<input value={config.name||collectionItems.find(c=>c.id===activeId)?.name||""} onChange={e=>updateConfig({name:e.target.value})}/></label>
                   <label>Description<input value={config.storeDescription||""} onChange={e=>updateConfig({storeDescription:e.target.value})} placeholder="Short description"/></label>
                   <label>Font family<select value={config.headingFont||"inherit"} onChange={e=>updateConfig({headingFont:e.target.value})}><option value="inherit">Store default</option><option value="Inter, sans-serif">Inter</option><option value="Arial, sans-serif">Arial</option><option value="Georgia, serif">Georgia</option><option value="'Trebuchet MS', sans-serif">Trebuchet</option><option value="'Times New Roman', serif">Times New Roman</option></select></label>
