@@ -905,11 +905,8 @@ function representativeProduct(categoryKey) {
 function CategoryGrid({ go }) {
   const { categories: CATEGORIES, siteContent } = useStoreData();
   const categoryImages = siteContent.categoryImages || {};
-  const shown = CATEGORIES.filter((c) => c.key !== "other-accessory");
-  // Woven bento pattern: a category spans 2 grid columns, the rest span 1.
-  // Because col-span-2 always means "half the row" whether the row has 2
-  // columns (mobile) or 4 (desktop), this single set of classes produces a
-  // sensible layout at every breakpoint with no responsive span overrides.
+  const shown = CATEGORIES.filter((c) => !c.parentKey && c.key !== "other-accessory");
+  const childrenOf = (key) => CATEGORIES.filter((c) => c.parentKey === key);
   const wide = new Set(["iphone", "apple-accessory", "other-devices"]);
 
   return (
@@ -921,27 +918,42 @@ function CategoryGrid({ go }) {
           const rep = representativeProduct(c.key);
           const hasPhoto = !!override || !!(rep && productImageSrc(rep));
           const isWide = wide.has(c.key);
+          const children = childrenOf(c.key);
           return (
-            <button key={c.key} onClick={() => go("catalog", { category: c.key })}
-              style={{ backgroundColor: T.stone }}
-              className={`group relative h-48 md:h-60 flex flex-col justify-between p-5 md:p-6 text-left overflow-hidden ${isWide ? "col-span-2" : "col-span-1"}`}>
-              <div className="absolute inset-0 pointer-events-none">
-                {override ? (
-                  <img src={override} alt="" className="absolute inset-0 w-full h-full object-cover object-center transition-transform duration-300 ease-out group-hover:scale-105" />
-                ) : rep ? (
-                  <ProductImage product={rep} size={isWide ? 118 : 78} className="transition-transform duration-300 ease-out group-hover:-translate-y-1" imgClassName="transition-transform duration-300 ease-out group-hover:-translate-y-1" />
-                ) : (
-                  <div className="absolute inset-0 flex items-center justify-center" style={{ padding: isWide ? "0 15%" : "14%" }}>
-                    <DeviceGlyph category={c.key === "apple-accessory" ? "pencil" : c.key} hex={DEFAULT_DEVICE_HEX} size={isWide ? 118 : 78} className="transition-transform duration-300 ease-out group-hover:-translate-y-1" />
-                  </div>
-                )}
-              </div>
-              <span />
-              <span className="relative flex items-center gap-1.5">
-                <span style={{ color: hasPhoto ? "#fff" : T.ink, textShadow: hasPhoto ? "0 1px 3px rgba(0,0,0,0.4)" : "none" }} className="text-sm font-medium">{c.label}</span>
-                <ChevronRight size={14} style={{ color: hasPhoto ? "#fff" : T.ink }} className="opacity-0 -translate-x-1 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-200" />
-              </span>
-            </button>
+            <article key={c.key} className={isWide ? "col-span-2" : "col-span-1"}>
+              <button type="button" onClick={() => go("catalog", { category: c.key })}
+                style={{ backgroundColor: T.stone }}
+                className={`group relative w-full h-48 md:h-60 flex flex-col justify-between p-5 md:p-6 text-left overflow-hidden `}>
+                <div className="absolute inset-0 pointer-events-none">
+                  {override ? (
+                    <img src={override} alt="" className="absolute inset-0 w-full h-full object-cover object-center transition-transform duration-300 ease-out group-hover:scale-105" />
+                  ) : rep ? (
+                    <ProductImage product={rep} size={isWide ? 118 : 78} className="transition-transform duration-300 ease-out group-hover:-translate-y-1" imgClassName="transition-transform duration-300 ease-out group-hover:-translate-y-1" />
+                  ) : (
+                    <div className="absolute inset-0 flex items-center justify-center" style={{ padding: isWide ? "0 15%" : "14%" }}>
+                      <DeviceGlyph category={c.key === "apple-accessory" ? "pencil" : c.key} hex={DEFAULT_DEVICE_HEX} size={isWide ? 118 : 78} className="transition-transform duration-300 ease-out group-hover:-translate-y-1" />
+                    </div>
+                  )}
+                </div>
+                <span />
+                <span className="relative flex items-center gap-1.5">
+                  <span style={{ color: hasPhoto ? "#fff" : T.ink, textShadow: hasPhoto ? "0 1px 3px rgba(0,0,0,0.4)" : "none" }} className="text-sm font-medium">{c.label}</span>
+                  <ChevronRight size={14} style={{ color: hasPhoto ? "#fff" : T.ink }} className="opacity-0 -translate-x-1 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-200" />
+                </span>
+              </button>
+              {children.length > 0 && (
+                <div className="mt-2 border-t" style={{ borderColor: T.line }}>
+                  {children.map((child) => (
+                    <button type="button" key={child.key} onClick={() => go("catalog", { category: child.key })}
+                      className="group/sub w-full flex items-center justify-between gap-2 py-2.5 px-1 text-left text-sm transition-colors"
+                      style={{ color: T.graphite }}>
+                      <span>{child.label}</span>
+                      <ChevronRight size={14} style={{ color: T.graphite }} className="transition-transform duration-200 group-hover/sub:translate-x-1" />
+                    </button>
+                  ))}
+                </div>
+              )}
+            </article>
           );
         })}
       </div>
