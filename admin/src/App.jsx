@@ -768,7 +768,7 @@ function HomepageBuilder({ onError }) {
   const [form, setForm] = useState(blank);
   const [mediaTarget, setMediaTarget] = useState("");
   const [refresh, setRefresh] = useState(0);
-  const [activeTab, setActiveTab] = useState("overview");
+  const [activeTab, setActiveTab] = useState("canvas");
   const [previewMode, setPreviewMode] = useState("");
   const previewFrameRef = useRef(null);
   const [draggedSection, setDraggedSection] = useState("");
