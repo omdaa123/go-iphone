@@ -778,6 +778,7 @@ function HomepageBuilder({ onError }) {
   const [canvasViewport, setCanvasViewport] = useState("desktop");
   const [showSectionPicker, setShowSectionPicker] = useState(false);
   const [addSectionAfterId, setAddSectionAfterId] = useState("");
+  const [liveCollectionId, setLiveCollectionId] = useState("best-sellers");
   const [editingHomepageCollectionId, setEditingHomepageCollectionId] = useState("best-sellers");
   const [layoutDirty, setLayoutDirty] = useState(false);
   function commitLayout(nextLayout) {
@@ -1091,6 +1092,27 @@ function HomepageBuilder({ onError }) {
               {field("Eyebrow","eyebrow","Small overline")}
               {field("Heading","title","Section heading")}
               <label>Description<textarea rows="4" value={selected.description||""} onChange={e=>updateSelectedSection({description:e.target.value})}/></label>
+              {(selected.id==="collections" || selected.type==="collections") && (() => {
+                const builtIns=[{id:"featured",name:"Featured"},{id:"new-arrivals",name:"New Arrivals"},{id:"best-sellers",name:"Best Sellers"},{id:"certified-refurbished",name:"Certified Refurbished"}];
+                const collectionItems=[...builtIns,...collections.filter(c=>!builtIns.some(b=>b.id===c.id))];
+                const activeId=collectionItems.some(c=>c.id===liveCollectionId)?liveCollectionId:(collectionItems[0]?.id||"");
+                const config=siteContent.collectionDetails?.[activeId]||{};
+                const updateConfig=patch=>setSiteContent(current=>({...current,collectionDetails:{...(current.collectionDetails||{}),[activeId]:{...(current.collectionDetails?.[activeId]||{}),...patch}}}));
+                const saveConfig=async()=>{await saveSiteSection("collectionDetails",siteContent.collectionDetails||{});};
+                return <div className="live-collection-inspector">
+                  <div className="live-collection-inspector-title"><b>Product collections inside this section</b><small>Select each collection and customize it separately. The preview updates as you edit.</small></div>
+                  <label>Choose collection<select value={activeId} onChange={e=>setLiveCollectionId(e.target.value)}>{collectionItems.map(item=><option key={item.id} value={item.id}>{item.name}</option>)}</select></label>
+                  <label>Collection heading<input value={config.name||collectionItems.find(c=>c.id===activeId)?.name||""} onChange={e=>updateConfig({name:e.target.value})}/></label>
+                  <label>Description<input value={config.storeDescription||""} onChange={e=>updateConfig({storeDescription:e.target.value})} placeholder="Short description"/></label>
+                  <label>Font family<select value={config.headingFont||"inherit"} onChange={e=>updateConfig({headingFont:e.target.value})}><option value="inherit">Store default</option><option value="Inter, sans-serif">Inter</option><option value="Arial, sans-serif">Arial</option><option value="Georgia, serif">Georgia</option><option value="'Trebuchet MS', sans-serif">Trebuchet</option><option value="'Times New Roman', serif">Times New Roman</option></select></label>
+                  <label>Font size <b>{config.headingSize||32}px</b><input type="range" min="20" max="56" value={config.headingSize||32} onChange={e=>updateConfig({headingSize:Number(e.target.value)})}/></label>
+                  <label>Font weight<select value={config.headingWeight||"700"} onChange={e=>updateConfig({headingWeight:e.target.value})}><option value="500">Medium</option><option value="600">Semi-bold</option><option value="700">Bold</option><option value="800">Extra bold</option></select></label>
+                  <label>Products layout<select value={config.productsLayout||"default"} onChange={e=>updateConfig({productsLayout:e.target.value})}><option value="default">Automatic</option><option value="grid">Grid</option><option value="rail">Slider</option></select></label>
+                  <div className="visual-color-fields"><label>Background<input type="color" value={config.sectionBackground||"#ffffff"} onChange={e=>updateConfig({sectionBackground:e.target.value})}/></label><label>Heading color<input type="color" value={config.headingColor||"#20242b"} onChange={e=>updateConfig({headingColor:e.target.value})}/></label><label>Accent color<input type="color" value={config.accentColor||"#ad8642"} onChange={e=>updateConfig({accentColor:e.target.value})}/></label></div>
+                  <label>Card radius <b>{config.cardRadius??16}px</b><input type="range" min="0" max="32" value={config.cardRadius??16} onChange={e=>updateConfig({cardRadius:Number(e.target.value)})}/></label>
+                  <button type="button" className="btn primary small" disabled={saving} onClick={saveConfig}>{saving?"Saving…":"Save collection design"}</button>
+                </div>;
+              })()}
               {field("Button text","ctaText","Explore now")}
               {field("Button URL","buttonUrl","/catalog")}
               {field("Category destination","linkCategoryKey","iphone")}
