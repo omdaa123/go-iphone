@@ -1280,9 +1280,7 @@ function HomePage({ go, compareIds, onToggleCompare }) {
   const hasCollectionsBlock = normalizedSavedLayout.some(item => (item.type || item.id) === "collections");
   const homepageLayout = (savedLayout.length
     ? (hasCollectionsBlock
-        ? normalizedSavedLayout.map(item =>
-            (item.type || item.id) === "collections" ? { ...item, visible: true } : item
-          )
+        ? normalizedSavedLayout
         : [
             ...normalizedSavedLayout,
             { id: "collections", type: "collections", visible: true, order: normalizedSavedLayout.length },
