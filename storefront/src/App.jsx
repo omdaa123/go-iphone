@@ -434,7 +434,7 @@ function SectionHeading({ eyebrow, title, action, onAction }) {
     <div className="flex flex-wrap items-end justify-between mb-10 md:mb-12 gap-x-4 gap-y-2">
       <div>
         {eyebrow && <p style={{ color: T.graphite, fontSize: "13px", letterSpacing: "0.02em" }} className="mb-2">{eyebrow}</p>}
-        <h2 style={{ color: "var(--collection-heading-color, " + "var(--collection-heading-color, " + "var(--collection-heading-color, inherit))" + ")", fontFamily: "inherit", fontWeight: "var(--collection-heading-weight, 700)", letterSpacing: "-0.02em", fontSize: "var(--collection-heading-size, clamp(1.9rem, 3.2vw, 2.75rem))", lineHeight: 1.12 }}>{title}</h2>
+        <h2 style={{ color: "var(--collection-heading-color, inherit)", fontFamily: "inherit", fontWeight: "var(--collection-heading-weight, 700)", letterSpacing: "-0.02em", fontSize: "var(--collection-heading-size, clamp(1.9rem, 3.2vw, 2.75rem))", lineHeight: 1.12 }}>{title}</h2>
       </div>
       {action && (
         <button onClick={onAction} className="group inline-flex items-center text-sm font-medium shrink-0 relative pb-1" style={{ color: T.ink }}>
