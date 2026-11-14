@@ -1020,7 +1020,7 @@ function HomepageBuilder({ onError }) {
             {[...siteContent.homepageLayout].sort((a, b) => a.order - b.order).map((item, index) => (
               <div key={item.id} draggable onDragStart={() => setDraggedSection(item.id)} onDragOver={e => e.preventDefault()} onDrop={() => dropHomepageSection(item.id)} onDragEnd={() => setDraggedSection("")} style={{ display: "grid", gap: 10, border: draggedSection === item.id ? "2px dashed #64748b" : "1px solid #e5e7eb", borderRadius: 12, padding: 14, background: "#fff" }}>
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
-                  <label className="homepage-toggle"><input type="checkbox" checked={item.visible !== false} onChange={e => updateHomepageLayout(item.id, { visible: e.target.checked })}/><b>⠿ {item.label}</b></label>
+                  <label className="homepage-toggle"><input type="checkbox" checked={item.visible !== false} onChange={e => updateHomepageLayout(item.id, { visible: e.target.checked })}/><b>⠿ {item.label}</b></label><button type="button" className="btn secondary small" onClick={() => setSelectedSectionId(item.id)}>Edit design</button>
                   <div className="row-actions">
                     <button type="button" className="btn secondary small" disabled={index === 0} onClick={() => moveHomepageSection(index, -1)}>↑</button>
                     <button type="button" className="btn secondary small" disabled={index === siteContent.homepageLayout.length - 1} onClick={() => moveHomepageSection(index, 1)}>↓</button>
@@ -1051,6 +1051,7 @@ function HomepageBuilder({ onError }) {
               </div>
             ))}
           </div>
+          <div style={{display:"flex",flexWrap:"wrap",gap:8,marginTop:18}}>{sectionPresets.map(p=><button key={p.type} type="button" className="btn secondary small" onClick={()=>addHomepageSection(p.type)}>Add {p.label}</button>)}</div>
         </div>
       </div>
     </section>}
