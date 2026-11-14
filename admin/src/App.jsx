@@ -1009,7 +1009,6 @@ function HomepageBuilder({ onError }) {
       if (event.origin !== new URL(PREVIEW_STOREFRONT_URL).origin) return;
       if (event.data?.type === "GO_IPHONE_SELECT_SECTION") {
         setSelectedSectionId(event.data.sectionId || "");
-        setActiveTab("layout");
       }
       if (event.data?.type === "GO_IPHONE_REORDER_SECTION") {
         const { fromId, toId } = event.data;
@@ -1043,7 +1042,34 @@ function HomepageBuilder({ onError }) {
 
     {activeTab === "canvas" && <section className="panel visual-canvas-panel">
       <div className="visual-canvas-toolbar"><div><span className="eyebrow">LIVE STOREFRONT / VISUAL EDITOR</span><h2>Click any section to edit it</h2><p>Choose a section in the storefront preview, or drag sections to reorder them.</p></div><div className="row-actions"><button type="button" className={canvasViewport==="desktop"?"btn primary small":"btn secondary small"} onClick={()=>setCanvasViewport("desktop")}><Monitor size={14}/> Desktop</button><button type="button" className={canvasViewport==="mobile"?"btn primary small":"btn secondary small"} onClick={()=>setCanvasViewport("mobile")}><Smartphone size={14}/> Mobile</button><button type="button" className="btn secondary small" onClick={sendPreviewDraft}><RefreshCw size={14}/> Refresh preview</button><button type="button" className="btn primary small" disabled={saving} onClick={()=>saveSiteSection("homepageLayout",siteContent.homepageLayout)}>{saving?"Saving…":"Save changes"}</button></div></div>
-      <div className="visual-canvas-stage"><iframe ref={previewFrameRef} title="Live editable GO iPhone storefront" src={PREVIEW_STOREFRONT_URL} onLoad={sendPreviewDraft} style={{width:canvasViewport==="mobile"?390:"100%",maxWidth:"100%",height:"78vh",minHeight:620,border:canvasViewport==="mobile"?"9px solid #202938":"0",borderRadius:canvasViewport==="mobile"?30:10,background:"#fff",boxShadow:"0 12px 45px rgba(15,23,42,.12)"}} /></div>
+      <div className="visual-canvas-stage">
+        <div className="visual-canvas-frame"><iframe ref={previewFrameRef} title="Live editable GO iPhone storefront" src={PREVIEW_STOREFRONT_URL} onLoad={sendPreviewDraft} style={{width:canvasViewport==="mobile"?390:"100%",maxWidth:"100%",height:"78vh",minHeight:620,border:canvasViewport==="mobile"?"9px solid #202938":"0",borderRadius:canvasViewport==="mobile"?30:10,background:"#fff",boxShadow:"0 12px 45px rgba(15,23,42,.12)"}} /></div>
+        <aside className="visual-canvas-inspector">
+          {(() => {
+            const selected=siteContent.homepageLayout.find(x=>x.id===selectedSectionId);
+            if(!selected) return <div className="visual-inspector-empty"><Sparkles size={22}/><b>Select a section</b><p>Click any block in the storefront preview to edit its content and appearance here.</p><button type="button" className="btn secondary small" onClick={()=>setActiveTab("layout")}>Open section list</button></div>;
+            const field=(label,key,placeholder="")=><label>{label}<input value={selected[key]||""} placeholder={placeholder} onChange={e=>updateSelectedSection({[key]:e.target.value})}/></label>;
+            return <div className="visual-inspector-fields">
+              <div className="visual-inspector-heading"><div><span className="eyebrow">SELECTED SECTION</span><h3>{selected.label||selected.type||selected.id}</h3></div><button type="button" className="icon-btn" title="Clear selection" onClick={()=>setSelectedSectionId("")}><X size={16}/></button></div>
+              {field("Section name","label","Section name")}
+              {field("Eyebrow","eyebrow","Small overline")}
+              {field("Heading","title","Section heading")}
+              <label>Description<textarea rows="4" value={selected.description||""} onChange={e=>updateSelectedSection({description:e.target.value})}/></label>
+              {field("Button text","ctaText","Explore now")}
+              {field("Button URL","buttonUrl","/catalog")}
+              {field("Category destination","linkCategoryKey","iphone")}
+              {field("Image URL","imageUrl","https://…")}
+              <label className="btn secondary small upload-label">{uploading?"Uploading…":"Upload image"}<input type="file" accept="image/jpeg,image/png,image/webp,image/gif" disabled={uploading} onChange={e=>{uploadSectionImage(e.target.files?.[0]);e.target.value="";}}/></label>
+              <label>Layout<select value={selected.layout||"grid"} onChange={e=>updateSelectedSection({layout:e.target.value})}><option value="grid">Grid</option><option value="centered">Centered</option><option value="split">Split</option><option value="rail">Horizontal rail</option></select></label>
+              <label>Image position<select value={selected.imagePosition||"left"} onChange={e=>updateSelectedSection({imagePosition:e.target.value})}><option value="left">Left</option><option value="right">Right</option></select></label>
+              <label>Columns<input type="number" min="1" max="4" value={selected.columns||3} onChange={e=>updateSelectedSection({columns:Math.max(1,Math.min(4,Number(e.target.value)||1))})}/></label>
+              <label>Section spacing<input type="number" min="0" max="180" value={selected.paddingY??64} onChange={e=>updateSelectedSection({paddingY:Math.max(0,Math.min(180,Number(e.target.value)||0))})}/></label>
+              <div className="visual-color-fields"><label>Background<input type="color" value={selected.backgroundColor||"#f5f3ef"} onChange={e=>updateSelectedSection({backgroundColor:e.target.value})}/></label><label>Text<input type="color" value={selected.textColor||"#20242b"} onChange={e=>updateSelectedSection({textColor:e.target.value})}/></label></div>
+              <div className="row-actions"><button type="button" className="btn secondary small" onClick={()=>setActiveTab("layout")}>More section settings</button><button type="button" className="btn danger small" onClick={()=>{if(window.confirm("Delete this section?")){commitLayout(siteContent.homepageLayout.filter(x=>x.id!==selected.id));setSelectedSectionId("");}}}>Delete</button></div>
+            </div>;
+          })()}
+        </aside>
+      </div>
       <div className="visual-canvas-footnote"><span><i/> Live draft preview</span><span>Click to select · Drag to reorder · Save to update the store</span></div>
     </section>}
     {activeTab === "brand" && <DesignStudio onError={onError}/>}
