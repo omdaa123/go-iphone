@@ -20,7 +20,7 @@ function CustomModelField({label,value,onChange,options,placeholder}) {
 }
 
 const API = "/admin";
-const PREVIEW_STOREFRONT_URL = import.meta.env.DEV ? "http://127.0.0.1:5174/?adminPreview=1" : "https://go-iphone-storefront1.vercel.app/?adminPreview=1";
+const PREVIEW_STOREFRONT_URL = import.meta.env.DEV ? "http://127.0.0.1:5175/?adminPreview=1" : "https://go-iphone-storefront1.vercel.app/?adminPreview=1";
 const money = (cents = 0) => new Intl.NumberFormat("en-EG", {
   style: "currency", currency: "EGP", maximumFractionDigits: 0
 }).format(Number(cents || 0) / 100);
