@@ -908,7 +908,6 @@ function CategoryGrid({ go }) {
   // API category records may expose the parent relation as parent_key or parentKey.
   const parentOf = (category) => category.parentKey || category.parent_key || null;
   const shown = CATEGORIES.filter((c) => !parentOf(c) && c.key !== "other-accessory");
-  const childrenOf = (key) => CATEGORIES.filter((c) => parentOf(c) === key);
   const wide = new Set(["iphone", "apple-accessory", "other-devices"]);
 
   return (
@@ -920,7 +919,6 @@ function CategoryGrid({ go }) {
           const rep = representativeProduct(c.key);
           const hasPhoto = !!override || !!(rep && productImageSrc(rep));
           const isWide = wide.has(c.key);
-          const children = childrenOf(c.key);
           return (
             <article key={c.key} className={isWide ? "col-span-2" : "col-span-1"}>
               <button type="button" onClick={() => go("catalog", { category: c.key })}
@@ -943,18 +941,7 @@ function CategoryGrid({ go }) {
                   <ChevronRight size={14} style={{ color: hasPhoto ? "#fff" : T.ink }} className="opacity-0 -translate-x-1 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-200" />
                 </span>
               </button>
-              {children.length > 0 && (
-                <div className="mt-2 border-t" style={{ borderColor: T.line }}>
-                  {children.map((child) => (
-                    <button type="button" key={child.key} onClick={() => go("catalog", { category: child.key })}
-                      className="group/sub w-full flex items-center justify-between gap-2 py-2.5 px-1 text-left text-sm transition-colors"
-                      style={{ color: T.graphite }}>
-                      <span>{child.label}</span>
-                      <ChevronRight size={14} style={{ color: T.graphite }} className="transition-transform duration-200 group-hover/sub:translate-x-1" />
-                    </button>
-                  ))}
-                </div>
-              )}
+
             </article>
           );
         })}
