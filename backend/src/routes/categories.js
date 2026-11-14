@@ -13,6 +13,22 @@ categoriesRouter.get("/", async (req, res, next) => {
   try {
     await pool.query("ALTER TABLE categories ADD COLUMN IF NOT EXISTS parent_key TEXT REFERENCES categories(key) ON DELETE SET NULL");
     await pool.query(`INSERT INTO categories (key, label, sort_order) VALUES ($1, $2, $3) ON CONFLICT (key) DO NOTHING`, ["other-devices", "Other Devices", 7]);
+    const otherDeviceBranches = [
+      ["smartphone", "Smartphones", 8],
+      ["smartwatch", "Smart Watches", 9],
+      ["tablet", "Tablets", 10],
+      ["speakers", "Speakers", 11],
+      ["headphones", "Headphones", 12],
+      ["other-electronics", "Other Electronics", 13],
+    ];
+    for (const [key, label, sortOrder] of otherDeviceBranches) {
+      await pool.query(
+        `INSERT INTO categories (key, label, sort_order, parent_key)
+         VALUES ($1, $2, $3, 'other-devices')
+         ON CONFLICT (key) DO UPDATE SET parent_key = 'other-devices'`,
+        [key, label, sortOrder]
+      );
+    }
     const { rows } = await pool.query(
       `SELECT c.*, m.url AS image_url FROM categories c LEFT JOIN media m ON m.id = c.image_media_id ORDER BY c.sort_order`
     );
