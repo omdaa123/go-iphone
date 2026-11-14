@@ -19,17 +19,21 @@ categoriesRouter.get("/", async (req, res, next) => {
        ON CONFLICT (key) DO UPDATE SET label = 'Accessories', parent_key = NULL`
     );
     const accessoryBranches = [
-      ["apple-accessories", "Apple Accessories", 14],
-      ["other-accessories", "Other Accessories", 15],
+      ["apple-accessory", "Apple Accessories", 14],
+      ["other-accessory", "Other Accessories", 15],
     ];
     for (const [key, label, sortOrder] of accessoryBranches) {
       await pool.query(
         `INSERT INTO categories (key, label, sort_order, parent_key)
          VALUES ($1, $2, $3, 'accessories')
-         ON CONFLICT (key) DO UPDATE SET parent_key = 'accessories'`,
+         ON CONFLICT (key) DO UPDATE SET label = EXCLUDED.label, parent_key = 'accessories'`,
         [key, label, sortOrder]
       );
     }
+    // Consolidate duplicate branch keys from the earlier plural-key version.
+    await pool.query(`UPDATE products SET category_key = 'apple-accessory' WHERE category_key = 'apple-accessories'`);
+    await pool.query(`UPDATE products SET category_key = 'other-accessory' WHERE category_key = 'other-accessories'`);
+    await pool.query(`DELETE FROM categories WHERE key IN ('apple-accessories', 'other-accessories')`);
     const otherDeviceBranches = [
       ["smartphone", "Smartphones", 8],
       ["smartwatch", "Smart Watches", 9],
