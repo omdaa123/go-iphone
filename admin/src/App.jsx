@@ -1074,7 +1074,7 @@ function HomepageBuilder({ onError }) {
       <div><span>MEDIA ASSETS</span><b>{media.length}</b><small>Available in your library</small></div>
     </div>
     <nav className="homepage-tabs" aria-label="Homepage builder sections">
-      {[["canvas","Live canvas"],["overview","Hero & banners"],["categories","Category visuals"],["content","Content & trust"],["brand","Brand design"]].map(([id,label],index)=><button type="button" key={id} className={activeTab===id?"active":""} onClick={()=>{setActiveTab(id);if(id==="canvas")request("/collections").then(d=>setCollections(d.collections||[])).catch(e=>onError(e.message));}}><span>{String(index+1).padStart(2,"0")}</span>{label}</button>)}
+      {[["canvas","Live canvas"],["overview","Hero & banners"],["categories","Category visuals"],["content","Content & trust"]].map(([id,label],index)=><button type="button" key={id} className={activeTab===id?"active":""} onClick={()=>{setActiveTab(id);if(id==="canvas")request("/collections").then(d=>setCollections(d.collections||[])).catch(e=>onError(e.message));}}><span>{String(index+1).padStart(2,"0")}</span>{label}</button>)}
     </nav>
 
     {activeTab === "canvas" && <section className="panel visual-canvas-panel">
