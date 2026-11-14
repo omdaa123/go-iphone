@@ -1151,7 +1151,7 @@ function HomepageBuilder({ onError }) {
         </aside>
       </div>
       <div className="visual-canvas-footnote"><span><i/> Live draft preview</span><span>Click to select · Drag to reorder · Changes auto-save to your live store</span></div>
-      <LiveBrandAndFooterEditor onError={onError}/>
+      <LiveBrandAndFooterEditor onError={onError} previewFrameRef={previewFrameRef}/>
     </section>}
     {showSectionPicker && <div className="modal-backdrop" onClick={()=>setShowSectionPicker(false)}>
       <div className="editor-modal section-picker-modal" onClick={e=>e.stopPropagation()} style={{width:"min(820px,96vw)",maxHeight:"88vh",overflow:"auto"}}>
@@ -1606,10 +1606,11 @@ function DesignStudio({ onError }) {
 
 
 
-function LiveBrandAndFooterEditor({ onError }) {
+function LiveBrandAndFooterEditor({ onError, previewFrameRef }) {
   const [design,setDesign]=useState(DESIGN_DEFAULTS);
   const [footer,setFooter]=useState({description:"A premium independent retailer for Apple devices — new and certified pre-owned.",groups:[{id:"shop",title:"Shop",links:[{label:"iPhone",category:"iphone"},{label:"iPad",category:"ipad"},{label:"Mac",category:"mac"},{label:"Watch",category:"watch"},{label:"AirPods",category:"airpods"}]},{id:"tools",title:"Tools",links:[{label:"Find your perfect device",action:"recommend"},{label:"Compare devices",action:"compare"}]},{id:"store",title:"Store",links:[{label:"Alexandria, Egypt",textOnly:true},{label:"Cash on delivery available",textOnly:true}]}],copyright:"© {year} Go iPhone. Not affiliated with Apple Inc."});
   const [loading,setLoading]=useState(true),[saving,setSaving]=useState(false),[saved,setSaved]=useState(false);
+  useEffect(()=>{const frame=previewFrameRef?.current;if(!frame?.contentWindow)return;frame.contentWindow.postMessage({type:"GO_IPHONE_ADMIN_PREVIEW",payload:{siteContent:{designSystem:design,footerSection:footer}}},new URL(PREVIEW_STOREFRONT_URL).origin);},[design,footer,previewFrameRef]);
   useEffect(()=>{request("/site-content").then(({siteContent={}})=>{const d=siteContent.designSystem||{};setDesign({...DESIGN_DEFAULTS,...d,colors:{...DESIGN_DEFAULTS.colors,...(d.colors||{})}});if(siteContent.footerSection)setFooter(f=>({...f,...siteContent.footerSection}));}).catch(e=>onError(e.message)).finally(()=>setLoading(false));},[onError]);
   const updateDesign=(patch)=>{setDesign(d=>({...d,...patch,preset:"custom"}));setSaved(false);};
   const updateColor=(key,value)=>{setDesign(d=>({...d,preset:"custom",colors:{...d.colors,[key]:value}}));setSaved(false);};
