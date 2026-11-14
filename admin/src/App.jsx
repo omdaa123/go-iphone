@@ -822,10 +822,14 @@ function HomepageBuilder({ onError }) {
     commitLayout(items);
   }
   const sectionPresets = [{type:"announcement",label:"Announcement bar"},{type:"image-text",label:"Image & text"},{type:"promo-banners",label:"Promotional banners"},{type:"featured-product",label:"Featured product"},{type:"testimonials",label:"Testimonials"},{type:"rich-text",label:"Rich text"}];
-  function addHomepageSection(type) {
+  function addHomepageSection(type, afterId = "") {
     const preset=sectionPresets.find(x=>x.type===type); if(!preset)return;
-    const item={...preset,id:type+"-"+Date.now(),visible:true,order:siteContent.homepageLayout.length,title:"Your new section",description:"Add your message here.",eyebrow:"GO IPHONE",ctaText:"Explore now",imageUrl:"",backgroundColor:"#f5f3ef",textColor:"#20242b",paddingY:64,linkCategoryKey:"iphone",testimonials:[{quote:"Excellent experience from start to finish.",name:"A happy customer"}]};
-    commitLayout([...siteContent.homepageLayout,item]); setSelectedSectionId(item.id);
+    const item={...preset,id:type+"-"+Date.now(),visible:true,order:0,title:"New "+preset.label,description:"Add your message here.",eyebrow:"GO IPHONE",ctaText:"Explore now",imageUrl:"",backgroundColor:"#f5f3ef",textColor:"#20242b",paddingY:64,linkCategoryKey:"iphone",testimonials:[{quote:"Excellent experience from start to finish.",name:"A happy customer"}]};
+    const items=[...siteContent.homepageLayout].sort((a,b)=>(a.order??0)-(b.order??0));
+    const targetIndex=afterId?items.findIndex(x=>x.id===afterId):-1;
+    items.splice(targetIndex>=0?targetIndex+1:items.length,0,item);
+    commitLayout(items.map((entry,index)=>({...entry,order:index})));
+    setSelectedSectionId(item.id);
   }
   function updateSelectedSection(patch) { const items=siteContent.homepageLayout.map(x=>x.id===selectedSectionId?{...x,...patch}:x); commitLayout(items); }
   function moveHomepageSection(index, direction) {
@@ -1009,6 +1013,9 @@ function HomepageBuilder({ onError }) {
       if (event.origin !== new URL(PREVIEW_STOREFRONT_URL).origin) return;
       if (event.data?.type === "GO_IPHONE_SELECT_SECTION") {
         setSelectedSectionId(event.data.sectionId || "");
+      }
+      if (event.data?.type === "GO_IPHONE_ADD_SECTION_AFTER") {
+        addHomepageSection("rich-text", event.data.afterId || "");
       }
       if (event.data?.type === "GO_IPHONE_REORDER_SECTION") {
         const { fromId, toId } = event.data;
