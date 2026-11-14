@@ -776,9 +776,13 @@ function HomepageBuilder({ onError }) {
   const [historyIndex, setHistoryIndex] = useState(-1);
   const [selectedSectionId, setSelectedSectionId] = useState("");
   const [canvasViewport, setCanvasViewport] = useState("desktop");
+  const [showSectionPicker, setShowSectionPicker] = useState(false);
+  const [addSectionAfterId, setAddSectionAfterId] = useState("");
+  const [layoutDirty, setLayoutDirty] = useState(false);
   function commitLayout(nextLayout) {
     const snapshot = nextLayout.map(item => ({ ...item }));
     setSiteContent(current => ({ ...current, homepageLayout: snapshot }));
+    setLayoutDirty(true);
     setLayoutHistory(history => [...history.slice(0, historyIndex + 1), snapshot].slice(-30));
     setHistoryIndex(index => Math.min(index + 1, 29));
   }
@@ -821,7 +825,10 @@ function HomepageBuilder({ onError }) {
     const items = siteContent.homepageLayout.map(item => item.id === id ? { ...item, ...patch } : item);
     commitLayout(items);
   }
-  const sectionPresets = [{type:"announcement",label:"Announcement bar"},{type:"image-text",label:"Image & text"},{type:"promo-banners",label:"Promotional banners"},{type:"featured-product",label:"Featured product"},{type:"testimonials",label:"Testimonials"},{type:"rich-text",label:"Rich text"}];
+  const sectionPresets = [
+    {type:"hero",label:"Hero banner",group:"Store essentials"},{type:"categories",label:"Shop categories",group:"Store essentials"},{type:"collections",label:"Product collections",group:"Store essentials"},{type:"tools",label:"Shopping tools",group:"Store essentials"},{type:"trust",label:"Trust & benefits",group:"Store essentials"},
+    {type:"announcement",label:"Announcement bar",group:"Content & marketing"},{type:"image-text",label:"Image with text",group:"Content & marketing"},{type:"promo-banners",label:"Promotional banner grid",group:"Content & marketing"},{type:"featured-product",label:"Featured product",group:"Content & marketing"},{type:"testimonials",label:"Customer testimonials",group:"Content & marketing"},{type:"rich-text",label:"Rich text / story",group:"Content & marketing"}
+  ];
   function addHomepageSection(type, afterId = "") {
     const preset=sectionPresets.find(x=>x.type===type); if(!preset)return;
     const item={...preset,id:type+"-"+Date.now(),visible:true,order:0,title:"New "+preset.label,description:"Add your message here.",eyebrow:"GO IPHONE",ctaText:"Explore now",imageUrl:"",backgroundColor:"#f5f3ef",textColor:"#20242b",paddingY:64,linkCategoryKey:"iphone",testimonials:[{quote:"Excellent experience from start to finish.",name:"A happy customer"}]};
@@ -830,6 +837,14 @@ function HomepageBuilder({ onError }) {
     items.splice(targetIndex>=0?targetIndex+1:items.length,0,item);
     commitLayout(items.map((entry,index)=>({...entry,order:index})));
     setSelectedSectionId(item.id);
+    setShowSectionPicker(false);
+  }
+  function openSectionPicker(afterId = "") { setAddSectionAfterId(afterId); setShowSectionPicker(true); }
+  function removeHomepageSection(id) {
+    const target=siteContent.homepageLayout.find(item=>item.id===id);
+    if(!target || !window.confirm(`Remove “${target.label||target.title||target.id}” from the homepage?`)) return;
+    commitLayout(siteContent.homepageLayout.filter(item=>item.id!==id).map((item,index)=>({...item,order:index})));
+    setSelectedSectionId(current=>current===id?"":current);
   }
   function updateSelectedSection(patch) { const items=siteContent.homepageLayout.map(x=>x.id===selectedSectionId?{...x,...patch}:x); commitLayout(items); }
   function moveHomepageSection(index, direction) {
@@ -1009,13 +1024,24 @@ function HomepageBuilder({ onError }) {
     return () => window.clearTimeout(timer);
   }, [activeTab, siteContent, slides, media]);
   useEffect(() => {
+    if (!layoutDirty || loading) return;
+    const timer = window.setTimeout(async () => {
+      try { await request("/site-content/homepageLayout", { method: "PUT", body: JSON.stringify(siteContent.homepageLayout) }); setLayoutDirty(false); }
+      catch (e) { onError("Auto-save failed: " + e.message); }
+    }, 1100);
+    return () => window.clearTimeout(timer);
+  }, [layoutDirty, loading, siteContent.homepageLayout, onError]);
+  useEffect(() => {
     const receiveCanvasAction = event => {
       if (event.origin !== new URL(PREVIEW_STOREFRONT_URL).origin) return;
       if (event.data?.type === "GO_IPHONE_SELECT_SECTION") {
         setSelectedSectionId(event.data.sectionId || "");
       }
       if (event.data?.type === "GO_IPHONE_ADD_SECTION_AFTER") {
-        addHomepageSection("rich-text", event.data.afterId || "");
+        openSectionPicker(event.data.afterId || "");
+      }
+      if (event.data?.type === "GO_IPHONE_REMOVE_SECTION") {
+        removeHomepageSection(event.data.sectionId || "");
       }
       if (event.data?.type === "GO_IPHONE_REORDER_SECTION") {
         const { fromId, toId } = event.data;
@@ -1044,33 +1070,17 @@ function HomepageBuilder({ onError }) {
       <div><span>MEDIA ASSETS</span><b>{media.length}</b><small>Available in your library</small></div>
     </div>
     <nav className="homepage-tabs" aria-label="Homepage builder sections">
-      {[["canvas","Live canvas"],["overview","Hero & banners"],["layout","Sections"],["collections","Collections"],["categories","Category visuals"],["content","Content & trust"],["brand","Brand design"]].map(([id,label],index)=><button type="button" key={id} className={activeTab===id?"active":""} onClick={()=>setActiveTab(id)}><span>{String(index+1).padStart(2,"0")}</span>{label}</button>)}
+      {[["canvas","Live canvas"],["overview","Hero & banners"],["collections","Collections"],["categories","Category visuals"],["content","Content & trust"],["brand","Brand design"]].map(([id,label],index)=><button type="button" key={id} className={activeTab===id?"active":""} onClick={()=>setActiveTab(id)}><span>{String(index+1).padStart(2,"0")}</span>{label}</button>)}
     </nav>
 
     {activeTab === "canvas" && <section className="panel visual-canvas-panel">
-      <div className="visual-canvas-toolbar"><div><span className="eyebrow">LIVE STOREFRONT / VISUAL EDITOR</span><h2>Click any section to edit it</h2><p>Choose a section in the storefront preview, or drag sections to reorder them.</p></div><div className="row-actions"><button type="button" className={canvasViewport==="desktop"?"btn primary small":"btn secondary small"} onClick={()=>setCanvasViewport("desktop")}><Monitor size={14}/> Desktop</button><button type="button" className={canvasViewport==="mobile"?"btn primary small":"btn secondary small"} onClick={()=>setCanvasViewport("mobile")}><Smartphone size={14}/> Mobile</button><button type="button" className="btn secondary small" onClick={undoLayout} disabled={historyIndex<=0} title="Undo"><ArrowLeft size={14}/> Undo</button><button type="button" className="btn secondary small" onClick={redoLayout} disabled={historyIndex<0||historyIndex>=layoutHistory.length-1} title="Redo"><ArrowRight size={14}/> Redo</button><button type="button" className="btn secondary small" onClick={sendPreviewDraft}><RefreshCw size={14}/> Refresh preview</button><button type="button" className="btn primary small" disabled={saving} onClick={()=>saveSiteSection("homepageLayout",siteContent.homepageLayout)}>{saving?"Saving…":"Save changes"}</button></div></div>
+      <div className="visual-canvas-toolbar"><div><span className="eyebrow">LIVE STOREFRONT / VISUAL EDITOR</span><h2>Click any section to edit it</h2><p>Choose a section in the storefront preview, or drag sections to reorder them.</p></div><div className="row-actions"><button type="button" className={canvasViewport==="desktop"?"btn primary small":"btn secondary small"} onClick={()=>setCanvasViewport("desktop")}><Monitor size={14}/> Desktop</button><button type="button" className={canvasViewport==="mobile"?"btn primary small":"btn secondary small"} onClick={()=>setCanvasViewport("mobile")}><Smartphone size={14}/> Mobile</button><button type="button" className="btn secondary small" onClick={undoLayout} disabled={historyIndex<=0} title="Undo"><ArrowLeft size={14}/> Undo</button><button type="button" className="btn secondary small" onClick={redoLayout} disabled={historyIndex<0||historyIndex>=layoutHistory.length-1} title="Redo"><ArrowRight size={14}/> Redo</button><button type="button" className="btn secondary small" onClick={sendPreviewDraft}><RefreshCw size={14}/> Refresh preview</button><button type="button" className="btn primary small" disabled={saving} onClick={()=>saveSiteSection("homepageLayout",siteContent.homepageLayout).then(()=>setLayoutDirty(false))}>{saving?"Saving…":"Save changes"}</button></div></div>
       <div className="visual-canvas-stage">
         <div className="visual-canvas-frame"><iframe ref={previewFrameRef} title="Live editable GO iPhone storefront" src={PREVIEW_STOREFRONT_URL} onLoad={sendPreviewDraft} style={{width:canvasViewport==="mobile"?390:"100%",maxWidth:"100%",height:"78vh",minHeight:620,border:canvasViewport==="mobile"?"9px solid #202938":"0",borderRadius:canvasViewport==="mobile"?30:10,background:"#fff",boxShadow:"0 12px 45px rgba(15,23,42,.12)"}} /></div>
         <aside className="visual-canvas-inspector">
-          <div className="canvas-layer-panel">
-            <div className="canvas-layer-heading"><div><span className="eyebrow">PAGE STRUCTURE</span><b>Sections & blocks</b></div><span className="count-pill">{siteContent.homepageLayout.length}</span></div>
-            <div className="canvas-layer-list">
-              {[...siteContent.homepageLayout].sort((a,b)=>(a.order??0)-(b.order??0)).map((item,index)=>(
-                <div key={item.id} className={"canvas-layer-row "+(selectedSectionId===item.id?"selected":"")+(item.visible===false?" muted":"")}>
-                  <button type="button" className="canvas-layer-select" onClick={()=>setSelectedSectionId(item.id)}><span className="canvas-layer-grip">⠿</span><span className="canvas-layer-copy"><b>{item.label||item.title||item.type||item.id}</b><small>{item.type||item.id}</small></span></button>
-                  <div className="canvas-layer-actions">
-                    <button type="button" title="Move up" aria-label={"Move "+(item.label||item.id)+" up"} disabled={index===0} onClick={()=>moveHomepageSection(index,-1)}>↑</button>
-                    <button type="button" title="Move down" aria-label={"Move "+(item.label||item.id)+" down"} disabled={index===siteContent.homepageLayout.length-1} onClick={()=>moveHomepageSection(index,1)}>↓</button>
-                    <button type="button" title={item.visible===false?"Show section":"Hide section"} aria-label={item.visible===false?"Show section":"Hide section"} onClick={()=>updateHomepageLayout(item.id,{visible:item.visible===false})}>{item.visible===false?"Show":"Hide"}</button>
-                  </div>
-                </div>
-              ))}
-            </div>
-            <button type="button" className="btn secondary small canvas-add-section" onClick={()=>setActiveTab("layout")}><Plus size={14}/> Add or manage sections</button>
-          </div>
           {(() => {
             const selected=siteContent.homepageLayout.find(x=>x.id===selectedSectionId);
-            if(!selected) return <div className="visual-inspector-empty"><Sparkles size={22}/><b>Select a section</b><p>Click any block in the storefront preview to edit its content and appearance here.</p><button type="button" className="btn secondary small" onClick={()=>setActiveTab("layout")}>Open section list</button></div>;
+            if(!selected) return <div className="visual-inspector-empty"><Sparkles size={22}/><b>Select a section</b><p>Click any block in the storefront preview to edit its content and appearance here.</p><button type="button" className="btn primary small" onClick={()=>openSectionPicker("")}><Plus size={14}/> Add section</button></div>;
             const field=(label,key,placeholder="")=><label>{label}<input value={selected[key]||""} placeholder={placeholder} onChange={e=>updateSelectedSection({[key]:e.target.value})}/></label>;
             return <div className="visual-inspector-fields">
               <div className="visual-inspector-heading"><div><span className="eyebrow">SELECTED SECTION</span><h3>{selected.label||selected.type||selected.id}</h3></div><button type="button" className="icon-btn" title="Clear selection" onClick={()=>setSelectedSectionId("")}><X size={16}/></button></div>
@@ -1088,7 +1098,7 @@ function HomepageBuilder({ onError }) {
               <label>Columns<input type="number" min="1" max="4" value={selected.columns||3} onChange={e=>updateSelectedSection({columns:Math.max(1,Math.min(4,Number(e.target.value)||1))})}/></label>
               <label>Section spacing<input type="number" min="0" max="180" value={selected.paddingY??64} onChange={e=>updateSelectedSection({paddingY:Math.max(0,Math.min(180,Number(e.target.value)||0))})}/></label>
               <div className="visual-color-fields"><label>Background<input type="color" value={selected.backgroundColor||"#f5f3ef"} onChange={e=>updateSelectedSection({backgroundColor:e.target.value})}/></label><label>Text<input type="color" value={selected.textColor||"#20242b"} onChange={e=>updateSelectedSection({textColor:e.target.value})}/></label></div>
-              <div className="row-actions"><button type="button" className="btn secondary small" onClick={()=>setActiveTab("layout")}>More section settings</button><button type="button" className="btn danger small" onClick={()=>{if(window.confirm("Delete this section?")){commitLayout(siteContent.homepageLayout.filter(x=>x.id!==selected.id));setSelectedSectionId("");}}}>Delete</button></div>
+              <div className="row-actions"><button type="button" className="btn secondary small" onClick={()=>duplicateHomepageSection(selected)}>Duplicate</button><button type="button" className="btn danger small" onClick={()=>removeHomepageSection(selected.id)}>Remove section</button></div>
             </div>;
           })()}
         </aside>
@@ -1096,74 +1106,12 @@ function HomepageBuilder({ onError }) {
       <div className="visual-canvas-footnote"><span><i/> Live draft preview</span><span>Click to select · Drag to reorder · Save to update the store</span></div>
     </section>}
     {activeTab === "brand" && <DesignStudio onError={onError}/>}
-    {activeTab === "layout" && <section className="panel homepage-editor-panel" style={{ marginBottom: 24 }}>
-      <div className="panel-head"><div><h2>Homepage sections</h2><p>Control which storefront blocks appear, their order, and optional publishing schedules. Changes here are reflected by the live storefront renderer.</p></div></div>
-      <div style={{ padding: 22, display: "grid", gap: 24 }}>
-        <div>
-          <div className="row-actions" style={{ justifyContent: "space-between", marginBottom: 14, flexWrap: "wrap" }}>
-            <div><h3>Homepage section order</h3><p className="muted">Drag sections to reorder, duplicate blocks, schedule visibility and preview before saving.</p></div>
-            <div className="row-actions">
-              <button type="button" className="btn secondary" onClick={undoLayout} disabled={historyIndex <= 0}>Undo</button>
-              <button type="button" className="btn secondary" onClick={redoLayout} disabled={historyIndex < 0 || historyIndex >= layoutHistory.length - 1}>Redo</button>
-              <button type="button" className="btn secondary" onClick={() => setPreviewMode("desktop")}>Live preview</button>
-              <button className="btn primary" disabled={saving} onClick={() => saveSiteSection("homepageLayout", siteContent.homepageLayout)}>{saving ? "Saving…" : "Save layout"}</button>
-            </div>
-          </div>
-          <div style={{ display: "grid", gap: 10 }}>
-            {[...siteContent.homepageLayout].sort((a, b) => a.order - b.order).map((item, index) => (
-              <div key={item.id} draggable onDragStart={() => setDraggedSection(item.id)} onDragOver={e => e.preventDefault()} onDrop={() => dropHomepageSection(item.id)} onDragEnd={() => setDraggedSection("")} style={{ display: "grid", gap: 10, border: draggedSection === item.id ? "2px dashed #64748b" : "1px solid #e5e7eb", borderRadius: 12, padding: 14, background: "#fff" }}>
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
-                  <label className="homepage-toggle"><input type="checkbox" checked={item.visible !== false} onChange={e => updateHomepageLayout(item.id, { visible: e.target.checked })}/><b>⠿ {item.label}</b></label><button type="button" className="btn secondary small" onClick={() => setSelectedSectionId(item.id)}>Edit design</button>
-                  <div className="row-actions">
-                    <button type="button" className="btn secondary small" disabled={index === 0} onClick={() => moveHomepageSection(index, -1)}>↑</button>
-                    <button type="button" className="btn secondary small" disabled={index === siteContent.homepageLayout.length - 1} onClick={() => moveHomepageSection(index, 1)}>↓</button>
-                    <button type="button" className="btn secondary small" onClick={() => duplicateHomepageSection(item)}>Duplicate</button>
-                    <button
-                      type="button"
-                      className={Boolean(item.scheduleEnabled ?? (item.publishAt || item.unpublishAt)) ? "btn secondary small" : "btn primary small"}
-                      onClick={() => {
-                        const scheduled = Boolean(item.scheduleEnabled ?? (item.publishAt || item.unpublishAt));
-                        updateHomepageLayout(item.id, scheduled
-                          ? { scheduleEnabled: false, publishAt: null, unpublishAt: null }
-                          : { scheduleEnabled: true });
-                      }}
-                    >
-                      {Boolean(item.scheduleEnabled ?? (item.publishAt || item.unpublishAt)) ? "Turn schedule off" : "Add schedule"}
-                    </button>
-                  </div>
-                </div>
-                {Boolean(item.scheduleEnabled ?? (item.publishAt || item.unpublishAt)) ? (
-                  <div style={{ display: "flex", gap: 12, flexWrap: "wrap", alignItems: "end" }}>
-                    <label style={{ display: "grid", gap: 5, fontSize: 12 }}>Publish from<input type="datetime-local" value={item.publishAt ? new Date(item.publishAt).toISOString().slice(0,16) : ""} onChange={e => updateHomepageLayout(item.id, { publishAt: e.target.value ? new Date(e.target.value).toISOString() : null })}/></label>
-                    <label style={{ display: "grid", gap: 5, fontSize: 12 }}>Unpublish at<input type="datetime-local" value={item.unpublishAt ? new Date(item.unpublishAt).toISOString().slice(0,16) : ""} onChange={e => updateHomepageLayout(item.id, { unpublishAt: e.target.value ? new Date(e.target.value).toISOString() : null })}/></label>
-                    <small className="muted">This section follows the dates you set.</small>
-                  </div>
-                ) : (
-                  <small className="muted">Always visible — this section stays on the homepage until you hide it.</small>
-                )}
-              </div>
-            ))}
-          </div>
-          <div style={{display:"flex",flexWrap:"wrap",gap:8,marginTop:18}}>{sectionPresets.map(p=><button key={p.type} type="button" className="btn secondary small" onClick={()=>addHomepageSection(p.type)}>Add {p.label}</button>)}</div>
-          {(() => { const selected=siteContent.homepageLayout.find(x=>x.id===selectedSectionId); if(!selected)return null; return <div className="panel" style={{padding:18,marginTop:18,display:"grid",gap:12}}>
-            <h3>Section designer - {selected.label}</h3>
-            <label>Heading<input value={selected.title||""} onChange={e=>updateSelectedSection({title:e.target.value})}/></label>
-            <label>Description<textarea value={selected.description||""} onChange={e=>updateSelectedSection({description:e.target.value})}/></label>
-            <label>Eyebrow<input value={selected.eyebrow||""} onChange={e=>updateSelectedSection({eyebrow:e.target.value})}/></label>
-            <label>Button text<input value={selected.ctaText||""} onChange={e=>updateSelectedSection({ctaText:e.target.value})}/></label>
-            <label>Image URL<input value={selected.imageUrl||""} onChange={e=>updateSelectedSection({imageUrl:e.target.value})}/></label>
-            <label className="btn secondary small upload-label">{uploading ? "Uploading…" : "Upload section image"}<input type="file" accept="image/jpeg,image/png,image/webp,image/gif" disabled={uploading} onChange={e=>{uploadSectionImage(e.target.files?.[0]);e.target.value="";}}/></label>
-            <label>Image position<select value={selected.imagePosition||"left"} onChange={e=>updateSelectedSection({imagePosition:e.target.value})}><option value="left">Left</option><option value="right">Right</option></select></label>
-            <label>Layout<select value={selected.layout||"grid"} onChange={e=>updateSelectedSection({layout:e.target.value})}><option value="grid">Grid</option><option value="centered">Centered</option><option value="split">Split</option></select></label>
-            <label>Vertical spacing (px)<input type="number" min="0" max="180" value={selected.paddingY??64} onChange={e=>updateSelectedSection({paddingY:Number(e.target.value)})}/></label>
-            <label>Button destination<input value={selected.linkCategoryKey||"iphone"} onChange={e=>updateSelectedSection({linkCategoryKey:e.target.value})} placeholder="iphone, ipad, mac…"/></label>
-            <label>Background color<input type="color" value={selected.backgroundColor||"#f5f3ef"} onChange={e=>updateSelectedSection({backgroundColor:e.target.value})}/></label>
-            <label>Text color<input type="color" value={selected.textColor||"#20242b"} onChange={e=>updateSelectedSection({textColor:e.target.value})}/></label>
-            <div className="row-actions"><button type="button" className="btn secondary" onClick={()=>saveSiteSection("homepageLayout",siteContent.homepageLayout)}>Save section settings</button><button type="button" className="btn danger" onClick={()=>{if(window.confirm("Delete this homepage section?")){commitLayout(siteContent.homepageLayout.filter(x=>x.id!==selected.id));setSelectedSectionId("");}}}>Delete section</button></div>
-          </div>; })()}
-        </div>
+    {showSectionPicker && <div className="modal-backdrop" onClick={()=>setShowSectionPicker(false)}>
+      <div className="editor-modal section-picker-modal" onClick={e=>e.stopPropagation()} style={{width:"min(820px,96vw)",maxHeight:"88vh",overflow:"auto"}}>
+        <div className="modal-head"><div><div className="eyebrow">LIVE STORE BUILDER</div><h2>Choose a section to add</h2><p className="muted">Pick a ready-made layout. You can customize its text, images, colors and spacing after adding it.</p></div><button type="button" className="icon-btn" onClick={()=>setShowSectionPicker(false)}><X size={18}/></button></div>
+        {["Store essentials","Content & marketing"].map(group=><div key={group} style={{marginTop:18}}><h3 style={{marginBottom:10}}>{group}</h3><div className="section-picker-grid">{sectionPresets.filter(p=>p.group===group).map(p=><button type="button" key={p.type} className="section-picker-option" onClick={()=>addHomepageSection(p.type,addSectionAfterId)}><span className="section-picker-icon"><Plus size={18}/></span><b>{p.label}</b><small>{p.type==="hero"?"Large visual introduction":p.type==="categories"?"Show shopping departments":p.type==="collections"?"Highlight product groups":p.type==="tools"?"Comparison and recommendation tools":p.type==="trust"?"Warranty, delivery and reassurance":p.type==="announcement"?"Short promotional message":p.type==="image-text"?"Editorial image and copy":p.type==="promo-banners"?"Multiple campaign cards":p.type==="featured-product"?"Spotlight one product":p.type==="testimonials"?"Customer reviews and quotes":"Flexible text and call to action"}</small></button>)}</div></div>)}
       </div>
-    </section>}
+    </div>}
     {previewMode && <div className="modal-backdrop" onClick={() => setPreviewMode("")}>
       <div className="editor-modal" onClick={e => e.stopPropagation()} style={{ width: "min(1500px,98vw)", height: "94vh", maxHeight: "94vh", display: "flex", flexDirection: "column", overflow: "hidden" }}>
         <div className="modal-head" style={{ flexShrink: 0 }}>
