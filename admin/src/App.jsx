@@ -1103,7 +1103,7 @@ function HomepageBuilder({ onError }) {
           })()}
         </aside>
       </div>
-      <div className="visual-canvas-footnote"><span><i/> Live draft preview</span><span>Click to select · Drag to reorder · Save to update the store</span></div>
+      <div className="visual-canvas-footnote"><span><i/> Live draft preview</span><span>Click to select · Drag to reorder · Changes auto-save to your live store</span></div>
     </section>}
     {activeTab === "brand" && <DesignStudio onError={onError}/>}
     {showSectionPicker && <div className="modal-backdrop" onClick={()=>setShowSectionPicker(false)}>
