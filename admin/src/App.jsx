@@ -775,6 +775,7 @@ function HomepageBuilder({ onError }) {
   const [draggedSection, setDraggedSection] = useState("");
   const [layoutHistory, setLayoutHistory] = useState([]);
   const [historyIndex, setHistoryIndex] = useState(-1);
+  const [selectedSectionId, setSelectedSectionId] = useState("");
   function commitLayout(nextLayout) {
     const snapshot = nextLayout.map(item => ({ ...item }));
     setSiteContent(current => ({ ...current, homepageLayout: snapshot }));
