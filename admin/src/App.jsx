@@ -1041,10 +1041,26 @@ function HomepageBuilder({ onError }) {
     </nav>
 
     {activeTab === "canvas" && <section className="panel visual-canvas-panel">
-      <div className="visual-canvas-toolbar"><div><span className="eyebrow">LIVE STOREFRONT / VISUAL EDITOR</span><h2>Click any section to edit it</h2><p>Choose a section in the storefront preview, or drag sections to reorder them.</p></div><div className="row-actions"><button type="button" className={canvasViewport==="desktop"?"btn primary small":"btn secondary small"} onClick={()=>setCanvasViewport("desktop")}><Monitor size={14}/> Desktop</button><button type="button" className={canvasViewport==="mobile"?"btn primary small":"btn secondary small"} onClick={()=>setCanvasViewport("mobile")}><Smartphone size={14}/> Mobile</button><button type="button" className="btn secondary small" onClick={sendPreviewDraft}><RefreshCw size={14}/> Refresh preview</button><button type="button" className="btn primary small" disabled={saving} onClick={()=>saveSiteSection("homepageLayout",siteContent.homepageLayout)}>{saving?"Saving…":"Save changes"}</button></div></div>
+      <div className="visual-canvas-toolbar"><div><span className="eyebrow">LIVE STOREFRONT / VISUAL EDITOR</span><h2>Click any section to edit it</h2><p>Choose a section in the storefront preview, or drag sections to reorder them.</p></div><div className="row-actions"><button type="button" className={canvasViewport==="desktop"?"btn primary small":"btn secondary small"} onClick={()=>setCanvasViewport("desktop")}><Monitor size={14}/> Desktop</button><button type="button" className={canvasViewport==="mobile"?"btn primary small":"btn secondary small"} onClick={()=>setCanvasViewport("mobile")}><Smartphone size={14}/> Mobile</button><button type="button" className="btn secondary small" onClick={undoLayout} disabled={historyIndex<=0} title="Undo"><ArrowLeft size={14}/> Undo</button><button type="button" className="btn secondary small" onClick={redoLayout} disabled={historyIndex<0||historyIndex>=layoutHistory.length-1} title="Redo"><ArrowRight size={14}/> Redo</button><button type="button" className="btn secondary small" onClick={sendPreviewDraft}><RefreshCw size={14}/> Refresh preview</button><button type="button" className="btn primary small" disabled={saving} onClick={()=>saveSiteSection("homepageLayout",siteContent.homepageLayout)}>{saving?"Saving…":"Save changes"}</button></div></div>
       <div className="visual-canvas-stage">
         <div className="visual-canvas-frame"><iframe ref={previewFrameRef} title="Live editable GO iPhone storefront" src={PREVIEW_STOREFRONT_URL} onLoad={sendPreviewDraft} style={{width:canvasViewport==="mobile"?390:"100%",maxWidth:"100%",height:"78vh",minHeight:620,border:canvasViewport==="mobile"?"9px solid #202938":"0",borderRadius:canvasViewport==="mobile"?30:10,background:"#fff",boxShadow:"0 12px 45px rgba(15,23,42,.12)"}} /></div>
         <aside className="visual-canvas-inspector">
+          <div className="canvas-layer-panel">
+            <div className="canvas-layer-heading"><div><span className="eyebrow">PAGE STRUCTURE</span><b>Sections & blocks</b></div><span className="count-pill">{siteContent.homepageLayout.length}</span></div>
+            <div className="canvas-layer-list">
+              {[...siteContent.homepageLayout].sort((a,b)=>(a.order??0)-(b.order??0)).map((item,index)=>(
+                <div key={item.id} className={"canvas-layer-row "+(selectedSectionId===item.id?"selected":"")+(item.visible===false?" muted":"")}>
+                  <button type="button" className="canvas-layer-select" onClick={()=>setSelectedSectionId(item.id)}><span className="canvas-layer-grip">⠿</span><span className="canvas-layer-copy"><b>{item.label||item.title||item.type||item.id}</b><small>{item.type||item.id}</small></span></button>
+                  <div className="canvas-layer-actions">
+                    <button type="button" title="Move up" aria-label={"Move "+(item.label||item.id)+" up"} disabled={index===0} onClick={()=>moveHomepageSection(index,-1)}>↑</button>
+                    <button type="button" title="Move down" aria-label={"Move "+(item.label||item.id)+" down"} disabled={index===siteContent.homepageLayout.length-1} onClick={()=>moveHomepageSection(index,1)}>↓</button>
+                    <button type="button" title={item.visible===false?"Show section":"Hide section"} aria-label={item.visible===false?"Show section":"Hide section"} onClick={()=>updateHomepageLayout(item.id,{visible:item.visible===false})}>{item.visible===false?"Show":"Hide"}</button>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <button type="button" className="btn secondary small canvas-add-section" onClick={()=>setActiveTab("layout")}><Plus size={14}/> Add or manage sections</button>
+          </div>
           {(() => {
             const selected=siteContent.homepageLayout.find(x=>x.id===selectedSectionId);
             if(!selected) return <div className="visual-inspector-empty"><Sparkles size={22}/><b>Select a section</b><p>Click any block in the storefront preview to edit its content and appearance here.</p><button type="button" className="btn secondary small" onClick={()=>setActiveTab("layout")}>Open section list</button></div>;
