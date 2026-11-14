@@ -905,8 +905,10 @@ function representativeProduct(categoryKey) {
 function CategoryGrid({ go }) {
   const { categories: CATEGORIES, siteContent } = useStoreData();
   const categoryImages = siteContent.categoryImages || {};
-  const shown = CATEGORIES.filter((c) => !c.parentKey && c.key !== "other-accessory");
-  const childrenOf = (key) => CATEGORIES.filter((c) => c.parentKey === key);
+  // API category records may expose the parent relation as parent_key or parentKey.
+  const parentOf = (category) => category.parentKey || category.parent_key || null;
+  const shown = CATEGORIES.filter((c) => !parentOf(c) && c.key !== "other-accessory");
+  const childrenOf = (key) => CATEGORIES.filter((c) => parentOf(c) === key);
   const wide = new Set(["iphone", "apple-accessory", "other-devices"]);
 
   return (
