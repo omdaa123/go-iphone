@@ -1151,8 +1151,8 @@ function HomepageBuilder({ onError }) {
         </aside>
       </div>
       <div className="visual-canvas-footnote"><span><i/> Live draft preview</span><span>Click to select · Drag to reorder · Changes auto-save to your live store</span></div>
+      <LiveBrandAndFooterEditor onError={onError}/>
     </section>}
-    {activeTab === "brand" && <DesignStudio onError={onError}/>}
     {showSectionPicker && <div className="modal-backdrop" onClick={()=>setShowSectionPicker(false)}>
       <div className="editor-modal section-picker-modal" onClick={e=>e.stopPropagation()} style={{width:"min(820px,96vw)",maxHeight:"88vh",overflow:"auto"}}>
         <div className="modal-head"><div><div className="eyebrow">LIVE STORE BUILDER</div><h2>Choose a section to add</h2><p className="muted">Pick a ready-made layout. You can customize its text, images, colors and spacing after adding it.</p></div><button type="button" className="icon-btn" onClick={()=>setShowSectionPicker(false)}><X size={18}/></button></div>
@@ -1604,6 +1604,47 @@ function DesignStudio({ onError }) {
   </>;
 }
 
+
+
+function LiveBrandAndFooterEditor({ onError }) {
+  const [design,setDesign]=useState(DESIGN_DEFAULTS);
+  const [footer,setFooter]=useState({description:"A premium independent retailer for Apple devices — new and certified pre-owned.",groups:[{id:"shop",title:"Shop",links:[{label:"iPhone",category:"iphone"},{label:"iPad",category:"ipad"},{label:"Mac",category:"mac"},{label:"Watch",category:"watch"},{label:"AirPods",category:"airpods"}]},{id:"tools",title:"Tools",links:[{label:"Find your perfect device",action:"recommend"},{label:"Compare devices",action:"compare"}]},{id:"store",title:"Store",links:[{label:"Alexandria, Egypt",textOnly:true},{label:"Cash on delivery available",textOnly:true}]}],copyright:"© {year} Go iPhone. Not affiliated with Apple Inc."});
+  const [loading,setLoading]=useState(true),[saving,setSaving]=useState(false),[saved,setSaved]=useState(false);
+  useEffect(()=>{request("/site-content").then(({siteContent={}})=>{const d=siteContent.designSystem||{};setDesign({...DESIGN_DEFAULTS,...d,colors:{...DESIGN_DEFAULTS.colors,...(d.colors||{})}});if(siteContent.footerSection)setFooter(f=>({...f,...siteContent.footerSection}));}).catch(e=>onError(e.message)).finally(()=>setLoading(false));},[onError]);
+  const updateDesign=(patch)=>{setDesign(d=>({...d,...patch,preset:"custom"}));setSaved(false);};
+  const updateColor=(key,value)=>{setDesign(d=>({...d,preset:"custom",colors:{...d.colors,[key]:value}}));setSaved(false);};
+  const savePart=async(key,value)=>{if(import.meta.env.DEV){onError("Local preview is read-only. Save this change from the connected live admin.");return;}setSaving(true);setSaved(false);try{await request("/site-content/"+key,{method:"PUT",body:JSON.stringify(value)});setSaved(true);}catch(e){onError(e.message);}finally{setSaving(false);}};
+  const patchGroup=(index,patch)=>setFooter(f=>({...f,groups:f.groups.map((g,i)=>i===index?{...g,...patch}:g)}));
+  const patchLink=(gi,li,patch)=>setFooter(f=>({...f,groups:f.groups.map((g,i)=>i===gi?{...g,links:g.links.map((l,j)=>j===li?{...l,...patch}:l)}:g)}));
+  return <div className="live-brand-footer-editor">
+    <section className="panel">
+      <div className="panel-head"><div><span className="eyebrow">LIVE CANVAS / BRAND IDENTITY</span><h2>Brand design</h2><p>Control the storefront palette, typography and component shape from the same workspace.</p></div></div>
+      {loading?<div className="loading-panel">Loading brand settings…</div>:<>
+        <div className="design-presets">{Object.entries(DESIGN_PRESETS).map(([key,p])=><button type="button" key={key} className={"design-preset "+(design.preset===key?"selected":"")} onClick={()=>{setDesign({preset:key,colors:{...p.colors},fontFamily:p.fontFamily,radius:p.radius});setSaved(false);}}><span className="design-preset-swatches">{[p.colors.ink,p.colors.paper,p.colors.stone,p.colors.brass].map((v,i)=><i key={i} style={{background:v}}/>)}</span><span className="design-preset-copy"><b>{p.label}</b><small>{p.description}</small></span></button>)}</div>
+        <div className="design-color-grid">{DESIGN_FIELDS.map(([key,label,hint])=><label className="design-color-field" key={key}><span className="design-color-chip" style={{background:design.colors[key]}}/><span className="design-color-copy"><b>{label}</b><small>{hint}</small><code>{design.colors[key]}</code></span><input type="color" value={design.colors[key]} onChange={e=>updateColor(key,e.target.value)}/></label>)}</div>
+        <div className="design-detail-grid"><label className="design-setting"><span>Typography family</span><select value={design.fontFamily} onChange={e=>updateDesign({fontFamily:e.target.value})}><option value="Inter">Inter</option><option value="Arial">Arial</option><option value="Georgia">Georgia</option></select></label><label className="design-setting"><span>Corner style</span><select value={design.radius||"12"} onChange={e=>updateDesign({radius:e.target.value})}><option value="6">Sharp · 6px</option><option value="10">Balanced · 10px</option><option value="12">Soft · 12px</option><option value="18">Rounded · 18px</option></select></label></div>
+        <div className="modal-foot"><button className="btn primary" disabled={saving} onClick={()=>savePart("designSystem",design)}>{saving?"Saving…":saved?"Saved":"Save brand design"}</button></div>
+      </>}
+    </section>
+    <section className="panel live-footer-editor">
+      <div className="panel-head"><div><span className="eyebrow">LIVE CANVAS / BOTTOM OF STORE</span><h2>Footer content & links</h2><p>Edit the text and navigation links displayed at the very bottom of the storefront.</p></div></div>
+      <label>Store description<textarea rows="3" value={footer.description||""} onChange={e=>setFooter(f=>({...f,description:e.target.value}))}/></label>
+      {footer.groups.map((group,gi)=><div className="live-footer-group" key={group.id||gi}>
+        <div className="live-footer-group-head"><label>Column heading<input value={group.title||""} onChange={e=>patchGroup(gi,{title:e.target.value})}/></label><button type="button" className="btn danger small" onClick={()=>setFooter(f=>({...f,groups:f.groups.filter((_,i)=>i!==gi)}))}>Remove column</button></div>
+        {group.links.map((link,li)=><div className="live-footer-link-row" key={li}>
+          <label>Link text<input value={link.label||""} onChange={e=>patchLink(gi,li,{label:e.target.value})}/></label>
+          <label>Destination<select value={link.action|| (link.category?"category:"+link.category : link.url?"url":"text")} onChange={e=>{const v=e.target.value;patchLink(gi,li,{action:v==="recommend"||v==="compare"?v:undefined,category:v.startsWith("category:")?v.slice(9):undefined,url:v==="url"?(link.url||""):undefined,textOnly:v==="text"});}}><option value="text">Text only</option><option value="recommend">Device finder</option><option value="compare">Compare devices</option>{["iphone","ipad","mac","watch","airpods","apple-accessory","other-accessory"].map(k=><option key={k} value={"category:"+k}>Category: {titleCase(k)}</option>)}<option value="url">Custom URL</option></select></label>
+          {(link.url!==undefined||link.action==="url")&&<label>URL<input value={link.url||""} placeholder="https://…" onChange={e=>patchLink(gi,li,{url:e.target.value,action:"url"})}/></label>}
+          <button type="button" className="icon-btn" title="Remove link" onClick={()=>setFooter(f=>({...f,groups:f.groups.map((g,i)=>i===gi?{...g,links:g.links.filter((_,j)=>j!==li)}:g)}))}><X size={15}/></button>
+        </div>)}
+        <button type="button" className="btn secondary small" onClick={()=>setFooter(f=>({...f,groups:f.groups.map((g,i)=>i===gi?{...g,links:[...g.links,{label:"New link",textOnly:true}]}:g)}))}><Plus size={13}/> Add link</button>
+      </div>)}
+      <button type="button" className="btn secondary small" onClick={()=>setFooter(f=>({...f,groups:[...f.groups,{id:"column-"+Date.now(),title:"New column",links:[]}]}))}><Plus size={13}/> Add footer column</button>
+      <label className="live-footer-copyright">Bottom copyright text<input value={footer.copyright||""} onChange={e=>setFooter(f=>({...f,copyright:e.target.value}))}/><small>Use {"{year}"} to insert the current year automatically.</small></label>
+      <div className="modal-foot"><button className="btn primary" disabled={saving} onClick={()=>savePart("footerSection",footer)}>{saving?"Saving…":saved?"Saved":"Save footer changes"}</button></div>
+    </section>
+  </div>;
+}
 
 function Inventory({ onError }) {
   const [products,setProducts]=useState([]),[units,setUnits]=useState([]),[loading,setLoading]=useState(true),[query,setQuery]=useState(""),[status,setStatus]=useState("all"),[refresh,setRefresh]=useState(0),[editing,setEditing]=useState(null),[saving,setSaving]=useState(false);
