@@ -2406,7 +2406,7 @@ function StoreDataProvider({ children }) {
           remove.title = "Remove this section from the homepage";
           remove.addEventListener("click", event => {
             event.preventDefault(); event.stopPropagation();
-            if (window.confirm("Remove this section from the homepage?")) post({type:"GO_IPHONE_REMOVE_SECTION",sectionId:section.dataset.homepageSection});
+            post({type:"GO_IPHONE_REMOVE_SECTION",sectionId:section.dataset.homepageSection});
           });
           section.appendChild(remove);
         }
