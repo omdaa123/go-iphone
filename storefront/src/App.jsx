@@ -1096,36 +1096,41 @@ function TrustSection() {
    FOOTER
    ============================================================ */
 function Footer({ go }) {
+  const { siteContent } = useStoreData();
+  const settings = siteContent.footerSection || {};
+  const defaults = [
+    { id: "shop", title: "Shop", links: ["iphone","ipad","mac","watch","airpods"].map(k=>({label:categoryLabel(k),category:k})) },
+    { id: "tools", title: "Tools", links: [{label:"Find your perfect device",action:"recommend"},{label:"Compare devices",action:"compare"}] },
+    { id: "store", title: "Store", links: [{label:"Alexandria, Egypt",textOnly:true},{label:"Cash on delivery available",textOnly:true}] },
+  ];
+  const groups = settings.groups || defaults;
+  const runLink = link => {
+    if (link.url) { window.open(link.url, "_blank", "noopener,noreferrer"); return; }
+    if (link.category) { go("catalog", { category: link.category }); return; }
+    if (link.action === "recommend" || link.action === "compare") { go(link.action); return; }
+  };
   return (
     <footer style={{ backgroundColor: T.ink }} className="mt-6">
       <div className="max-w-7xl mx-auto px-6 md:px-10 py-20 grid md:grid-cols-4 gap-12 md:gap-10">
         <div>
           <div className="flex items-center gap-2.5 mb-5"><BrandMark size={30} /><span className="text-white font-semibold tracking-tight">Go iPhone</span></div>
-          <p className="text-white/45 text-sm max-w-xs leading-relaxed">A premium independent retailer for Apple devices — new and certified pre-owned.</p>
+          <p className="text-white/45 text-sm max-w-xs leading-relaxed">{settings.description || "A premium independent retailer for Apple devices — new and certified pre-owned."}</p>
         </div>
-        <div>
-          <p className="text-white/70 text-xs font-medium tracking-wide mb-4">Shop</p>
-          <div className="flex flex-col gap-3">
-            {["iphone", "ipad", "mac", "watch", "airpods"].map((k) => (
-              <button key={k} onClick={() => go("catalog", { category: k })} className="text-white/50 text-sm text-left hover:text-white transition-colors">{categoryLabel(k)}</button>
-            ))}
+        {groups.map((group,index) => (
+          <div key={group.id || index}>
+            <p className="text-white/70 text-xs font-medium tracking-wide mb-4">{group.title}</p>
+            <div className="flex flex-col gap-3">
+              {(group.links || []).map((link,linkIndex) => (
+                link.textOnly || (!link.category && !link.action && !link.url)
+                  ? <p key={link.id || linkIndex} className="text-white/50 text-sm">{link.label}</p>
+                  : <button key={link.id || linkIndex} onClick={() => runLink(link)} className="text-white/50 text-sm text-left hover:text-white transition-colors">{link.label}</button>
+              ))}
+            </div>
           </div>
-        </div>
-        <div>
-          <p className="text-white/70 text-xs font-medium tracking-wide mb-4">Tools</p>
-          <div className="flex flex-col gap-3">
-            <button onClick={() => go("recommend")} className="text-white/50 text-sm text-left hover:text-white transition-colors">Find your perfect device</button>
-            <button onClick={() => go("compare")} className="text-white/50 text-sm text-left hover:text-white transition-colors">Compare devices</button>
-          </div>
-        </div>
-        <div>
-          <p className="text-white/70 text-xs font-medium tracking-wide mb-4">Store</p>
-          <p className="text-white/50 text-sm">Alexandria, Egypt</p>
-          <p className="text-white/50 text-sm mt-1.5">Cash on delivery available</p>
-        </div>
+        ))}
       </div>
       <div style={{ borderColor: "rgba(255,255,255,0.1)" }} className="border-t px-6 md:px-10 py-6 flex items-center justify-between gap-4">
-        <p className="text-white/30 text-xs">© {new Date().getFullYear()} Go iPhone. Not affiliated with Apple Inc.</p>
+        <p className="text-white/30 text-xs">{(settings.copyright || "© {year} Go iPhone. Not affiliated with Apple Inc.").replace("{year}", String(new Date().getFullYear()))}</p>
       </div>
     </footer>
   );
