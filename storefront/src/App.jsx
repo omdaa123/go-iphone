@@ -1315,7 +1315,7 @@ function HomePage({ go, compareIds, onToggleCompare }) {
     if(item.type==="announcement") return <section key={item.id} style={{...style,padding:"15px 24px"}}><div style={{...inner,display:"flex",justifyContent:"center",alignItems:"center",gap:14,flexWrap:"wrap",textAlign:"center"}}><strong>{item.title}</strong><span>{item.description}</span>{action}</div></section>;
     if(item.type==="image-text") return <section key={item.id} style={style}><div style={{...inner,display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(280px,1fr))",gap:42,alignItems:"center"}}>{item.imagePosition==="right" ? <>{heading}{image}</> : <>{image || <div style={{minHeight:180}}/>}{heading}</>}</div><div style={inner}>{action}</div></section>;
     if(item.type==="promo-banners") return <section key={item.id} style={style}><div style={inner}>{heading}<div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(220px,1fr))",gap:16}}>{(item.banners?.length?item.banners:[{title:item.title||"Discover more",description:item.description,imageUrl:item.imageUrl}]).map((banner,index)=><article key={index} style={{position:"relative",minHeight:220,borderRadius:18,overflow:"hidden",background:"#dfe3e8",color:"#20242b"}}>{banner.imageUrl&&<img src={banner.imageUrl} alt="" style={{position:"absolute",inset:0,width:"100%",height:"100%",objectFit:"cover"}}/>}<div style={{position:"relative",padding:24,minHeight:220,display:"flex",flexDirection:"column",justifyContent:"end",background:"linear-gradient(0deg,rgba(0,0,0,.58),transparent 78%)",color:"#fff"}}><h3 style={{fontSize:24,fontWeight:750,margin:0}}>{banner.title}</h3>{banner.description&&<p>{banner.description}</p>}</div></article>)}</div></div></section>;
-    if(item.type==="featured-product") { const product=PRODUCTS.find(p=>p.id===item.productId)||featured; return <section key={item.id} style={style}><div style={inner}>{heading}{product&&<EditorialFeature product={product} go={go}/ >}{action}</div></section>; }
+    if(item.type==="featured-product") { const product=PRODUCTS.find(p=>p.id===item.productId)||featured; return <section key={item.id} style={style}><div style={inner}>{heading}{product&&<EditorialFeature product={product} go={go} />}{action}</div></section>; }
     if(item.type==="testimonials") return <section key={item.id} style={style}><div style={inner}>{heading}<div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(230px,1fr))",gap:16}}>{(item.testimonials||[]).map((quote,index)=><article key={index} style={{background:"rgba(255,255,255,.62)",border:"1px solid rgba(0,0,0,.08)",borderRadius:16,padding:24}}><div style={{fontSize:26,letterSpacing:2}}>★★★★★</div><p style={{fontSize:16,lineHeight:1.7}}>“{quote.quote}”</p><strong>{quote.name}</strong><div style={{fontSize:12,opacity:.65}}>{quote.detail}</div></article>)}</div></div></section>;
     if(item.type==="rich-text") return <section key={item.id} style={style}><div style={{...inner,maxWidth:850,textAlign:item.layout==="centered"?"center":"left"}}>{heading}{action}</div></section>;
     return null;
@@ -1325,12 +1325,15 @@ function HomePage({ go, compareIds, onToggleCompare }) {
     <div>
       {homepageLayout.filter(item => item.visible !== false && isInPublishWindow(item)).map(item => {
         const type = item.type || item.id;
-        if (type === "hero") return <Hero key={item.id} go={go} />;
-        if (type === "categories") return <CategoryGrid key={item.id} go={go} />;
-        if (type === "collections") return <React.Fragment key={item.id}>{merchandisingSections.map((section, index) => renderCollection(section, index))}</React.Fragment>;
-        if (type === "tools") return <ToolsSection key={item.id} onRecommend={() => go("recommend")} onCompare={() => go("compare")} />;
-        if (type === "trust") return <TrustSection key={item.id} />;
-        return null;
+        if (["announcement","image-text","promo-banners","featured-product","testimonials","rich-text"].includes(type)) return renderCustomHomepageSection(item);
+        const sectionStyle = { backgroundColor: item.backgroundColor || "transparent", color: item.textColor || "inherit", paddingTop: item.paddingY != null ? Number(item.paddingY) : undefined, paddingBottom: item.paddingY != null ? Number(item.paddingY) : undefined };
+        let content = null;
+        if (type === "hero") content = <Hero go={go} />;
+        if (type === "categories") content = <CategoryGrid go={go} />;
+        if (type === "collections") content = <React.Fragment>{merchandisingSections.map((section, index) => renderCollection(section, index))}</React.Fragment>;
+        if (type === "tools") content = <ToolsSection onRecommend={() => go("recommend")} onCompare={() => go("compare")} />;
+        if (type === "trust") content = <TrustSection />;
+        return content ? <div key={item.id} style={sectionStyle}>{content}</div> : null;
       })}
     </div>
   );
