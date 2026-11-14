@@ -1154,6 +1154,9 @@ function StoreCategoriesManager({ onError }) {
   const [savingId,setSavingId]=useState("");
   const [loading,setLoading]=useState(true);
   const [refresh,setRefresh]=useState(0);
+  const [creating,setCreating]=useState(false);
+  const [newLabel,setNewLabel]=useState("");
+  const [creatingBusy,setCreatingBusy]=useState(false);
   const selected=categories.find(c=>c.key===selectedKey);
   const label=c=>c.name||c.label||c.title||titleCase(c.key);
   const load=useCallback(async()=>{setLoading(true);try{const [a,b]=await Promise.all([request("/categories"),request("/products")]);setCategories(a.categories||[]);setProducts(b.products||[]);}catch(e){onError(e.message);}finally{setLoading(false);}},[onError]);
@@ -1161,12 +1164,27 @@ function StoreCategoriesManager({ onError }) {
   const assigned=products.filter(p=>p.category_key===selectedKey);
   const candidates=products.filter(p=>p.category_key!==selectedKey&&(!query.trim()||[p.name,p.category_key].some(v=>String(v||"").toLowerCase().includes(query.toLowerCase()))));
   async function move(p,key){setSavingId(p.id);try{await request("/products/"+encodeURIComponent(p.id),{method:"PATCH",body:JSON.stringify({categoryKey:key})});setProducts(list=>list.map(x=>x.id===p.id?{...x,category_key:key}:x));}catch(e){onError(e.message);}finally{setSavingId("");}}
-  return <><div className="page-heading"><div><div className="eyebrow">STORE EXPERIENCE / CATALOG STRUCTURE</div><h1>Store Categories</h1><p>Manage Apple departments, Accessories and Other Devices with Smartphones, Smart Watches, Tablets and Other Electronics.</p></div><button className="btn secondary" onClick={()=>setRefresh(v=>v+1)}><RefreshCw size={15}/> Refresh</button></div>
+  async function createCategory(event){
+    event.preventDefault();
+    const labelText=newLabel.trim();
+    const key=labelText.toLowerCase().normalize("NFKD").replace(/[\\u0300-\\u036f]/g,"").replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"");
+    if(!key){onError("Use a category name with English letters or numbers so it can be used in product URLs.");return;}
+    setCreatingBusy(true);
+    try{
+      await request("/categories",{method:"POST",body:JSON.stringify({key,label:labelText})});
+      setNewLabel("");setCreating(false);setRefresh(v=>v+1);
+    }catch(e){onError(e.message);}
+    finally{setCreatingBusy(false);}
+  }
+  return <><div className="page-heading"><div><div className="eyebrow">STORE EXPERIENCE / CATALOG STRUCTURE</div><h1>Store Categories</h1><p>Manage Apple departments, Accessories and Other Devices with Smartphones, Smart Watches, Tablets and Other Electronics.</p></div><div className="heading-actions"><button className="btn secondary" onClick={()=>setRefresh(v=>v+1)}><RefreshCw size={15}/> Refresh</button><button className="btn primary" onClick={()=>setCreating(true)}><Plus size={15}/> Add Category</button></div></div>
   {!selected?<section className="panel collections-library-panel"><div className="panel-head"><div><h2>Store departments</h2><p>Open a category to manage the products shown inside it.</p></div></div>{loading?<div className="loading-panel">Loading categories…</div>:<div className="collection-library-grid">{categories.map(c=><button className="collection-library-card collection-library-open" key={c.key} onClick={()=>setSelectedKey(c.key)}><div className="collection-library-cover">{c.image_url?<img src={c.image_url} alt=""/>:<div><Package size={28}/></div>}</div><div className="collection-library-card-body"><h3>{label(c)}</h3><div className="collection-library-meta">{products.filter(p=>p.category_key===c.key).length} products</div></div></button>)}</div>}</section>:<>
   <div className="page-heading collection-open-heading"><div><button className="text-btn" onClick={()=>{setSelectedKey("");setPickerOpen(false);}}>← All store categories</button><div className="eyebrow">CATEGORY WORKSPACE</div><h1>{label(selected)}</h1><p>{assigned.length} products</p></div><button className="btn primary" onClick={()=>setPickerOpen(true)}><Plus size={15}/> Move products here</button></div>
   <section className="panel collection-products-panel"><div className="panel-head"><h2>Products ({assigned.length})</h2></div><div className="collection-assigned-grid">{assigned.map(p=><article className="collection-assigned-product" key={p.id}>{p.image_url?<img src={p.image_url} alt=""/>:<div className="product-avatar"><Smartphone size={20}/></div>}<div><b>{p.name}</b><small>{titleCase(p.product_type)}</small></div><select value={p.category_key} disabled={savingId===p.id} onChange={e=>move(p,e.target.value)}>{categories.map(c=><option key={c.key} value={c.key}>{label(c)}</option>)}</select></article>)}</div></section>
   {pickerOpen&&<div className="modal-backdrop collection-picker-backdrop"><section className="editor-modal collection-picker-modal"><div className="modal-head"><div><h2>Move products to {label(selected)}</h2><p>Each product has one main store category. Moving it here changes its current category.</p></div><button className="icon-btn" onClick={()=>setPickerOpen(false)}><X size={19}/></button></div><div className="collection-picker-search"><input value={query} onChange={e=>setQuery(e.target.value)} placeholder="Search products…"/></div><div className="collection-picker-list">{candidates.map(p=><article className="collection-picker-product" key={p.id}><div><b>{p.name}</b><small>Currently: {titleCase(p.category_key)}</small></div><button className="btn secondary small" disabled={savingId===p.id} onClick={()=>move(p,selectedKey)}>{savingId===p.id?"Moving…":"Move here"}</button></article>)}</div><div className="modal-foot"><button className="btn primary" onClick={()=>setPickerOpen(false)}>Done</button></div></section></div>}
-  </>}</>;
+  </>}
+  
+  {creating&&<div className="modal-backdrop"><form className="editor-modal" onSubmit={createCategory}><div className="modal-head"><div><div className="eyebrow">STORE CATALOG</div><h2>Add store category</h2><p>It will appear in Store Categories, product category selectors and the storefront category feed.</p></div><button type="button" className="icon-btn" onClick={()=>setCreating(false)}><X size={19}/></button></div><div className="editor-grid"><label className="field-wide">Category name<input required minLength={2} maxLength={80} autoFocus value={newLabel} onChange={e=>setNewLabel(e.target.value)} placeholder="e.g. Gaming Accessories"/></label></div><div className="modal-foot"><button type="button" className="btn secondary" onClick={()=>setCreating(false)}>Cancel</button><button className="btn primary" disabled={creatingBusy||!newLabel.trim()}>{creatingBusy?"Creating…":"Create category"}</button></div></form></div>}
+  </>;
 }
 
 function CollectionsManager({ onError }) {
