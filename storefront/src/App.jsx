@@ -1296,14 +1296,29 @@ function HomePage({ go, compareIds, onToggleCompare }) {
   };
 
   function renderCollection(section, index) {
-    if (section.id === "featured") return <EditorialFeature key={section.id} product={section.products[0]} go={go} />;
-    if (section.id === "certified-refurbished") return <CertifiedPreownedSection key={section.id} products={section.products} go={go} onOpen={(id) => go("product", { id })} onToggleCompare={onToggleCompare} compareIds={compareIds} />;
-    const onNavAction = () => go("catalog", { category: section.products[0]?.category || "iphone" });
-    const props = { title: section.name, action: "View all", onNavAction, products: section.products, onOpen: (id) => go("product", { id }), onToggleCompare, compareIds, coverImage: section.imageUrl || null, description: section.storeDescription || "" };
-    if (section.id === "best-sellers") return <ProductGrid key={section.id} {...props} />;
-    if (section.id === "new-arrivals") return <ProductRail key={section.id} {...props} />;
-    const RailOrGrid = index % 2 === 0 ? ProductRail : ProductGrid;
-    return <RailOrGrid key={section.id} {...props} />;
+    const detailStyle = {
+      background: section.sectionBackground || "transparent",
+      color: section.headingColor || "inherit",
+      fontFamily: section.headingFont && section.headingFont !== "inherit" ? section.headingFont : "inherit",
+      "--collection-heading-size": (section.headingSize || 32) + "px",
+      "--collection-heading-weight": section.headingWeight || "700",
+      "--collection-accent": section.accentColor || "#ad8642",
+      "--collection-card-radius": (section.cardRadius ?? 16) + "px",
+    };
+    let content;
+    if (section.id === "featured") content = <EditorialFeature product={section.products[0]} go={go} />;
+    else if (section.id === "certified-refurbished") content = <CertifiedPreownedSection products={section.products} go={go} onOpen={(id) => go("product", { id })} onToggleCompare={onToggleCompare} compareIds={compareIds} />;
+    else {
+      const onNavAction = () => go("catalog", { category: section.products[0]?.category || "iphone" });
+      const props = { title: section.name, action: "View all", onNavAction, products: section.products, onOpen: (id) => go("product", { id }), onToggleCompare, compareIds, coverImage: section.imageUrl || null, description: section.storeDescription || "" };
+      if (section.id === "best-sellers") content = section.productsLayout === "rail" ? <ProductRail {...props}/> : <ProductGrid {...props}/>;
+      else if (section.id === "new-arrivals") content = section.productsLayout === "grid" ? <ProductGrid {...props}/> : <ProductRail {...props}/>;
+      else {
+        const RailOrGrid = section.productsLayout === "grid" ? ProductGrid : section.productsLayout === "rail" ? ProductRail : index % 2 === 0 ? ProductRail : ProductGrid;
+        content = <RailOrGrid {...props}/>;
+      }
+    }
+    return <div key={section.id} className="collection-custom-style" style={detailStyle}>{content}</div>;
   }
 
   function renderCustomHomepageSection(item) {
