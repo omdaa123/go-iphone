@@ -1250,7 +1250,7 @@ function HomePage({ go, compareIds, onToggleCompare }) {
   })).concat(collectionSettings.filter((c) => !builtInCollections.some((base) => base.id === c.id)));
   const merchandisingSections = mergedCollections
     .filter((c) => c.visible !== false && c.homepageVisible !== false)
-    .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
+    .sort((a, b) => (a.homepageOrder ?? a.order ?? 0) - (b.homepageOrder ?? b.order ?? 0))
     .map((c) => {
       const assigned = PRODUCTS.filter((p) => hasCollection(p, c.id));
       let products = assigned;
