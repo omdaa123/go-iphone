@@ -1052,6 +1052,17 @@ function HomepageBuilder({ onError }) {
             ))}
           </div>
           <div style={{display:"flex",flexWrap:"wrap",gap:8,marginTop:18}}>{sectionPresets.map(p=><button key={p.type} type="button" className="btn secondary small" onClick={()=>addHomepageSection(p.type)}>Add {p.label}</button>)}</div>
+          {(() => { const selected=siteContent.homepageLayout.find(x=>x.id===selectedSectionId); if(!selected)return null; return <div className="panel" style={{padding:18,marginTop:18,display:"grid",gap:12}}>
+            <h3>Section designer - {selected.label}</h3>
+            <label>Heading<input value={selected.title||""} onChange={e=>updateSelectedSection({title:e.target.value})}/></label>
+            <label>Description<textarea value={selected.description||""} onChange={e=>updateSelectedSection({description:e.target.value})}/></label>
+            <label>Eyebrow<input value={selected.eyebrow||""} onChange={e=>updateSelectedSection({eyebrow:e.target.value})}/></label>
+            <label>Button text<input value={selected.ctaText||""} onChange={e=>updateSelectedSection({ctaText:e.target.value})}/></label>
+            <label>Image URL<input value={selected.imageUrl||""} onChange={e=>updateSelectedSection({imageUrl:e.target.value})}/></label>
+            <label>Background color<input type="color" value={selected.backgroundColor||"#f5f3ef"} onChange={e=>updateSelectedSection({backgroundColor:e.target.value})}/></label>
+            <label>Text color<input type="color" value={selected.textColor||"#20242b"} onChange={e=>updateSelectedSection({textColor:e.target.value})}/></label>
+            <button type="button" className="btn primary" onClick={()=>saveSiteSection("homepageLayout",siteContent.homepageLayout)}>Save section settings</button>
+          </div>; })()}
         </div>
       </div>
     </section>}
