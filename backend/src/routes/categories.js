@@ -19,6 +19,26 @@ categoriesRouter.get("/", async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
+const createCategorySchema = z.object({
+  key: z.string().min(2).max(60).regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, "Use lowercase letters, numbers and hyphens."),
+  label: z.string().trim().min(2).max(80),
+});
+
+categoriesRouter.post("/", requirePermission("cms.write"), validateBody(createCategorySchema), async (req, res, next) => {
+  try {
+    const { rows: maxRows } = await pool.query("SELECT COALESCE(MAX(sort_order), -1) + 1 AS next FROM categories");
+    const { rows } = await pool.query(
+      "INSERT INTO categories (key, label, sort_order) VALUES ($1, $2, $3) RETURNING *",
+      [req.body.key, req.body.label, maxRows[0].next]
+    );
+    await logAudit({ adminUserId: req.admin.id, action: "category.create", resourceType: "category", resourceId: rows[0].key, after: rows[0], ip: req.ip });
+    res.status(201).json({ category: rows[0] });
+  } catch (err) {
+    if (err.code === "23505") return res.status(409).json({ error: "A category with that name already exists." });
+    next(err);
+  }
+});
+
 const categoryImageSchema = z.object({ imageMediaId: z.string().uuid().nullable() });
 categoriesRouter.patch("/:key/image", requirePermission("cms.write"), validateBody(categoryImageSchema), async (req, res, next) => {
   try {
