@@ -1077,7 +1077,7 @@ function HomepageBuilder({ onError }) {
             <label>Button destination<input value={selected.linkCategoryKey||"iphone"} onChange={e=>updateSelectedSection({linkCategoryKey:e.target.value})} placeholder="iphone, ipad, mac…"/></label>
             <label>Background color<input type="color" value={selected.backgroundColor||"#f5f3ef"} onChange={e=>updateSelectedSection({backgroundColor:e.target.value})}/></label>
             <label>Text color<input type="color" value={selected.textColor||"#20242b"} onChange={e=>updateSelectedSection({textColor:e.target.value})}/></label>
-            <button type="button" className="btn primary" onClick={()=>saveSiteSection("homepageLayout",siteContent.homepageLayout)}>Save section settings</button>
+            <div className="row-actions"><button type="button" className="btn secondary" onClick={()=>saveSiteSection("homepageLayout",siteContent.homepageLayout)}>Save section settings</button><button type="button" className="btn danger" onClick={()=>{if(window.confirm("Delete this homepage section?")){commitLayout(siteContent.homepageLayout.filter(x=>x.id!==selected.id));setSelectedSectionId("");}}}>Delete section</button></div>
           </div>; })()}
         </div>
       </div>
