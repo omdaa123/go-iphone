@@ -1051,3 +1051,24 @@ table td{font-size:12px;padding:15px 16px}
 .collection-style-grid input[type=range]{width:100%;accent-color:var(--accent)}
 .collection-style-actions{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-top:16px;padding-top:14px;border-top:1px solid var(--line)}
 @media(max-width:700px){.collection-style-grid{grid-template-columns:1fr}}
+
+
+/* Collection controls inside Visual Store Editor */
+.visual-collections-workspace{padding:24px}
+.visual-collection-editor-layout{display:grid;grid-template-columns:minmax(220px,290px) minmax(0,1fr);gap:22px;align-items:start}
+.visual-collection-picker{display:grid;gap:8px}
+.visual-collection-picker h3{font-size:13px;font-weight:750;margin:0 0 5px}
+.visual-collection-choice{width:100%;display:flex;align-items:center;gap:11px;text-align:left;padding:10px;border:1px solid var(--line);border-radius:11px;background:var(--panel);color:var(--text);cursor:pointer}
+.visual-collection-choice.active{border-color:var(--accent);background:var(--panel-2);box-shadow:0 0 0 2px color-mix(in srgb,var(--accent) 14%,transparent)}
+.visual-collection-choice-thumb{width:42px;height:42px;flex:0 0 42px;border-radius:8px;background:var(--panel-2);display:grid;place-items:center;overflow:hidden}
+.visual-collection-choice-thumb img{width:100%;height:100%;object-fit:cover}
+.visual-collection-choice>span:nth-child(2){display:grid;gap:4px;min-width:0}
+.visual-collection-choice b{font-size:12px}
+.visual-collection-choice small{font-size:10px;color:var(--muted)}
+.visual-collection-choice-arrow{margin-left:auto;font-size:22px;color:var(--muted)}
+.visual-collection-settings{min-width:0;border:1px solid var(--line);border-radius:14px;padding:20px;background:var(--panel)}
+.visual-collection-settings-head{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;margin-bottom:20px}
+.visual-collection-settings-head h3{font-size:21px;margin:5px 0}
+.visual-collection-settings-head p{font-size:12px;color:var(--muted);margin:0}
+@media(max-width:850px){.visual-collection-editor-layout{grid-template-columns:1fr}.visual-collection-picker{grid-template-columns:repeat(2,minmax(0,1fr))}.visual-collection-picker h3{grid-column:1/-1}}
+@media(max-width:560px){.visual-collection-picker{grid-template-columns:1fr}.visual-collection-settings-head{flex-direction:column}}
