@@ -162,8 +162,7 @@ const navGroups = [
     { id: "customers", label: "Customers", icon: Users },
   ]},
   { label: "STORE EXPERIENCE", items: [
-    { id: "homepage", label: "Homepage Builder", icon: Layers3 },
-    { id: "design", label: "Design Studio", icon: Sparkles },
+    { id: "homepage", label: "Visual Store Editor", icon: Layers3 },
     { id: "media", label: "Media Library", icon: Image },
     { id: "collections", label: "Collections", icon: ShoppingBag },
   ]},
@@ -776,6 +775,7 @@ function HomepageBuilder({ onError }) {
   const [layoutHistory, setLayoutHistory] = useState([]);
   const [historyIndex, setHistoryIndex] = useState(-1);
   const [selectedSectionId, setSelectedSectionId] = useState("");
+  const [canvasViewport, setCanvasViewport] = useState("desktop");
   function commitLayout(nextLayout) {
     const snapshot = nextLayout.map(item => ({ ...item }));
     setSiteContent(current => ({ ...current, homepageLayout: snapshot }));
@@ -999,8 +999,34 @@ function HomepageBuilder({ onError }) {
       return () => window.clearTimeout(timer);
     }
   }, [previewMode, siteContent, slides, media]);
+  useEffect(() => {
+    if (activeTab !== "canvas") return;
+    const timer = window.setTimeout(sendPreviewDraft, 450);
+    return () => window.clearTimeout(timer);
+  }, [activeTab, siteContent, slides, media]);
+  useEffect(() => {
+    const receiveCanvasAction = event => {
+      if (event.origin !== new URL(PREVIEW_STOREFRONT_URL).origin) return;
+      if (event.data?.type === "GO_IPHONE_SELECT_SECTION") {
+        setSelectedSectionId(event.data.sectionId || "");
+        setActiveTab("layout");
+      }
+      if (event.data?.type === "GO_IPHONE_REORDER_SECTION") {
+        const { fromId, toId } = event.data;
+        if (!fromId || !toId || fromId === toId) return;
+        const items = [...siteContent.homepageLayout].sort((x,y)=>x.order-y.order);
+        const from = items.findIndex(x=>x.id===fromId), to = items.findIndex(x=>x.id===toId);
+        if (from < 0 || to < 0) return;
+        const [moved] = items.splice(from,1);
+        items.splice(to,0,moved);
+        commitLayout(items.map((item,index)=>({...item,order:index})));
+      }
+    };
+    window.addEventListener("message", receiveCanvasAction);
+    return () => window.removeEventListener("message", receiveCanvasAction);
+  }, [siteContent.homepageLayout, layoutHistory, historyIndex]);
   return <>
-    <div className="page-heading"><div><div className="eyebrow">STORE EXPERIENCE</div><h1>Homepage Builder</h1><p>Manage banners, page structure, category visuals and the collections featured on your storefront.</p></div><div className="heading-actions"><button className="btn secondary" onClick={() => setRefresh(v => v + 1)}><RefreshCw size={15}/> Refresh</button><button className="btn primary" onClick={startNew}><Plus size={15}/> Add hero slide</button></div></div>
+    <div className="page-heading"><div><div className="eyebrow">STORE EXPERIENCE</div><h1>Visual Store Editor</h1><p>Build and edit your storefront from one live workspace — sections, content and visual identity together.</p></div><div className="heading-actions"><button className="btn secondary" onClick={() => setRefresh(v => v + 1)}><RefreshCw size={15}/> Refresh</button><button className="btn primary" onClick={startNew}><Plus size={15}/> Add hero slide</button></div></div>
     <div className="homepage-commandbar">
       <div className="homepage-commandbar-copy"><span className="homepage-kicker">STORE EXPERIENCE / CONTENT CONTROL</span><h2>Shape the first impression.</h2><p>Build, organize and refine every section of your storefront from one workspace.</p></div>
       <div className="homepage-commandbar-status"><span className="homepage-status-dot"/><div><b>Storefront connected</b><small>Content workspace</small></div></div>
@@ -1012,8 +1038,15 @@ function HomepageBuilder({ onError }) {
       <div><span>MEDIA ASSETS</span><b>{media.length}</b><small>Available in your library</small></div>
     </div>
     <nav className="homepage-tabs" aria-label="Homepage builder sections">
-      {[["overview","Hero & banners"],["layout","Page structure"],["collections","Collections"],["categories","Category visuals"],["content","Content & trust"]].map(([id,label],index)=><button type="button" key={id} className={activeTab===id?"active":""} onClick={()=>setActiveTab(id)}><span>0{index+1}</span>{label}</button>)}
+      {[["canvas","Live canvas"],["overview","Hero & banners"],["layout","Sections"],["collections","Collections"],["categories","Category visuals"],["content","Content & trust"],["brand","Brand design"]].map(([id,label],index)=><button type="button" key={id} className={activeTab===id?"active":""} onClick={()=>setActiveTab(id)}><span>{String(index+1).padStart(2,"0")}</span>{label}</button>)}
     </nav>
+
+    {activeTab === "canvas" && <section className="panel visual-canvas-panel">
+      <div className="visual-canvas-toolbar"><div><span className="eyebrow">LIVE STOREFRONT / VISUAL EDITOR</span><h2>Click any section to edit it</h2><p>Choose a section in the storefront preview, or drag sections to reorder them.</p></div><div className="row-actions"><button type="button" className={canvasViewport==="desktop"?"btn primary small":"btn secondary small"} onClick={()=>setCanvasViewport("desktop")}><Monitor size={14}/> Desktop</button><button type="button" className={canvasViewport==="mobile"?"btn primary small":"btn secondary small"} onClick={()=>setCanvasViewport("mobile")}><Smartphone size={14}/> Mobile</button><button type="button" className="btn secondary small" onClick={sendPreviewDraft}><RefreshCw size={14}/> Refresh preview</button><button type="button" className="btn primary small" disabled={saving} onClick={()=>saveSiteSection("homepageLayout",siteContent.homepageLayout)}>{saving?"Saving…":"Save changes"}</button></div></div>
+      <div className="visual-canvas-stage"><iframe ref={previewFrameRef} title="Live editable GO iPhone storefront" src={PREVIEW_STOREFRONT_URL} onLoad={sendPreviewDraft} style={{width:canvasViewport==="mobile"?390:"100%",maxWidth:"100%",height:"78vh",minHeight:620,border:canvasViewport==="mobile"?"9px solid #202938":"0",borderRadius:canvasViewport==="mobile"?30:10,background:"#fff",boxShadow:"0 12px 45px rgba(15,23,42,.12)"}} /></div>
+      <div className="visual-canvas-footnote"><span><i/> Live draft preview</span><span>Click to select · Drag to reorder · Save to update the store</span></div>
+    </section>}
+    {activeTab === "brand" && <DesignStudio onError={onError}/>}
     {activeTab === "layout" && <section className="panel homepage-editor-panel" style={{ marginBottom: 24 }}>
       <div className="panel-head"><div><h2>Homepage sections</h2><p>Control which storefront blocks appear, their order, and optional publishing schedules. Changes here are reflected by the live storefront renderer.</p></div></div>
       <div style={{ padding: 22, display: "grid", gap: 24 }}>
@@ -1733,7 +1766,7 @@ export default function App() {
         {page === "homepage" && <HomepageBuilder onError={showError}/>}
         {page === "collections" && <CollectionsManager onError={showError}/>}
         {page === "design" && <DesignStudio onError={showError}/>}
-        {!["dashboard","products","orders","inventory","reservations","customers","team","settings","media","homepage","collections","design"].includes(page) && <Placeholder id={page} onNavigate={navigate}/>}
+        {!["dashboard","products","orders","inventory","reservations","customers","team","settings","media","homepage","collections"].includes(page) && <Placeholder id={page} onNavigate={navigate}/>}
         <footer className="app-footer"><span>© {new Date().getFullYear()} GO iPhone</span><span>Admin workspace <i/> Built for your store</span></footer>
       </div>
     </main>
