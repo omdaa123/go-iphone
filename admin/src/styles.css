@@ -880,9 +880,11 @@ table td{font-size:12px;padding:15px 16px}
 .store-category-card{min-width:0;border:1px solid var(--line,#e7e5e1);border-radius:15px;overflow:hidden;background:var(--surface,#fff);transition:border-color .18s,transform .18s}
 .store-category-card:hover{border-color:var(--accent,#9a8664);transform:translateY(-2px)}
 .store-category-main{width:100%;display:flex;align-items:center;gap:15px;text-align:left;padding:17px;background:transparent;border:0;cursor:pointer;color:inherit}
-.store-category-art{width:65px;height:65px;flex:0 0 65px;border-radius:13px;background:var(--soft,#f3f1ed);display:grid;place-items:center;position:relative;overflow:hidden;color:var(--accent,#887451)}
+.store-category-art{width:68px;height:68px;flex:0 0 68px;border-radius:16px;background:linear-gradient(145deg,var(--dept-wash,#edf2f7),color-mix(in srgb,var(--dept-accent,#71869d) 13%,white));display:grid;place-items:center;position:relative;overflow:hidden;color:var(--dept-accent,#71869d);border:1px solid color-mix(in srgb,var(--dept-accent,#71869d) 18%,transparent)}
+.store-category-art:before{content:"";position:absolute;width:42px;height:42px;border:1px solid color-mix(in srgb,var(--dept-accent,#71869d) 18%,transparent);border-radius:50%;right:-17px;top:-16px}
 .store-category-art img{width:100%;height:100%;object-fit:cover}
-.store-category-art>span{position:absolute;right:6px;bottom:5px;font-size:9px;font-weight:800;color:var(--muted,#888);background:rgba(255,255,255,.85);padding:2px 4px;border-radius:4px}
+.store-category-monogram{font-family:Georgia,serif;font-size:32px;line-height:1;font-weight:600;letter-spacing:-.06em}
+.store-category-art .store-category-index{position:absolute;right:6px;bottom:5px;font-size:9px;font-weight:800;color:var(--dept-accent,#71869d);background:rgba(255,255,255,.82);padding:2px 4px;border-radius:4px}
 .store-category-main-copy{min-width:0;flex:1}
 .store-category-main-copy .eyebrow{font-size:9px}
 .store-category-main-copy h3{font-size:17px;margin:4px 0 6px;overflow-wrap:anywhere}
@@ -950,3 +952,12 @@ table td{font-size:12px;padding:15px 16px}
 :root[data-theme="dark"] .store-category-card{background:linear-gradient(155deg,color-mix(in srgb,var(--dept-accent) 12%,var(--panel)) 0%,var(--panel) 48%)}
 :root[data-theme="dark"] .store-category-art,:root[data-theme="dark"] .store-category-open{background:color-mix(in srgb,var(--dept-accent) 18%,var(--panel))}
 :root[data-theme="dark"] .store-category-branch-dot{box-shadow:0 0 0 4px color-mix(in srgb,var(--dept-accent) 18%,var(--panel))}
+
+/* Refined department cards */
+.store-category-card{border-radius:17px;border-top-width:2px;box-shadow:0 5px 18px rgba(25,35,48,.035);transition:transform .2s ease,border-color .2s ease,box-shadow .2s ease}
+.store-category-card:hover{transform:translateY(-3px);box-shadow:0 12px 28px rgba(25,35,48,.075)}
+.store-category-main{gap:16px;padding:19px}
+.store-category-main-copy h3{font-size:18px;letter-spacing:-.025em}
+.store-category-branches{padding:13px 18px 15px;background:color-mix(in srgb,var(--panel,#fff) 75%,var(--dept-wash,#f4f6f8))}
+.store-category-branch{padding:10px 3px}
+@media(max-width:620px){.store-category-art{width:56px;height:56px;flex-basis:56px}.store-category-monogram{font-size:27px}}
