@@ -1084,3 +1084,14 @@ table td{font-size:12px;padding:15px 16px}
 .live-collection-inspector input[type=color]{width:100%;height:34px;padding:2px;border:1px solid var(--line);border-radius:7px;background:var(--panel)}
 .live-collection-inspector .visual-color-fields{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
 .live-collection-inspector .visual-color-fields label{display:grid;gap:5px;font-size:10px;font-weight:650}
+
+
+.live-collection-order{display:flex;flex-direction:column;gap:7px;padding:12px;border:1px solid var(--border,#e5e7eb);border-radius:12px;background:var(--panel-soft,#f8f9fb)}
+.live-collection-order>b{font-size:13px}
+.live-collection-order>small{font-size:11px;color:var(--muted,#737985);line-height:1.45}
+.live-collection-order-row{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:5px 7px;border:1px solid transparent;border-radius:8px;background:var(--surface,#fff)}
+.live-collection-order-row.active{border-color:var(--accent,#ad8642);background:var(--accent-soft,#faf7f0)}
+.live-collection-order-row>.text-btn{min-width:0;text-align:left}
+.live-collection-order-actions{display:flex;gap:3px}
+.live-collection-order-actions .icon-btn{width:27px;height:27px;min-width:27px}
+.live-collection-order-actions .icon-btn:disabled{opacity:.3;cursor:not-allowed}
