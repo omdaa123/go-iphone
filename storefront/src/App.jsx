@@ -2366,6 +2366,8 @@ function StoreDataProvider({ children }) {
         [data-homepage-section].go-admin-selected{outline:3px solid #4778b8!important;outline-offset:-3px;box-shadow:inset 0 0 0 3px rgba(71,120,184,.10)}
         .go-admin-section-grip{position:absolute!important;top:8px!important;left:8px!important;z-index:99999!important;border:1px solid #d6dfeb!important;border-radius:7px!important;padding:6px 9px!important;background:#fff!important;color:#30445d!important;font:800 9px/1.2 Arial,sans-serif!important;letter-spacing:.08em!important;box-shadow:0 2px 9px rgba(15,23,42,.14)!important;cursor:grab!important}
         .go-admin-section-grip:active{cursor:grabbing!important}
+        .go-admin-section-remove{position:absolute!important;top:8px!important;right:8px!important;z-index:99999!important;border:1px solid #f0c7c7!important;border-radius:7px!important;padding:6px 9px!important;background:#fff!important;color:#b42318!important;font:800 9px/1.2 Arial,sans-serif!important;letter-spacing:.08em!important;box-shadow:0 2px 9px rgba(15,23,42,.14)!important;cursor:pointer!important}
+        .go-admin-section-remove:hover{background:#b42318!important;color:#fff!important;border-color:#b42318!important}
         .go-admin-insert-section{display:flex!important;align-items:center!important;justify-content:center!important;gap:9px!important;width:100%!important;min-height:38px!important;margin:0!important;padding:3px 12px!important;border:0!important;background:transparent!important;color:#61758d!important;cursor:pointer!important;position:relative!important;z-index:100000!important}
         .go-admin-insert-section:before,.go-admin-insert-section:after{content:""!important;height:1px!important;flex:1!important;background:#cbd5e1!important}
         .go-admin-insert-section span{display:grid!important;place-items:center!important;width:25px!important;height:25px!important;border:1px solid #aabbd0!important;border-radius:50%!important;background:#fff!important;color:#385d86!important;font:600 19px/1 Arial,sans-serif!important;box-shadow:0 2px 6px rgba(15,23,42,.10)!important}
@@ -2396,6 +2398,17 @@ function StoreDataProvider({ children }) {
             if (event.dataTransfer) event.dataTransfer.effectAllowed = "move";
           });
           section.appendChild(grip);
+        }
+        if (!section.querySelector(":scope > .go-admin-section-remove")) {
+          const remove = document.createElement("button");
+          remove.type = "button"; remove.className = "go-admin-section-remove";
+          remove.textContent = "✕  REMOVE";
+          remove.title = "Remove this section from the homepage";
+          remove.addEventListener("click", event => {
+            event.preventDefault(); event.stopPropagation();
+            if (window.confirm("Remove this section from the homepage?")) post({type:"GO_IPHONE_REMOVE_SECTION",sectionId:section.dataset.homepageSection});
+          });
+          section.appendChild(remove);
         }
         if (index < sections.length - 1) {
           const next = section.nextElementSibling;
@@ -2448,7 +2461,7 @@ function StoreDataProvider({ children }) {
     document.addEventListener("drop", dropSection, true);
     return () => {
       observer?.disconnect();
-      document.querySelectorAll(".go-admin-insert-section,.go-admin-section-grip").forEach(node=>node.remove());
+      document.querySelectorAll(".go-admin-insert-section,.go-admin-section-grip,.go-admin-section-remove").forEach(node=>node.remove());
       document.removeEventListener("click", selectSection, true);
       document.removeEventListener("dragstart", startDrag, true);
       document.removeEventListener("dragover", allowDrop, true);
