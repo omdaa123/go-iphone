@@ -13,6 +13,23 @@ categoriesRouter.get("/", async (req, res, next) => {
   try {
     await pool.query("ALTER TABLE categories ADD COLUMN IF NOT EXISTS parent_key TEXT REFERENCES categories(key) ON DELETE SET NULL");
     await pool.query(`INSERT INTO categories (key, label, sort_order) VALUES ($1, $2, $3) ON CONFLICT (key) DO NOTHING`, ["other-devices", "Other Devices", 7]);
+    await pool.query(
+      `INSERT INTO categories (key, label, sort_order, parent_key)
+       VALUES ('accessories', 'Accessories', 6, NULL)
+       ON CONFLICT (key) DO UPDATE SET label = 'Accessories', parent_key = NULL`
+    );
+    const accessoryBranches = [
+      ["apple-accessories", "Apple Accessories", 14],
+      ["other-accessories", "Other Accessories", 15],
+    ];
+    for (const [key, label, sortOrder] of accessoryBranches) {
+      await pool.query(
+        `INSERT INTO categories (key, label, sort_order, parent_key)
+         VALUES ($1, $2, $3, 'accessories')
+         ON CONFLICT (key) DO UPDATE SET parent_key = 'accessories'`,
+        [key, label, sortOrder]
+      );
+    }
     const otherDeviceBranches = [
       ["smartphone", "Smartphones", 8],
       ["smartwatch", "Smart Watches", 9],
