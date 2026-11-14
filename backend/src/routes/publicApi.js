@@ -21,6 +21,7 @@ const egp = (piastres) => Math.round(Number(piastres) / 100); // DB stores piast
 // hundred products fit comfortably in a single cached response.
 publicRouter.get("/catalog", async (req, res, next) => {
   try {
+    await pool.query("ALTER TABLE categories ADD COLUMN IF NOT EXISTS parent_key TEXT REFERENCES categories(key) ON DELETE SET NULL");
     await pool.query(`INSERT INTO categories (key, label, sort_order) VALUES ($1, $2, $3) ON CONFLICT (key) DO NOTHING`, ["other-devices", "Other Devices", 7]);
     // Restore missing built-in merchandising groups without changing any
     // existing names, visibility choices, ordering, or product assignments.
@@ -34,7 +35,7 @@ publicRouter.get("/catalog", async (req, res, next) => {
        ON CONFLICT (id) DO NOTHING`
     );
     const [cats, cols, prods, variants, units, hero, content, settings, pcs, sales] = await Promise.all([
-      pool.query(`SELECT c.key, c.label, c.sort_order, m.url AS image_url FROM categories c LEFT JOIN media m ON m.id = c.image_media_id ORDER BY c.sort_order`),
+      pool.query(`SELECT c.key, c.label, c.sort_order, c.parent_key, m.url AS image_url FROM categories c LEFT JOIN media m ON m.id = c.image_media_id ORDER BY c.sort_order`),
       pool.query(`SELECT id, name, description, is_system, visible, sort_order FROM collections ORDER BY sort_order`),
       pool.query(
         `SELECT p.*, m.url AS image_url,
@@ -130,7 +131,7 @@ publicRouter.get("/catalog", async (req, res, next) => {
 
     res.set("Cache-Control", "public, max-age=15"); // admin edits show up within seconds
     res.json({
-      categories: cats.rows.map((c) => ({ key: c.key, label: c.label })),
+      categories: cats.rows.map((c) => ({ key: c.key, label: c.label, parentKey: c.parent_key || null })),
       products, deviceUnits, heroSlides, siteContent,
     });
   } catch (err) { next(err); }
