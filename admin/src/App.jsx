@@ -778,6 +778,7 @@ function HomepageBuilder({ onError }) {
   const [canvasViewport, setCanvasViewport] = useState("desktop");
   const [showSectionPicker, setShowSectionPicker] = useState(false);
   const [addSectionAfterId, setAddSectionAfterId] = useState("");
+  const [editingHomepageCollectionId, setEditingHomepageCollectionId] = useState("best-sellers");
   const [layoutDirty, setLayoutDirty] = useState(false);
   function commitLayout(nextLayout) {
     const snapshot = nextLayout.map(item => ({ ...item }));
@@ -1130,31 +1131,56 @@ function HomepageBuilder({ onError }) {
         <p className="muted" style={{ padding: "8px 14px", margin: 0, flexShrink: 0 }}>This is the actual storefront with your unsaved draft applied. Preview mode blocks checkout and reservation submissions and does not publish changes.</p>
       </div>
     </div>}
-    {activeTab === "collections" && <section className="panel homepage-editor-panel">
-      <div className="panel-head"><div><h2>Collections on the homepage</h2><p>Choose which product groups appear. Manage their products and cover images in Collections.</p></div></div>
-      <div className="homepage-collection-control-list">
-        {collections.map((item,index)=>{
-          const config=siteContent.collectionDetails?.[item.id]||{};
-          const enabled=config.homepageVisible!==false;
-          return <article className="homepage-collection-control" key={item.id}>
-            <div className="homepage-collection-control-info">{config.imageUrl?<img src={config.imageUrl} alt=""/>:<span><ShoppingBag size={18}/></span>}<div><b>{item.name}</b><small>{item.product_count||0} products · {item.id}</small></div></div>
-            <label className="homepage-toggle"><input type="checkbox" checked={enabled} onChange={async e=>{
-              const next={...(siteContent.collectionDetails||{}),[item.id]:{...config,homepageVisible:e.target.checked}};
-              setSiteContent(current=>({...current,collectionDetails:next}));
-              await saveSiteSection("collectionDetails",next);
-            }}/> Show on homepage</label>
-            <div className="row-actions"><button className="btn secondary small" disabled={index===0} onClick={async()=>{
-              const next=[...collections];[next[index-1],next[index]]=[next[index],next[index-1]];setCollections(next);
-              try{await Promise.all(next.map((entry,order)=>request("/collections/"+encodeURIComponent(entry.id),{method:"PATCH",body:JSON.stringify({sortOrder:order})})));}catch(e){onError(e.message);load();}
-            }}>↑</button><button className="btn secondary small" disabled={index===collections.length-1} onClick={async()=>{
-              const next=[...collections];[next[index+1],next[index]]=[next[index],next[index+1]];setCollections(next);
-              try{await Promise.all(next.map((entry,order)=>request("/collections/"+encodeURIComponent(entry.id),{method:"PATCH",body:JSON.stringify({sortOrder:order})})));}catch(e){onError(e.message);load();}
-            }}>↓</button></div>
-          </article>;
-        })}
-        {!collections.length&&<EmptyState icon={ShoppingBag} title="No collections yet" detail="Create a collection first, then choose it here to feature it on the homepage."/>}
-      </div>
-    </section>}
+    {activeTab === "collections" && (() => {
+      const core = [
+        {id:"featured",name:"Featured"},{id:"new-arrivals",name:"New Arrivals"},
+        {id:"best-sellers",name:"Best Sellers"},{id:"certified-refurbished",name:"Certified Refurbished"}
+      ];
+      const collectionItems = [...core.map(item=>({...item,...(collections.find(c=>c.id===item.id)||{})})), ...collections.filter(item=>!core.some(base=>base.id===item.id))];
+      const selectedCollection = collectionItems.find(item=>item.id===editingHomepageCollectionId) || collectionItems[0];
+      const selectedConfig = selectedCollection ? (siteContent.collectionDetails?.[selectedCollection.id] || {}) : {};
+      const patchCollection = patch => setSiteContent(current=>({...current,collectionDetails:{...(current.collectionDetails||{}),[selectedCollection.id]:{...(current.collectionDetails?.[selectedCollection.id]||{}),...patch}}}));
+      const saveCollection = async patch => {
+        const next={...(siteContent.collectionDetails||{}),[selectedCollection.id]:{...selectedConfig,...patch}};
+        setSiteContent(current=>({...current,collectionDetails:next}));
+        await saveSiteSection("collectionDetails",next);
+      };
+      return <section className="panel homepage-editor-panel visual-collections-workspace">
+        <div className="panel-head"><div><h2>Product collections</h2><p>Select a collection to edit its storefront appearance independently. These settings are saved with the Visual Store Editor.</p></div></div>
+        <div className="visual-collection-editor-layout">
+          <div className="visual-collection-picker">
+            <h3>Homepage collections</h3>
+            {collectionItems.map(item=>{
+              const config=siteContent.collectionDetails?.[item.id]||{};
+              return <button type="button" key={item.id} className={selectedCollection?.id===item.id?"visual-collection-choice active":"visual-collection-choice"} onClick={()=>setEditingHomepageCollectionId(item.id)}>
+                <span className="visual-collection-choice-thumb">{config.imageUrl?<img src={config.imageUrl} alt=""/>:<ShoppingBag size={17}/>}</span>
+                <span><b>{item.name}</b><small>{item.product_count??"—"} products</small></span>
+                <span className="visual-collection-choice-arrow">›</span>
+              </button>;
+            })}
+          </div>
+          {selectedCollection && <div className="visual-collection-settings">
+            <div className="visual-collection-settings-head"><div><span className="eyebrow">EDITING COLLECTION</span><h3>{selectedCollection.name}</h3><p>Changes here affect only {selectedCollection.name}.</p></div><label className="homepage-toggle"><input type="checkbox" checked={selectedConfig.homepageVisible!==false} onChange={e=>saveCollection({homepageVisible:e.target.checked})}/> Show on homepage</label></div>
+            <div className="editor-grid">
+              <label>Collection title<input value={selectedConfig.name||selectedCollection.name} onChange={e=>patchCollection({name:e.target.value})}/></label>
+              <label>Storefront description<input value={selectedConfig.storeDescription||""} onChange={e=>patchCollection({storeDescription:e.target.value})} placeholder="Short description under the title"/></label>
+              <label>Heading font<select value={selectedConfig.headingFont||"inherit"} onChange={e=>saveCollection({headingFont:e.target.value})}><option value="inherit">Store default</option><option value="Inter, sans-serif">Inter</option><option value="Arial, sans-serif">Arial</option><option value="Georgia, serif">Georgia</option><option value="'Trebuchet MS', sans-serif">Trebuchet</option><option value="'Times New Roman', serif">Times New Roman</option></select></label>
+              <label>Heading size <b>{selectedConfig.headingSize||32}px</b><input type="range" min="20" max="56" value={selectedConfig.headingSize||32} onChange={e=>patchCollection({headingSize:Number(e.target.value)})}/></label>
+              <label>Heading weight<select value={selectedConfig.headingWeight||"700"} onChange={e=>saveCollection({headingWeight:e.target.value})}><option value="500">Medium</option><option value="600">Semi-bold</option><option value="700">Bold</option><option value="800">Extra bold</option></select></label>
+              <label>Products layout<select value={selectedConfig.productsLayout||"default"} onChange={e=>saveCollection({productsLayout:e.target.value})}><option value="default">Automatic</option><option value="grid">Product grid</option><option value="rail">Horizontal slider</option></select></label>
+              <label>Section background<input type="color" value={selectedConfig.sectionBackground||"#ffffff"} onChange={e=>saveCollection({sectionBackground:e.target.value})}/></label>
+              <label>Heading color<input type="color" value={selectedConfig.headingColor||"#20242b"} onChange={e=>saveCollection({headingColor:e.target.value})}/></label>
+              <label>Accent color<input type="color" value={selectedConfig.accentColor||"#ad8642"} onChange={e=>saveCollection({accentColor:e.target.value})}/></label>
+              <label>Card corner radius <b>{selectedConfig.cardRadius??16}px</b><input type="range" min="0" max="32" value={selectedConfig.cardRadius??16} onChange={e=>patchCollection({cardRadius:Number(e.target.value)})}/></label>
+            </div>
+            <div className="row-actions" style={{justifyContent:"space-between",marginTop:18}}>
+              <span className="muted">Save changes to apply this collection's settings to the storefront.</span>
+              <button type="button" className="btn primary" disabled={saving} onClick={()=>saveCollection({})}>{saving?"Saving…":"Save collection design"}</button>
+            </div>
+          </div>}
+        </div>
+      </section>;
+    })()}
     {activeTab === "categories" && <section className="category-image-manager">
       <div className="panel-head"><div><h2>Category images <span className="count-pill">{categories.length}</span></h2><p>Choose the image shown for each shopping category across the storefront.</p></div></div>
       {loading ? <div className="loading-panel"><span className="spinner"/> Loading categories…</div> : <div className="category-image-grid">
