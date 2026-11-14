@@ -961,3 +961,13 @@ table td{font-size:12px;padding:15px 16px}
 .store-category-branches{padding:13px 18px 15px;background:color-mix(in srgb,var(--panel,#fff) 75%,var(--dept-wash,#f4f6f8))}
 .store-category-branch{padding:10px 3px}
 @media(max-width:620px){.store-category-art{width:56px;height:56px;flex-basis:56px}.store-category-monogram{font-size:27px}}
+
+/* Text-led department headings: no image, icon, tile or decorative object */
+.store-category-main{gap:18px;min-height:112px;padding:22px 23px;align-items:center}
+.store-category-main-copy{padding-left:2px}
+.store-category-main-copy .eyebrow{display:flex;align-items:center;gap:10px;font-size:9px;letter-spacing:.16em;font-weight:800;color:var(--dept-accent,#71869d)}
+.store-category-heading-rule{display:inline-block;width:25px;height:1px;background:var(--dept-accent,#71869d);opacity:.55}
+.store-category-main-copy h3{font-size:21px;line-height:1.2;font-weight:750;letter-spacing:-.035em;margin:9px 0 8px;color:var(--text,#252a31)}
+.store-category-main-copy p{font-size:12px;letter-spacing:.01em}
+.store-category-open{width:34px;height:34px;border-radius:10px;background:var(--dept-wash,#f3f6fa);border-color:color-mix(in srgb,var(--dept-accent,#71869d) 18%,var(--line,#e7e5e1));color:var(--dept-accent,#71869d)}
+@media(max-width:620px){.store-category-main{min-height:96px;padding:17px}.store-category-main-copy h3{font-size:19px}}
