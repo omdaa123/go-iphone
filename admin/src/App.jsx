@@ -1200,8 +1200,7 @@ function StoreCategoriesManager({ onError }) {
         {loading?<div className="loading-panel">Loading categories…</div>:roots.length===0?<div className="store-category-empty"><Package size={28}/><b>No departments yet</b><span>Create your first main category to get started.</span></div>:<div className="store-category-grid">
           {roots.map((c,index)=><article className="store-category-card" key={c.key}>
             <button type="button" className="store-category-main" onClick={()=>setSelectedKey(c.key)}>
-              <div className="store-category-art">{c.image_url?<img src={c.image_url} alt=""/>:<span className="store-category-monogram">{label(c).trim().charAt(0).toUpperCase()}</span>}<span className="store-category-index">{String(index+1).padStart(2,"0")}</span></div>
-              <div className="store-category-main-copy"><div className="eyebrow">MAIN DEPARTMENT</div><h3>{label(c)}</h3><p>{productCount(c.key)} products <i/> {childrenOf(c.key).length} branches</p></div>
+              <div className="store-category-main-copy"><div className="eyebrow">MAIN DEPARTMENT <span className="store-category-heading-rule"/></div><h3>{label(c)}</h3><p>{productCount(c.key)} products <i/> {childrenOf(c.key).length} branches</p></div>
               <span className="store-category-open"><ArrowRight size={17}/></span>
             </button>
             <div className="store-category-branches">
