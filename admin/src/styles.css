@@ -1003,3 +1003,26 @@ table td{font-size:12px;padding:15px 16px}
 .visual-inspector-empty p { max-width:230px; margin:0 0 8px; font-size:12px; line-height:1.6; }
 .visual-color-fields { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
 @media(max-width:1050px) { .visual-canvas-stage { flex-direction:column; } .visual-canvas-inspector { width:100%; flex-basis:auto; max-height:none; } }
+
+
+/* Visual editor: Shopify-style page structure and layer controls */
+.canvas-layer-panel{display:grid;gap:12px;padding-bottom:16px;margin-bottom:16px;border-bottom:1px solid #e8edf2}
+.canvas-layer-heading{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.canvas-layer-heading>div{display:grid;gap:4px}
+.canvas-layer-heading b{font-size:14px;color:#202938}
+.canvas-layer-list{display:grid;gap:6px}
+.canvas-layer-row{display:flex;align-items:center;gap:5px;padding:5px;border:1px solid #e7ebf0;border-radius:9px;background:#fff;transition:border-color .15s,background .15s}
+.canvas-layer-row.selected{border-color:#647f9f;background:#f1f5f9;box-shadow:0 0 0 2px rgba(100,127,159,.09)}
+.canvas-layer-row.muted{opacity:.62}
+.canvas-layer-select{display:flex;align-items:center;gap:8px;flex:1;min-width:0;text-align:left;background:transparent;border:0;padding:5px;color:#344054;cursor:pointer}
+.canvas-layer-grip{font-size:17px;color:#98a2b3;line-height:1}
+.canvas-layer-copy{display:grid;gap:3px;min-width:0}
+.canvas-layer-copy b{font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#202938}
+.canvas-layer-copy small{font-size:9px;color:#98a2b3;text-transform:uppercase;letter-spacing:.06em}
+.canvas-layer-actions{display:flex;align-items:center;gap:2px}
+.canvas-layer-actions button{min-width:25px;height:25px;padding:0 5px;border:1px solid #e8edf2;border-radius:6px;background:#fff;color:#526071;font-size:11px;cursor:pointer}
+.canvas-layer-actions button:last-child{font-size:9px;font-weight:700;padding:0 6px}
+.canvas-layer-actions button:disabled{opacity:.3;cursor:not-allowed}
+.canvas-layer-actions button:not(:disabled):hover{background:#eef2f6;border-color:#cbd5e1}
+.canvas-add-section{width:100%;justify-content:center}
+@media(max-width:1050px){.canvas-layer-panel{max-height:280px;overflow:auto}}
