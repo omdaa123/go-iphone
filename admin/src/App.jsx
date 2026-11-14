@@ -1026,8 +1026,10 @@ function HomepageBuilder({ onError }) {
   useEffect(() => {
     if (!layoutDirty || loading) return;
     const timer = window.setTimeout(async () => {
+      setSaving(true);
       try { await request("/site-content/homepageLayout", { method: "PUT", body: JSON.stringify(siteContent.homepageLayout) }); setLayoutDirty(false); }
       catch (e) { onError("Auto-save failed: " + e.message); }
+      finally { setSaving(false); }
     }, 1100);
     return () => window.clearTimeout(timer);
   }, [layoutDirty, loading, siteContent.homepageLayout, onError]);
