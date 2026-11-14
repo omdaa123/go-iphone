@@ -1325,7 +1325,7 @@ function HomePage({ go, compareIds, onToggleCompare }) {
     <div>
       {homepageLayout.filter(item => item.visible !== false && isInPublishWindow(item)).map(item => {
         const type = item.type || item.id;
-        if (["announcement","image-text","promo-banners","featured-product","testimonials","rich-text"].includes(type)) return renderCustomHomepageSection(item);
+        if (["announcement","image-text","promo-banners","featured-product","testimonials","rich-text"].includes(type)) return <div key={item.id} data-homepage-section={item.id} draggable>{renderCustomHomepageSection(item)}</div>;
         const sectionStyle = { backgroundColor: item.backgroundColor || "transparent", color: item.textColor || "inherit", paddingTop: item.paddingY != null ? Number(item.paddingY) : undefined, paddingBottom: item.paddingY != null ? Number(item.paddingY) : undefined };
         let content = null;
         if (type === "hero") content = <Hero go={go} />;
@@ -1333,7 +1333,7 @@ function HomePage({ go, compareIds, onToggleCompare }) {
         if (type === "collections") content = <React.Fragment>{merchandisingSections.map((section, index) => renderCollection(section, index))}</React.Fragment>;
         if (type === "tools") content = <ToolsSection onRecommend={() => go("recommend")} onCompare={() => go("compare")} />;
         if (type === "trust") content = <TrustSection />;
-        return content ? <div key={item.id} style={sectionStyle}>{content}</div> : null;
+        return content ? <div key={item.id} data-homepage-section={item.id} draggable style={sectionStyle}>{content}</div> : null;
       })}
     </div>
   );
@@ -2351,6 +2351,44 @@ function StoreDataProvider({ children }) {
     window.addEventListener("message", receiveDraft);
     return () => window.removeEventListener("message", receiveDraft);
   }, [adminPreview]);
+  useEffect(() => {
+    if (!adminPreview || !previewDraft) return;
+    let draggedSectionId = "";
+    const sectionAt = target => target?.closest?.("[data-homepage-section]");
+    const selectSection = event => {
+      const section = sectionAt(event.target);
+      if (!section) return;
+      event.preventDefault();
+      event.stopPropagation();
+      window.parent.postMessage({ type: "GO_IPHONE_SELECT_SECTION", sectionId: section.dataset.homepageSection }, "*");
+    };
+    const startDrag = event => {
+      const section = sectionAt(event.target);
+      if (!section) return;
+      draggedSectionId = section.dataset.homepageSection;
+      event.dataTransfer?.setData("text/plain", draggedSectionId);
+      if (event.dataTransfer) event.dataTransfer.effectAllowed = "move";
+    };
+    const allowDrop = event => { if (sectionAt(event.target)) event.preventDefault(); };
+    const dropSection = event => {
+      const target = sectionAt(event.target);
+      if (!target || !draggedSectionId) return;
+      event.preventDefault();
+      event.stopPropagation();
+      window.parent.postMessage({ type: "GO_IPHONE_REORDER_SECTION", fromId: draggedSectionId, toId: target.dataset.homepageSection }, "*");
+      draggedSectionId = "";
+    };
+    document.addEventListener("click", selectSection, true);
+    document.addEventListener("dragstart", startDrag, true);
+    document.addEventListener("dragover", allowDrop, true);
+    document.addEventListener("drop", dropSection, true);
+    return () => {
+      document.removeEventListener("click", selectSection, true);
+      document.removeEventListener("dragstart", startDrag, true);
+      document.removeEventListener("dragover", allowDrop, true);
+      document.removeEventListener("drop", dropSection, true);
+    };
+  }, [adminPreview, previewDraft]);
 
   // Plain mutable mirror so the pure helper functions (unitsFor, priceFrom,
   // computeRecommendation, ...) always read the live catalog.
