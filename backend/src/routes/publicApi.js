@@ -115,6 +115,7 @@ publicRouter.get("/catalog", async (req, res, next) => {
       id: s.id, eyebrow: s.eyebrow || "", title: s.title, sub: s.subtitle || "", cta: s.cta_text || "Shop now",
       badge: s.badge || "", active: true, duration: s.duration_ms,
       image: s.image_url || "", mobileImage: s.mobile_image_url || "",
+      video: s.video_url || "", mobileVideo: s.mobile_video_url || "",
       target: s.link_product_id
         ? { view: "product", params: { id: s.link_product_id } }
         : { view: "catalog", params: { category: s.link_category_key || "iphone" } },
