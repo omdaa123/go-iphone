@@ -7,7 +7,7 @@ import { validateBody } from "../middleware/validate.js";
 import { logAudit } from "../lib/audit.js";
 
 export const unitsRouter = Router({ mergeParams: true }); // mounted at /admin/products/:productId/units
-unitsRouter.use(requireAuth);
+unitsRouter.use(requireAuth, requirePermission("inventory.write"));
 
 const unitSchema = z.object({
   storage: z.string().optional().nullable(),
