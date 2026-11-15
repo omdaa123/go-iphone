@@ -7,7 +7,7 @@ import { validateBody } from "../middleware/validate.js";
 import { logAudit } from "../lib/audit.js";
 
 export const siteContentRouter = Router();
-siteContentRouter.use(requireAuth);
+siteContentRouter.use(requireAuth, requirePermission("cms.write"));
 
 const KNOWN_SECTIONS = ["comparisonSection", "recommendationSection", "announcement", "toolsSection", "trustSection", "homepageLayout", "designSystem", "heroSlideSchedules", "collectionDetails"];
 
