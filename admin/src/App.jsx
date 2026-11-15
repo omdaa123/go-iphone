@@ -1228,7 +1228,20 @@ function HomepageBuilder({ onError }) {
                     <label>Product card radius <b>{config.cardRadius??16}px</b><input type="range" min="0" max="32" value={config.cardRadius??16} onChange={e=>updateConfig({cardRadius:Number(e.target.value)})}/></label>
                     <label>Intro column width<select value={config.introWidth||"narrow"} onChange={e=>updateConfig({introWidth:e.target.value})}><option value="narrow">Narrow</option><option value="balanced">Balanced</option><option value="wide">Wide</option></select></label>
                   </div></details>}
-                  {activeId!=="certified-refurbished" && <>
+                  {activeId==="featured" && <details className="inspector-group" open><summary><span><b>Featured section design</b><small>Every control here updates the Featured storefront block</small></span><ChevronDown size={16}/></summary><div className="inspector-group-body">
+                    <label>Eyebrow<input value={config.eyebrow??"Featured"} onChange={e=>updateConfig({eyebrow:e.target.value})}/></label>
+                    <label>Featured headline<input value={config.featuredTitle||""} placeholder="Use product name" onChange={e=>updateConfig({featuredTitle:e.target.value})}/></label>
+                    <label>Description<textarea rows="3" value={config.storeDescription||""} placeholder="Use product specifications" onChange={e=>updateConfig({storeDescription:e.target.value})}/></label>
+                    <label>Button text<input value={config.ctaText||""} placeholder="View product" onChange={e=>updateConfig({ctaText:e.target.value})}/></label>
+                    <label>Heading font<select value={config.headingFont||"inherit"} onChange={e=>updateConfig({headingFont:e.target.value})}><option value="inherit">Store default</option><option value="Inter, sans-serif">Inter</option><option value="Arial, sans-serif">Arial</option><option value="Georgia, serif">Georgia</option></select></label>
+                    <label>Heading size <b>{config.headingSize??42}px</b><input type="range" min="24" max="64" value={config.headingSize??42} onChange={e=>updateConfig({headingSize:Number(e.target.value)})}/></label>
+                    <label>Heading weight<select value={config.headingWeight||"700"} onChange={e=>updateConfig({headingWeight:e.target.value})}><option value="500">Medium</option><option value="600">Semi-bold</option><option value="700">Bold</option><option value="800">Extra bold</option></select></label>
+                    <label>Section background<input type="color" value={config.sectionBackground||"#ffffff"} onChange={e=>updateConfig({sectionBackground:e.target.value})}/></label>
+                    <label>Text color<input type="color" value={config.headingColor||"#20242b"} onChange={e=>updateConfig({headingColor:e.target.value})}/></label>
+                    <label>Button accent<input type="color" value={config.accentColor||"#20242b"} onChange={e=>updateConfig({accentColor:e.target.value})}/></label>
+                    <label>Section spacing <b>{config.sectionPadding??64}px</b><input type="range" min="20" max="160" value={config.sectionPadding??64} onChange={e=>updateConfig({sectionPadding:Number(e.target.value)})}/></label>
+                  </div></details>}
+                  {activeId!=="certified-refurbished" && activeId!=="featured" && <>
                     <label>Collection heading<input value={config.name||collectionItems.find(c=>c.id===activeId)?.name||""} onChange={e=>updateConfig({name:e.target.value})}/></label>
                     <label>Description<input value={config.storeDescription||""} onChange={e=>updateConfig({storeDescription:e.target.value})} placeholder="Short description"/></label>
                     <label>Font family<select value={config.headingFont||"inherit"} onChange={e=>updateConfig({headingFont:e.target.value})}><option value="inherit">Store default</option><option value="Inter, sans-serif">Inter</option><option value="Arial, sans-serif">Arial</option><option value="Georgia, serif">Georgia</option><option value="'Trebuchet MS', sans-serif">Trebuchet</option><option value="'Times New Roman', serif">Times New Roman</option></select></label>
