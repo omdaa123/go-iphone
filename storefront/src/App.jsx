@@ -1218,7 +1218,7 @@ function CertifiedPreownedSection({ products, go, onOpen, onToggleCompare, compa
       <div className="max-w-7xl mx-auto px-6 md:px-10 grid gap-10 md:gap-16" style={{gridTemplateColumns:`minmax(0,${introWidth.split(" ")[0]}) minmax(0,${introWidth.split(" ")[1]})`}}>
         <div>
           <p style={{color:config.accentColor||muted,fontSize:12,letterSpacing:".12em"}} className="mb-5 uppercase font-semibold">{config.eyebrow??"CERTIFIED PRE-OWNED"}</p>
-          <h2 style={{color:ink,fontFamily:FONT_DISPLAY,fontWeight:700,letterSpacing:"-.02em",fontSize:"clamp(1.9rem,2.6vw,2.5rem)",lineHeight:1.14}} className="mb-5 max-w-xl">{config.heroTitle??"Carefully checked. Clearly graded. Honestly priced."}</h2>
+          <h2 style={{color:ink,fontFamily:config.headingFont&&config.headingFont!=="inherit"?config.headingFont:FONT_DISPLAY,fontWeight:config.headingWeight||700,letterSpacing:"-.02em",fontSize:`clamp(1.5rem,2.6vw,${Number(config.headingSize)||40}px)`,lineHeight:1.14}} className="mb-5 max-w-xl">{config.heroTitle??"Carefully checked. Clearly graded. Honestly priced."}</h2>
           <p style={{color:muted}} className="text-sm leading-relaxed max-w-xl mb-8">{config.heroDescription??"Every unit is individually inspected — battery health, cosmetic condition, and storage are disclosed upfront, backed by a Go iPhone warranty."}</p>
           <button onClick={() => go("catalog",{category:config.ctaCategory||"iphone"})} style={{backgroundColor:config.accentColor||ink}} className="text-white text-sm font-medium px-7 py-3.5 hover:opacity-90 transition-opacity">{config.ctaText??"Browse certified pre-owned"}</button>
         </div>
