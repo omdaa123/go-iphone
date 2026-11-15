@@ -1102,10 +1102,19 @@ function HomepageBuilder({ onError }) {
             const field=(label,key,placeholder="")=><label>{label}<input value={selected[key]||""} placeholder={placeholder} onChange={e=>updateSelectedSection({[key]:e.target.value})}/></label>;
             return <div className="visual-inspector-fields">
               <div className="visual-inspector-heading"><div><span className="eyebrow">SELECTED SECTION</span><h3>{selected.label||selected.type||selected.id}</h3></div><button type="button" className="icon-btn" title="Clear selection" onClick={()=>setSelectedSectionId("")}><X size={16}/></button></div>
-              {field("Section name","label","Section name")}
-              {field("Eyebrow","eyebrow","Small overline")}
-              {field("Heading","title","Section heading")}
-              <label>Description<textarea rows="4" value={selected.description||""} onChange={e=>updateSelectedSection({description:e.target.value})}/></label>
+              <div className="inspector-section-meta">
+                <span className="inspector-type-chip">{titleCase(selected.type||selected.id)}</span>
+                <label className="homepage-toggle"><input type="checkbox" checked={selected.visible!==false} onChange={e=>updateSelectedSection({visible:e.target.checked})}/> Section visible</label>
+              </div>
+              {!(["tools","trust","collections"].includes(selected.type||selected.id)) && <details className="inspector-group" open>
+                <summary><span><b>Content</b><small>Names, headings and messaging</small></span><ChevronDown size={16}/></summary>
+                <div className="inspector-group-body">
+                  {field("Section name","label","Section name")}
+                  {field("Eyebrow","eyebrow","Small overline")}
+                  {field("Heading","title","Section heading")}
+                  <label>Description<textarea rows="3" value={selected.description||""} onChange={e=>updateSelectedSection({description:e.target.value})}/></label>
+                </div>
+              </details>}
               {(selected.id==="collections" || selected.type==="collections") && (() => {
                 const builtIns=[{id:"featured",name:"Featured"},{id:"new-arrivals",name:"New Arrivals"},{id:"best-sellers",name:"Best Sellers"},{id:"certified-refurbished",name:"Certified Refurbished"}];
                 const collectionItems=[...builtIns,...collections.filter(c=>!builtIns.some(b=>b.id===c.id))];
@@ -1202,17 +1211,27 @@ function HomepageBuilder({ onError }) {
                   <button type="button" className="btn primary small" disabled={saving} onClick={()=>saveSiteSection("trustSection",siteContent.trustSection||{})}>{saving?"Saving…":"Save Trust section"}</button>
                 </div>;
               })()}
-              {field("Button text","ctaText","Explore now")}
-              {field("Button URL","buttonUrl","/catalog")}
-              {field("Category destination","linkCategoryKey","iphone")}
-              {field("Image URL","imageUrl","https://…")}
-              <label className="btn secondary small upload-label">{uploading?"Uploading…":"Upload image"}<input type="file" accept="image/jpeg,image/png,image/webp,image/gif" disabled={uploading} onChange={e=>{uploadSectionImage(e.target.files?.[0]);e.target.value="";}}/></label>
-              <label>Layout<select value={selected.layout||"grid"} onChange={e=>updateSelectedSection({layout:e.target.value})}><option value="grid">Grid</option><option value="centered">Centered</option><option value="split">Split</option><option value="rail">Horizontal rail</option></select></label>
-              <label>Image position<select value={selected.imagePosition||"left"} onChange={e=>updateSelectedSection({imagePosition:e.target.value})}><option value="left">Left</option><option value="right">Right</option></select></label>
-              <label>Columns<input type="number" min="1" max="4" value={selected.columns||3} onChange={e=>updateSelectedSection({columns:Math.max(1,Math.min(4,Number(e.target.value)||1))})}/></label>
-              <label>Section spacing<input type="number" min="0" max="180" value={selected.paddingY??64} onChange={e=>updateSelectedSection({paddingY:Math.max(0,Math.min(180,Number(e.target.value)||0))})}/></label>
-              <div className="visual-color-fields"><label>Background<input type="color" value={selected.backgroundColor||"#f5f3ef"} onChange={e=>updateSelectedSection({backgroundColor:e.target.value})}/></label><label>Text<input type="color" value={selected.textColor||"#20242b"} onChange={e=>updateSelectedSection({textColor:e.target.value})}/></label></div>
-              <div className="row-actions"><button type="button" className="btn secondary small" onClick={()=>duplicateHomepageSection(selected)}>Duplicate</button><button type="button" className="btn danger small" onClick={()=>removeHomepageSection(selected.id)}>Remove section</button></div>
+              {!(["tools","trust","collections"].includes(selected.type||selected.id)) && <details className="inspector-group">
+                <summary><span><b>Buttons & destination</b><small>Actions and where customers go</small></span><ChevronDown size={16}/></summary>
+                <div className="inspector-group-body">
+                  {field("Button text","ctaText","Explore now")}
+                  {field("Button URL","buttonUrl","/catalog")}
+                  {field("Category destination","linkCategoryKey","iphone")}
+                </div>
+              </details>}
+              {!(["tools","trust","collections"].includes(selected.type||selected.id)) && <details className="inspector-group">
+                <summary><span><b>Layout & appearance</b><small>Images, spacing, colors and structure</small></span><ChevronDown size={16}/></summary>
+                <div className="inspector-group-body">
+                  {field("Image URL","imageUrl","https://…")}
+                  <label className="btn secondary small upload-label">{uploading?"Uploading…":"Upload image"}<input type="file" accept="image/jpeg,image/png,image/webp,image/gif" disabled={uploading} onChange={e=>{uploadSectionImage(e.target.files?.[0]);e.target.value="";}}/></label>
+                  <label>Layout<select value={selected.layout||"grid"} onChange={e=>updateSelectedSection({layout:e.target.value})}><option value="grid">Grid</option><option value="centered">Centered</option><option value="split">Split</option><option value="rail">Horizontal rail</option></select></label>
+                  <label>Image position<select value={selected.imagePosition||"left"} onChange={e=>updateSelectedSection({imagePosition:e.target.value})}><option value="left">Left</option><option value="right">Right</option></select></label>
+                  <label>Columns<input type="number" min="1" max="4" value={selected.columns||3} onChange={e=>updateSelectedSection({columns:Math.max(1,Math.min(4,Number(e.target.value)||1))})}/></label>
+                  <label>Section spacing<input type="number" min="0" max="180" value={selected.paddingY??64} onChange={e=>updateSelectedSection({paddingY:Math.max(0,Math.min(180,Number(e.target.value)||0))})}/></label>
+                  <div className="visual-color-fields"><label>Background<input type="color" value={selected.backgroundColor||"#f5f3ef"} onChange={e=>updateSelectedSection({backgroundColor:e.target.value})}/></label><label>Text<input type="color" value={selected.textColor||"#20242b"} onChange={e=>updateSelectedSection({textColor:e.target.value})}/></label></div>
+                </div>
+              </details>}
+              <div className="inspector-danger-zone"><div><b>Section actions</b><small>Duplicate or remove this section from the homepage.</small></div><div className="row-actions"><button type="button" className="btn secondary small" onClick={()=>duplicateHomepageSection(selected)}>Duplicate</button><button type="button" className="btn danger small" onClick={()=>removeHomepageSection(selected.id)}>Remove</button></div></div>
             </div>;
           })()}
         </aside>
