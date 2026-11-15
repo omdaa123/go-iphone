@@ -9,7 +9,7 @@ import { logAudit } from "../lib/audit.js";
 import { saveFile, deleteFile } from "../lib/storage.js";
 
 export const mediaRouter = Router();
-mediaRouter.use(requireAuth);
+mediaRouter.use(requireAuth, requirePermission("media.write"));
 
 const ALLOWED_TYPES = new Set(["image/jpeg", "image/png", "image/webp", "image/gif"]);
 const MAX_BYTES = 8 * 1024 * 1024; // 8MB — the client already compresses images down before this point
