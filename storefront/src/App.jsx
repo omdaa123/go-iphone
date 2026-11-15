@@ -1285,10 +1285,13 @@ function HomePage({ go, compareIds, onToggleCompare }) {
   ];
   const savedLayout = Array.isArray(siteContent.homepageLayout) ? siteContent.homepageLayout : [];
   const normalizedSavedLayout = savedLayout.map(item => ({ ...item, type: item.type || item.id }));
-  const homepageLayout = (savedLayout.length ? normalizedSavedLayout.flatMap(item => {
+  const homepageLayoutBase = savedLayout.length ? normalizedSavedLayout.flatMap(item => {
     if (item.type !== "collections") return [item];
     return merchandisingSections.map((section,index)=>({id:"collection-"+section.id,type:"product-collection",collectionId:section.id,visible:section.visible!==false,label:section.name,order:(item.order??0)+index/100}));
-  }) : defaultLayout.map(item => ({ ...item, type: item.type || item.id })))
+  }) : defaultLayout.map(item => ({ ...item, type: item.type || item.id }));
+  const homepageLayout = [...homepageLayoutBase,...merchandisingSections
+    .filter(section=>!homepageLayoutBase.some(item=>item.type==="product-collection"&&item.collectionId===section.id))
+    .map((section,index)=>({id:"collection-"+section.id,type:"product-collection",collectionId:section.id,visible:section.visible!==false,label:section.name,order:homepageLayoutBase.length+index}))]
     .sort((a, b) => (a.order??0) - (b.order??0));
   const now = Date.now();
   const isInPublishWindow = item => {
