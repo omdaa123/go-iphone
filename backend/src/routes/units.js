@@ -7,7 +7,7 @@ import { validateBody } from "../middleware/validate.js";
 import { logAudit } from "../lib/audit.js";
 
 export const unitsRouter = Router({ mergeParams: true }); // mounted at /admin/products/:productId/units
-unitsRouter.use(requireAuth, requirePermission("inventory.write"));
+unitsRouter.use(requireAuth);
 
 const unitSchema = z.object({
   storage: z.string().optional().nullable(),
@@ -21,7 +21,7 @@ const unitSchema = z.object({
   photoMediaId: z.string().uuid().optional().nullable(),
 });
 
-unitsRouter.get("/", async (req, res, next) => {
+unitsRouter.get("/", requirePermission("inventory.write"), async (req, res, next) => {
   try {
     const { rows } = await pool.query(
       `SELECT * FROM inventory_units WHERE product_id = $1 ORDER BY updated_at DESC`,
@@ -31,7 +31,7 @@ unitsRouter.get("/", async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
-unitsRouter.post("/", requirePermission("inventory.write"), validateBody(unitSchema), async (req, res, next) => {
+unitsRouter.post("/", requirePermission("products.write"), validateBody(unitSchema), async (req, res, next) => {
   try {
     const b = req.body;
     const { rows } = await pool.query(
