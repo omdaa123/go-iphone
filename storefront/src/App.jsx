@@ -339,6 +339,18 @@ function priceFrom(product) {
 function categoryLabel(key) {
   return store.categories.find((c) => c.key === key)?.label || key;
 }
+function categoryParentKey(category) {
+  return category?.parentKey || category?.parent_key || category?.parentCategoryKey ||
+    category?.parent_category_key || category?.parentId || category?.parent_id ||
+    (typeof category?.parent === "string" ? category.parent : category?.parent?.key) || null;
+}
+const OTHER_DEVICE_BRANCH_KEYS = new Set([
+  "smartphone", "smartwatch", "tablet", "speakers", "headphones", "other-electronics",
+]);
+function isTopLevelStoreCategory(category) {
+  return !categoryParentKey(category) && !OTHER_DEVICE_BRANCH_KEYS.has(category?.key);
+}
+
 function conditionTone(cond) {
   if (cond === "New" || cond === "Excellent") return T.ok;
   if (cond === "Very Good") return T.brassDeep;
@@ -588,7 +600,7 @@ function Navbar({ go, cartCount, compareCount, onSearch, onCart }) {
           </button>
 
           <nav className="hidden md:flex items-center gap-9">
-            {CATEGORIES.filter((c) => !["apple-accessory", "other-accessory", "other-devices"].includes(c.key)).map((c) => (
+            {CATEGORIES.filter((c) => isTopLevelStoreCategory(c) && !["apple-accessory", "other-accessory", "other-devices"].includes(c.key)).map((c) => (
               <button key={c.key} onClick={() => go("catalog", { category: c.key })}
                 style={{ color: T.ink, fontSize: "13.5px" }} className="group relative font-medium py-1">
                 {c.label}
@@ -668,7 +680,7 @@ function Navbar({ go, cartCount, compareCount, onSearch, onCart }) {
             <button onClick={() => setMenuOpen(false)} style={{ color: T.ink }} className="p-2 -m-2"><X size={22} /></button>
           </div>
           <div className="flex-1 overflow-y-auto px-6 py-4 flex flex-col">
-            {CATEGORIES.filter((c) => !["apple-accessory", "other-accessory", "other-devices"].includes(c.key)).map((c) => (
+            {CATEGORIES.filter((c) => isTopLevelStoreCategory(c) && !["apple-accessory", "other-accessory", "other-devices"].includes(c.key)).map((c) => (
               <button key={c.key} onClick={() => { go("catalog", { category: c.key }); setMenuOpen(false); }}
                 style={{ color: T.ink, borderColor: T.line }} className="text-2xl font-medium tracking-tight py-4 border-b text-left">
                 {c.label}
@@ -906,8 +918,7 @@ function CategoryGrid({ go }) {
   const { categories: CATEGORIES, siteContent } = useStoreData();
   const categoryImages = siteContent.categoryImages || {};
   // API category records may expose the parent relation as parent_key or parentKey.
-  const parentOf = (category) => category.parentKey || category.parent_key || null;
-  const shown = CATEGORIES.filter((c) => !parentOf(c) && c.key !== "other-accessory");
+  const shown = CATEGORIES.filter((c) => isTopLevelStoreCategory(c) && c.key !== "other-accessory");
   const wide = new Set(["iphone", "apple-accessory", "other-devices"]);
 
   return (
