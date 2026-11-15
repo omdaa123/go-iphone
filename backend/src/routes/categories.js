@@ -7,7 +7,7 @@ import { validateBody } from "../middleware/validate.js";
 import { logAudit } from "../lib/audit.js";
 
 export const categoriesRouter = Router();
-categoriesRouter.use(requireAuth);
+categoriesRouter.use(requireAuth, requirePermission("products.write"));
 
 categoriesRouter.get("/", async (req, res, next) => {
   try {
