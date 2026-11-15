@@ -943,7 +943,7 @@ function CategoryGrid({ go }) {
           const hasPhoto=!!override||!!(rep&&productImageSrc(rep));
           const isWide=card.wide??["iphone","apple-accessory","other-devices"].includes(c.key);
           const span=isWide&&columns>=3?2:1;
-          const imageFit=config.imageFit||"cover";
+          const imageFit=card.imageFit&&card.imageFit!=="inherit"?card.imageFit:(config.imageFit||"cover");
           const textColor=card.textColor||(hasPhoto?"#fff":(config.textColor||T.ink));
           const overlay=hasPhoto&&config.showOverlay!==false?Number(config.overlayOpacity??35)/100:0;
           const textPlacement=config.textPlacement||"bottom";
