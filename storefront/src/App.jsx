@@ -1075,10 +1075,16 @@ function TrustSection() {
     { id: "delivery", icon: CircleCheck, title: "Cash on delivery", desc: "Pay when your order arrives, anywhere we deliver." },
   ];
   const icons = { warranty: ShieldCheck, battery: BatteryMedium, grading: Check, delivery: CircleCheck };
-  const points = defaults.map(base => {
-    const saved = (settings.points || []).find(point => point.id === base.id) || {};
-    return { ...base, ...saved, icon: icons[base.id] };
-  }).filter(point => point.visible !== false);
+  const savedPoints = Array.isArray(settings.points) ? settings.points : [];
+  const points = [
+    ...defaults.map(base => {
+      const saved = savedPoints.find(point => point.id === base.id) || {};
+      return { ...base, ...saved, icon: icons[base.id] };
+    }),
+    ...savedPoints.filter(point => !defaults.some(base => base.id === point.id)).map(point => ({
+      ...point, icon: CircleCheck,
+    })),
+  ].filter(point => point.visible !== false);
   if (settings.visible === false || !points.length) return null;
   return (
     <section style={{ borderColor: T.line, backgroundColor: settings.backgroundColor || "transparent", color: settings.textColor || T.ink, paddingTop: (settings.paddingY ?? 80) + "px", paddingBottom: (settings.paddingY ?? 80) + "px" }} className="max-w-7xl mx-auto px-6 md:px-10 border-t">
