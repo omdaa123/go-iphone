@@ -898,6 +898,17 @@ function HomepageBuilder({ onError }) {
     } catch (e) { onError(e.message); }
     finally { setUploading(false); }
   }
+  async function uploadToolCardImage(file, sectionKey) {
+    if (!file) return;
+    setUploading(true);
+    try {
+      const dataUrl = await compressImage(file);
+      const d = await request("/media", { method: "POST", body: JSON.stringify({ dataUrl, fileName: file.name, usageTag: "tools-card" }) });
+      setMedia(list => [d.media, ...list]);
+      setSiteContent(current => ({ ...current, [sectionKey]: { ...(current[sectionKey] || {}), image: d.media.url } }));
+    } catch (e) { onError(e.message); }
+    finally { setUploading(false); }
+  }
   async function uploadSectionImage(file) {
     if (!file) return;
     setUploading(true);
@@ -1157,7 +1168,7 @@ function HomepageBuilder({ onError }) {
                     <label>Card description<textarea rows="3" value={data.description||""} onChange={e=>patchCard(card.key,{description:e.target.value})}/></label>
                     <label>Button text<input value={data.cta||""} onChange={e=>patchCard(card.key,{cta:e.target.value})}/></label>
                     <label>Card image URL<input value={data.image||""} onChange={e=>patchCard(card.key,{image:e.target.value})} placeholder="https://…"/></label>
-                    <label>Upload card image<input type="file" accept="image/jpeg,image/png,image/webp,image/gif" disabled={uploading} onChange={e=>{uploadToolsImage(e.target.files?.[0],card.key==="recommendationSection"?"recommendationImage":"comparisonImage");e.target.value="";}}/></label>
+                    <label>Upload card image<input type="file" accept="image/jpeg,image/png,image/webp,image/gif" disabled={uploading} onChange={e=>{uploadToolCardImage(e.target.files?.[0],card.key);e.target.value="";}}/></label>
                     {data.image&&<img src={data.image} alt="" style={{width:"100%",maxHeight:130,objectFit:"cover",borderRadius:10}}/>}
                     <button type="button" className="btn secondary small" disabled={saving} onClick={()=>saveSiteSection(card.key,siteContent[card.key]||card.fallback)}>Save this card</button>
                   </div>})}
