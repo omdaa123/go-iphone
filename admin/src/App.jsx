@@ -1157,7 +1157,7 @@ function HomepageBuilder({ onError }) {
                     <label>Image URL<input value={card.imageUrl||""} placeholder="Use category default image" onChange={e=>patchCard({imageUrl:e.target.value})}/></label>
                     <label className="btn secondary small upload-label">{uploading?"Uploading…":"Upload category image"}<input type="file" accept="image/jpeg,image/png,image/webp,image/gif" disabled={uploading} onChange={e=>{uploadCategoryCard(e.target.files?.[0]);e.target.value="";}}/></label>
                     {card.imageUrl&&<img src={card.imageUrl} alt="" style={{width:"100%",height:110,objectFit:"cover",borderRadius:9}}/>}
-                    <button type="button" className="btn secondary small" onClick={()=>patchCard({label:"",imageUrl:""})}>Reset card overrides</button>
+                    <button type="button" className="btn secondary small" onClick={()=>patchCard({label:null,imageUrl:null})}>Reset card overrides</button>
                   </div></details>
                   <button type="button" className="btn primary small" disabled={saving} onClick={save}>{saving?"Saving…":"Save Shop by category design"}</button>
                 </div>;
