@@ -13,11 +13,10 @@ CREATE TABLE IF NOT EXISTS roles (
 );
 
 INSERT INTO roles (name, permissions) VALUES
-  ('OWNER',   '{"admin.manage":true,"products.write":true,"inventory.write":true,"orders.write":true,"reservations.write":true,"cms.write":true,"media.write":true,"settings.write":true}'),
-  ('MANAGER', '{"admin.manage":false,"products.write":true,"inventory.write":true,"orders.write":true,"reservations.write":true,"cms.write":true,"media.write":true,"settings.write":false}'),
-  ('STAFF',   '{"admin.manage":false,"products.write":false,"inventory.write":true,"orders.write":true,"reservations.write":true,"cms.write":false,"media.write":false,"settings.write":false}'),
-  ('CONTENT', '{"admin.manage":false,"products.write":false,"inventory.write":false,"orders.write":false,"reservations.write":false,"cms.write":true,"media.write":true,"settings.write":false}')
-ON CONFLICT (name) DO NOTHING;
+  ('OWNER', '{"admin.manage":true,"dashboard.view":true,"dashboard.sales.view":true,"products.write":true,"inventory.write":true,"orders.write":true,"reservations.write":true,"cms.write":true,"media.write":true,"settings.write":true}'),
+  ('DASHBOARD', '{"admin.manage":false,"dashboard.view":true,"dashboard.sales.view":true,"products.write":false,"inventory.write":false,"orders.write":false,"reservations.write":false,"cms.write":false,"media.write":false,"settings.write":false}'),
+  ('CATALOG', '{"admin.manage":false,"dashboard.view":true,"dashboard.sales.view":false,"products.write":true,"inventory.write":false,"orders.write":false,"reservations.write":false,"cms.write":true,"media.write":true,"settings.write":false}')
+ON CONFLICT (name) DO UPDATE SET permissions = EXCLUDED.permissions;
 
 CREATE TABLE IF NOT EXISTS admin_users (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -32,6 +31,10 @@ CREATE TABLE IF NOT EXISTS admin_users (
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   last_login_at TIMESTAMPTZ
 );
+
+UPDATE admin_users SET role = 'DASHBOARD' WHERE role = 'STAFF';
+UPDATE admin_users SET role = 'CATALOG' WHERE role IN ('MANAGER','CONTENT');
+DELETE FROM roles WHERE name IN ('MANAGER','STAFF','CONTENT');
 
 CREATE TABLE IF NOT EXISTS sessions (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
