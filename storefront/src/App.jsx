@@ -918,7 +918,7 @@ function CategoryGrid({ go }) {
   const { categories: CATEGORIES, siteContent } = useStoreData();
   const categoryImages = siteContent.categoryImages || {};
   // API category records may expose the parent relation as parent_key or parentKey.
-  const shown = CATEGORIES.filter((c) => isTopLevelStoreCategory(c) && c.key !== "other-accessory");
+  const shown = CATEGORIES.filter((c) => isTopLevelStoreCategory(c) && c.key !== "other-accessory" && (c.key === "apple-accessory" || (!["accessories"].includes(String(c.key || "").toLowerCase()) && !/accessor(?:y|ies)/i.test(String(c.label || "")))));
   const wide = new Set(["iphone", "apple-accessory", "other-devices"]);
 
   return (
