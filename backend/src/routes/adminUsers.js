@@ -41,7 +41,7 @@ adminUsersRouter.post("/", validateBody(createSchema), async (req, res, next) =>
   }
 });
 
-const roleSchema = z.object({ role: z.enum(["OWNER", "DASHBOARD", "CATALOG"]) });
+const roleSchema = z.object({ role: z.enum(["DASHBOARD", "CATALOG"]) });
 adminUsersRouter.patch("/:id/role", validateBody(roleSchema), async (req, res, next) => {
   try {
     const { rows } = await pool.query(`UPDATE admin_users SET role = $1 WHERE id = $2 RETURNING id, email, role`, [req.body.role, req.params.id]);
