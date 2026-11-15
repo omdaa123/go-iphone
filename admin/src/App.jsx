@@ -1791,7 +1791,7 @@ function LiveBrandAndFooterEditor({ onError, previewFrameRef }) {
       </>}
     </section>
     <section className="panel live-footer-editor">
-      <div className="live-footer-hero"><div className="live-footer-hero-icon"><Layout size={21}/></div><div><span className="eyebrow">STORE EXPERIENCE / FOOTER BUILDER</span><h2>Footer Studio</h2><p>Build a polished store footer, organize navigation columns and manage every destination from one place.</p></div><div className="live-footer-count"><b>{footer.groups.length}</b><span>Navigation columns</span></div></div>
+      <div className="live-footer-hero"><div className="live-footer-hero-icon"><LayoutDashboard size={21}/></div><div><span className="eyebrow">STORE EXPERIENCE / FOOTER BUILDER</span><h2>Footer Studio</h2><p>Build a polished store footer, organize navigation columns and manage every destination from one place.</p></div><div className="live-footer-count"><b>{footer.groups.length}</b><span>Navigation columns</span></div></div>
       <div className="live-footer-description-card"><div><b>Brand introduction</b><small>A short description that appears with your store identity in the footer.</small></div><label><span>Store description</span><textarea rows="3" value={footer.description||""} onChange={e=>changeFooter(f=>({...f,description:e.target.value}))} placeholder="A concise introduction to your store and what makes it special."/></label></div>
       {footer.groups.map((group,gi)=><div className="live-footer-group" key={group.id||gi}>
         <div className="live-footer-group-kicker"><span> NAVIGATION COLUMN {String(gi+1).padStart(2,"0")}</span><b>{group.links.length} {group.links.length===1?"link":"links"}</b></div>
