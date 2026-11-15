@@ -779,6 +779,7 @@ function HomepageBuilder({ onError }) {
   const [showSectionPicker, setShowSectionPicker] = useState(false);
   const [addSectionAfterId, setAddSectionAfterId] = useState("");
   const [liveCollectionId, setLiveCollectionId] = useState("best-sellers");
+  const [liveCategoryKey, setLiveCategoryKey] = useState("");
   const [editingHomepageCollectionId, setEditingHomepageCollectionId] = useState("best-sellers");
   const [layoutDirty, setLayoutDirty] = useState(false);
   function commitLayout(nextLayout) {
@@ -1115,6 +1116,52 @@ function HomepageBuilder({ onError }) {
                   <label>Description<textarea rows="3" value={selected.description||""} onChange={e=>updateSelectedSection({description:e.target.value})}/></label>
                 </div>
               </details>}
+              {(selected.id==="categories" || selected.type==="categories") && (() => {
+                const config=siteContent.shopCategoriesSection||{};
+                const shown=categories.filter(c=>!c.parent_key&&!c.parentKey&&c.key!=="other-accessory"&&(c.key==="apple-accessory"||(!["accessories"].includes(String(c.key||"").toLowerCase())&&!/accessor(?:y|ies)/i.test(String(c.label||"")))));
+                const categoryOrder=Array.isArray(config.order)?config.order:[];
+                const ordered=[...shown].sort((a,b)=>{const ai=categoryOrder.indexOf(a.key),bi=categoryOrder.indexOf(b.key);return (ai<0?999:ai)-(bi<0?999:bi);});
+                const activeKey=shown.some(c=>c.key===liveCategoryKey)?liveCategoryKey:(shown[0]?.key||"");
+                const cards=config.cards||{};
+                const card=cards[activeKey]||{};
+                const patch=next=>setSiteContent(current=>({...current,shopCategoriesSection:{...(current.shopCategoriesSection||{}),...next}}));
+                const patchCard=next=>setSiteContent(current=>({...current,shopCategoriesSection:{...(current.shopCategoriesSection||{}),cards:{...(current.shopCategoriesSection?.cards||{}),[activeKey]:{...(current.shopCategoriesSection?.cards?.[activeKey]||{}),...next}}}}));
+                const moveCategory=(key,direction)=>{const list=[...ordered];const index=list.findIndex(x=>x.key===key),target=index+direction;if(index<0||target<0||target>=list.length)return;[list[index],list[target]]=[list[target],list[index]];patch({order:list.map(x=>x.key)});};
+                const uploadCategoryCard=async(file)=>{if(!file||!activeKey)return;setUploading(true);try{const dataUrl=await compressImage(file);const d=await request("/media",{method:"POST",body:JSON.stringify({dataUrl,fileName:file.name,usageTag:"shop-category"})});setMedia(list=>[d.media,...list]);patchCard({imageUrl:d.media.url});}catch(e){onError(e.message);}finally{setUploading(false);}};
+                const save=()=>saveSiteSection("shopCategoriesSection",siteContent.shopCategoriesSection||{});
+                return <div className="live-collection-inspector category-live-editor">
+                  <div className="live-collection-inspector-title"><b>Shop by category · Full section control</b><small>Every setting below is connected to the actual storefront category grid. Changes appear in the live preview.</small></div>
+                  <details className="inspector-group" open><summary><span><b>Section content</b><small>Heading and supporting copy</small></span><ChevronDown size={16}/></summary><div className="inspector-group-body">
+                    <label>Eyebrow<input value={config.eyebrow??"EXPLORE"} onChange={e=>patch({eyebrow:e.target.value})}/></label>
+                    <label>Heading<input value={config.title??"Shop by category"} onChange={e=>patch({title:e.target.value})}/></label>
+                    <label>Description<textarea rows="2" value={config.description||""} onChange={e=>patch({description:e.target.value})}/></label>
+                    <label>Section background<input type="color" value={config.backgroundColor||"#ffffff"} onChange={e=>patch({backgroundColor:e.target.value})}/></label>
+                    <label>Text color<input type="color" value={config.textColor||"#20242b"} onChange={e=>patch({textColor:e.target.value})}/></label>
+                  </div></details>
+                  <details className="inspector-group" open><summary><span><b>Grid & card design</b><small>Responsive layout, dimensions and image treatment</small></span><ChevronDown size={16}/></summary><div className="inspector-group-body">
+                    <label>Desktop columns <b>{config.columns??4}</b><input type="range" min="2" max="6" value={config.columns??4} onChange={e=>patch({columns:Number(e.target.value)})}/></label>
+                    <label>Card height <b>{config.cardHeight??240}px</b><input type="range" min="140" max="420" step="10" value={config.cardHeight??240} onChange={e=>patch({cardHeight:Number(e.target.value)})}/></label>
+                    <label>Grid gap <b>{config.gap??16}px</b><input type="range" min="4" max="36" value={config.gap??16} onChange={e=>patch({gap:Number(e.target.value)})}/></label>
+                    <label>Card radius <b>{config.cardRadius??4}px</b><input type="range" min="0" max="36" value={config.cardRadius??4} onChange={e=>patch({cardRadius:Number(e.target.value)})}/></label>
+                    <label>Section spacing <b>{config.paddingY??80}px</b><input type="range" min="16" max="160" value={config.paddingY??80} onChange={e=>patch({paddingY:Number(e.target.value)})}/></label>
+                    <label>Image fit<select value={config.imageFit||"cover"} onChange={e=>patch({imageFit:e.target.value})}><option value="cover">Cover</option><option value="contain">Contain</option></select></label>
+                    <label>Text placement<select value={config.textPlacement||"bottom"} onChange={e=>patch({textPlacement:e.target.value})}><option value="bottom">Bottom</option><option value="top">Top</option><option value="center">Center</option></select></label>
+                    <label className="homepage-toggle"><input type="checkbox" checked={config.showOverlay!==false} onChange={e=>patch({showOverlay:e.target.checked})}/> Show image overlay</label>
+                    <label>Overlay strength <b>{config.overlayOpacity??35}%</b><input type="range" min="0" max="85" value={config.overlayOpacity??35} onChange={e=>patch({overlayOpacity:Number(e.target.value)})}/></label>
+                  </div></details>
+                  <details className="inspector-group" open><summary><span><b>Category cards</b><small>Visibility, order, title and individual image for each card</small></span><ChevronDown size={16}/></summary><div className="inspector-group-body">
+                    <label>Choose category<select value={activeKey} onChange={e=>setLiveCategoryKey(e.target.value)}>{ordered.map(item=><option key={item.key} value={item.key}>{item.label}</option>)}</select></label>
+                    <div className="live-collection-order">{ordered.map((item,index)=><div className={item.key===activeKey?"live-collection-order-row active":"live-collection-order-row"} key={item.key}><button type="button" className="text-btn" onClick={()=>setLiveCategoryKey(item.key)}>{index+1}. {cards[item.key]?.label||item.label} {cards[item.key]?.visible===false?"(Hidden)":""}</button><span className="live-collection-order-actions"><button type="button" className="icon-btn" disabled={!index} onClick={()=>moveCategory(item.key,-1)}>↑</button><button type="button" className="icon-btn" disabled={index===ordered.length-1} onClick={()=>moveCategory(item.key,1)}>↓</button></span></div>)}</div>
+                    <label className="homepage-toggle"><input type="checkbox" checked={card.visible!==false} onChange={e=>patchCard({visible:e.target.checked})}/> Show this category</label>
+                    <label>Card title<input value={card.label??shown.find(x=>x.key===activeKey)?.label??""} onChange={e=>patchCard({label:e.target.value})}/></label>
+                    <label>Image URL<input value={card.imageUrl||""} placeholder="Use category default image" onChange={e=>patchCard({imageUrl:e.target.value})}/></label>
+                    <label className="btn secondary small upload-label">{uploading?"Uploading…":"Upload category image"}<input type="file" accept="image/jpeg,image/png,image/webp,image/gif" disabled={uploading} onChange={e=>{uploadCategoryCard(e.target.files?.[0]);e.target.value="";}}/></label>
+                    {card.imageUrl&&<img src={card.imageUrl} alt="" style={{width:"100%",height:110,objectFit:"cover",borderRadius:9}}/>}
+                    <button type="button" className="btn secondary small" onClick={()=>patchCard({label:"",imageUrl:""})}>Reset card overrides</button>
+                  </div></details>
+                  <button type="button" className="btn primary small" disabled={saving} onClick={save}>{saving?"Saving…":"Save Shop by category design"}</button>
+                </div>;
+              })()}
               {(selected.id==="collections" || selected.type==="collections") && (() => {
                 const builtIns=[{id:"featured",name:"Featured"},{id:"new-arrivals",name:"New Arrivals"},{id:"best-sellers",name:"Best Sellers"},{id:"certified-refurbished",name:"Certified Refurbished"}];
                 const collectionItems=[...builtIns,...collections.filter(c=>!builtIns.some(b=>b.id===c.id))];
@@ -1147,6 +1194,22 @@ function HomepageBuilder({ onError }) {
                       </span>
                     </div>)}
                   </div>
+                  {activeId==="certified-refurbished" && <details className="inspector-group" open><summary><span><b>Certified pre-owned · Full section design</b><small>All content and product presentation settings</small></span><ChevronDown size={16}/></summary><div className="inspector-group-body">
+                    <label>Eyebrow<input value={config.eyebrow??"CERTIFIED PRE-OWNED"} onChange={e=>updateConfig({eyebrow:e.target.value})}/></label>
+                    <label>Main headline<textarea rows="3" value={config.heroTitle??"Carefully checked. Clearly graded. Honestly priced."} onChange={e=>updateConfig({heroTitle:e.target.value})}/></label>
+                    <label>Intro description<textarea rows="4" value={config.heroDescription??"Every unit is individually inspected — battery health, cosmetic condition, and storage are disclosed upfront, backed by a Go iPhone warranty."} onChange={e=>updateConfig({heroDescription:e.target.value})}/></label>
+                    <label>Button text<input value={config.ctaText??"Browse certified pre-owned"} onChange={e=>updateConfig({ctaText:e.target.value})}/></label>
+                    <label>Button destination<select value={config.ctaCategory||"iphone"} onChange={e=>updateConfig({ctaCategory:e.target.value})}>{categories.filter(x=>!x.parent_key&&!x.parentKey).map(x=><option key={x.key} value={x.key}>{x.label}</option>)}</select></label>
+                    <label>Products shown <b>{config.productLimit??8}</b><input type="range" min="2" max="24" value={config.productLimit??8} onChange={e=>updateConfig({productLimit:Number(e.target.value)})}/></label>
+                    <label>Product layout<select value={config.productsLayout||"grid"} onChange={e=>updateConfig({productsLayout:e.target.value})}><option value="grid">Grid</option><option value="rail">Horizontal slider</option></select></label>
+                    <label>Desktop product columns <b>{config.productColumns??2}</b><input type="range" min="2" max="5" value={config.productColumns??2} onChange={e=>updateConfig({productColumns:Number(e.target.value)})}/></label>
+                    <label>Section background<input type="color" value={config.sectionBackground||"#f5f3ef"} onChange={e=>updateConfig({sectionBackground:e.target.value})}/></label>
+                    <label>Heading and body color<input type="color" value={config.headingColor||"#20242b"} onChange={e=>updateConfig({headingColor:e.target.value})}/></label>
+                    <label>Accent color<input type="color" value={config.accentColor||"#ad8642"} onChange={e=>updateConfig({accentColor:e.target.value})}/></label>
+                    <label>Section spacing <b>{config.sectionPadding??80}px</b><input type="range" min="20" max="180" value={config.sectionPadding??80} onChange={e=>updateConfig({sectionPadding:Number(e.target.value)})}/></label>
+                    <label>Product card radius <b>{config.cardRadius??16}px</b><input type="range" min="0" max="32" value={config.cardRadius??16} onChange={e=>updateConfig({cardRadius:Number(e.target.value)})}/></label>
+                    <label>Intro column width<select value={config.introWidth||"narrow"} onChange={e=>updateConfig({introWidth:e.target.value})}><option value="narrow">Narrow</option><option value="balanced">Balanced</option><option value="wide">Wide</option></select></label>
+                  </div></details>}
                   <label>Collection heading<input value={config.name||collectionItems.find(c=>c.id===activeId)?.name||""} onChange={e=>updateConfig({name:e.target.value})}/></label>
                   <label>Description<input value={config.storeDescription||""} onChange={e=>updateConfig({storeDescription:e.target.value})} placeholder="Short description"/></label>
                   <label>Font family<select value={config.headingFont||"inherit"} onChange={e=>updateConfig({headingFont:e.target.value})}><option value="inherit">Store default</option><option value="Inter, sans-serif">Inter</option><option value="Arial, sans-serif">Arial</option><option value="Georgia, serif">Georgia</option><option value="'Trebuchet MS', sans-serif">Trebuchet</option><option value="'Times New Roman', serif">Times New Roman</option></select></label>
