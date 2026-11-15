@@ -1,9 +1,10 @@
 import { Router } from "express";
 import { pool } from "../db.js";
 import { requireAuth } from "../middleware/auth.js";
+import { requirePermission } from "../middleware/rbac.js";
 
 export const statsRouter = Router();
-statsRouter.use(requireAuth);
+statsRouter.use(requireAuth, requirePermission("dashboard.view"));
 
 // Dashboard numbers, computed in the database so the admin app doesn't have to
 // download every order just to count them.
