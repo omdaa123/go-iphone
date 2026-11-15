@@ -1138,6 +1138,59 @@ function HomepageBuilder({ onError }) {
                   <button type="button" className="btn primary small" disabled={saving} onClick={saveConfig}>{saving?"Saving…":"Save collection design"}</button>
                 </div>;
               })()}
+              {(selected.id==="tools" || selected.type==="tools") && (() => {
+                const tools=siteContent.toolsSection||{};
+                const cards=[{key:"recommendationSection",label:"Find your perfect device",fallback:{title:"Find your perfect device",description:"Answer a few questions and discover the right device for you.",cta:"Get a recommendation",visible:true}},{key:"comparisonSection",label:"Compare devices",fallback:{title:"Compare devices",description:"See the differences side by side before you decide.",cta:"Compare now",visible:true}}];
+                const patchTools=patch=>setSiteContent(current=>({...current,toolsSection:{...(current.toolsSection||{}),...patch}}));
+                const patchCard=(key,patch)=>setSiteContent(current=>({...current,[key]:{...(current[key]||{}),...patch}}));
+                return <div className="live-collection-inspector">
+                  <div className="live-collection-inspector-title"><b>Tools section — every element</b><small>Edit the section heading, each tool card, its image, text, button and visibility.</small></div>
+                  <label className="homepage-toggle"><input type="checkbox" checked={tools.visible!==false} onChange={e=>patchTools({visible:e.target.checked})}/> Show entire Tools section</label>
+                  <label>Small heading<input value={tools.eyebrow||"Tools"} onChange={e=>patchTools({eyebrow:e.target.value})}/></label>
+                  <label>Main heading<input value={tools.title||"Not sure which to choose?"} onChange={e=>patchTools({title:e.target.value})}/></label>
+                  <label>Section background<input type="color" value={tools.backgroundColor||"#ffffff"} onChange={e=>patchTools({backgroundColor:e.target.value})}/></label>
+                  <label>Section top/bottom spacing <b>{tools.paddingY??96}px</b><input type="range" min="24" max="180" value={tools.paddingY??96} onChange={e=>patchTools({paddingY:Number(e.target.value)})}/></label>
+                  {cards.map(card=>{const data={...card.fallback,...(siteContent[card.key]||{})};return <div className="panel homepage-content-card" key={card.key}>
+                    <div className="panel-head"><div><b>{card.label}</b><small>Individual card settings</small></div><label className="homepage-toggle"><input type="checkbox" checked={data.visible!==false} onChange={e=>patchCard(card.key,{visible:e.target.checked})}/> Visible</label></div>
+                    <label>Card eyebrow<input value={data.eyebrow|| (card.key==="recommendationSection"?"Guided shopping":"Side by side")} onChange={e=>patchCard(card.key,{eyebrow:e.target.value})}/></label>
+                    <label>Card title<input value={data.title||""} onChange={e=>patchCard(card.key,{title:e.target.value})}/></label>
+                    <label>Card description<textarea rows="3" value={data.description||""} onChange={e=>patchCard(card.key,{description:e.target.value})}/></label>
+                    <label>Button text<input value={data.cta||""} onChange={e=>patchCard(card.key,{cta:e.target.value})}/></label>
+                    <label>Card image URL<input value={data.image||""} onChange={e=>patchCard(card.key,{image:e.target.value})} placeholder="https://…"/></label>
+                    <label>Upload card image<input type="file" accept="image/jpeg,image/png,image/webp,image/gif" disabled={uploading} onChange={e=>{uploadToolsImage(e.target.files?.[0],card.key==="recommendationSection"?"recommendationImage":"comparisonImage");e.target.value="";}}/></label>
+                    {data.image&&<img src={data.image} alt="" style={{width:"100%",maxHeight:130,objectFit:"cover",borderRadius:10}}/>}
+                    <button type="button" className="btn secondary small" disabled={saving} onClick={()=>saveSiteSection(card.key,siteContent[card.key]||card.fallback)}>Save this card</button>
+                  </div>})}
+                  <button type="button" className="btn primary small" disabled={saving} onClick={()=>saveSiteSection("toolsSection",siteContent.toolsSection||{})}>{saving?"Saving…":"Save Tools section settings"}</button>
+                </div>;
+              })()}
+              {(selected.id==="trust" || selected.type==="trust") && (() => {
+                const trust=siteContent.trustSection||{points:[]};
+                const points=Array.isArray(trust.points)?trust.points:[];
+                const patchTrust=patch=>setSiteContent(current=>({...current,trustSection:{...(current.trustSection||{}),...patch}}));
+                const patchPoint=(index,patch)=>patchTrust({points:points.map((point,i)=>i===index?{...point,...patch}:point)});
+                const movePoint=(index,direction)=>{const next=[...points],to=index+direction;if(to<0||to>=next.length)return;[next[index],next[to]]=[next[to],next[index]];patchTrust({points:next});};
+                const addPoint=()=>patchTrust({points:[...points,{id:"trust-"+Date.now(),title:"New benefit",desc:"Describe this benefit to your customers.",visible:true}]});
+                const removePoint=index=>patchTrust({points:points.filter((_,i)=>i!==index)});
+                return <div className="live-collection-inspector">
+                  <div className="live-collection-inspector-title"><b>Trust section — every point</b><small>Edit, add, remove, reorder and show/hide each trust item independently.</small></div>
+                  <label className="homepage-toggle"><input type="checkbox" checked={trust.visible!==false} onChange={e=>patchTrust({visible:e.target.checked})}/> Show entire Trust section</label>
+                  <label>Section background<input type="color" value={trust.backgroundColor||"#ffffff"} onChange={e=>patchTrust({backgroundColor:e.target.value})}/></label>
+                  <label>Text color<input type="color" value={trust.textColor||"#20242b"} onChange={e=>patchTrust({textColor:e.target.value})}/></label>
+                  <label>Top/bottom spacing <b>{trust.paddingY??80}px</b><input type="range" min="20" max="180" value={trust.paddingY??80} onChange={e=>patchTrust({paddingY:Number(e.target.value)})}/></label>
+                  {points.map((point,index)=><div className="panel homepage-content-card" key={point.id||index}>
+                    <div className="panel-head"><div><b>Trust point {index+1}</b><small>{point.id||"Custom item"}</small></div><label className="homepage-toggle"><input type="checkbox" checked={point.visible!==false} onChange={e=>patchPoint(index,{visible:e.target.checked})}/> Visible</label></div>
+                    <label>Title<input value={point.title||""} onChange={e=>patchPoint(index,{title:e.target.value})}/></label>
+                    <label>Description<textarea rows="3" value={point.desc||""} onChange={e=>patchPoint(index,{desc:e.target.value})}/></label>
+                    <label>Icon / image URL<input value={point.image||""} onChange={e=>patchPoint(index,{image:e.target.value})} placeholder="Optional image URL"/></label>
+                    <label>Upload icon or image<input type="file" accept="image/jpeg,image/png,image/webp,image/gif" disabled={uploading} onChange={e=>{uploadTrustImage(e.target.files?.[0],index);e.target.value="";}}/></label>
+                    {point.image&&<img src={point.image} alt="" style={{width:54,height:54,objectFit:"contain"}}/>}
+                    <div className="row-actions"><button type="button" className="btn secondary small" disabled={index===0} onClick={()=>movePoint(index,-1)}>Move up</button><button type="button" className="btn secondary small" disabled={index===points.length-1} onClick={()=>movePoint(index,1)}>Move down</button><button type="button" className="btn danger small" onClick={()=>removePoint(index)}>Delete point</button></div>
+                  </div>)}
+                  <button type="button" className="btn secondary small" onClick={addPoint}><Plus size={14}/> Add trust point</button>
+                  <button type="button" className="btn primary small" disabled={saving} onClick={()=>saveSiteSection("trustSection",siteContent.trustSection||{})}>{saving?"Saving…":"Save Trust section"}</button>
+                </div>;
+              })()}
               {field("Button text","ctaText","Explore now")}
               {field("Button URL","buttonUrl","/catalog")}
               {field("Category destination","linkCategoryKey","iphone")}
