@@ -1273,24 +1273,23 @@ function HomePage({ go, compareIds, onToggleCompare }) {
     })
     .filter((c) => c.products.length > 0 || ["featured", "new-arrivals", "best-sellers", "certified-refurbished"].includes(c.id));
   const defaultLayout = [
-    { id: "hero", visible: true, order: 0 },
-    { id: "categories", visible: true, order: 1 },
-    { id: "collections", visible: true, order: 2 },
-    { id: "tools", visible: true, order: 3 },
-    { id: "trust", visible: true, order: 4 },
+    { id: "hero", type: "hero", visible: true, order: 0 },
+    { id: "categories", type: "categories", visible: true, order: 1 },
+    { id: "collection-featured", type: "product-collection", collectionId: "featured", visible: true, order: 2 },
+    { id: "collection-new-arrivals", type: "product-collection", collectionId: "new-arrivals", visible: true, order: 3 },
+    { id: "collection-best-sellers", type: "product-collection", collectionId: "best-sellers", visible: true, order: 4 },
+    { id: "collection-certified-refurbished", type: "product-collection", collectionId: "certified-refurbished", visible: true, order: 5 },
+    ...mergedCollections.filter(c => !["featured","new-arrivals","best-sellers","certified-refurbished"].includes(c.id)).map((c,index)=>({id:"collection-"+c.id,type:"product-collection",collectionId:c.id,visible:true,order:6+index})),
+    { id: "tools", type: "tools", visible: true, order: 100 },
+    { id: "trust", type: "trust", visible: true, order: 101 },
   ];
   const savedLayout = Array.isArray(siteContent.homepageLayout) ? siteContent.homepageLayout : [];
   const normalizedSavedLayout = savedLayout.map(item => ({ ...item, type: item.type || item.id }));
-  const hasCollectionsBlock = normalizedSavedLayout.some(item => (item.type || item.id) === "collections");
-  const homepageLayout = (savedLayout.length
-    ? (hasCollectionsBlock
-        ? normalizedSavedLayout
-        : [
-            ...normalizedSavedLayout,
-            { id: "collections", type: "collections", visible: true, order: normalizedSavedLayout.length },
-          ])
-    : defaultLayout.map(item => ({ ...item, type: item.id }))
-  ).sort((a, b) => a.order - b.order);
+  const homepageLayout = (savedLayout.length ? normalizedSavedLayout.flatMap(item => {
+    if (item.type !== "collections") return [item];
+    return merchandisingSections.map((section,index)=>({id:"collection-"+section.id,type:"product-collection",collectionId:section.id,visible:section.visible!==false,label:section.name,order:(item.order??0)+index/100}));
+  }) : defaultLayout.map(item => ({ ...item, type: item.type || item.id })))
+    .sort((a, b) => (a.order??0) - (b.order??0));
   const now = Date.now();
   const isInPublishWindow = item => {
     const scheduleEnabled = item.scheduleEnabled ?? Boolean(item.publishAt || item.unpublishAt);
@@ -1350,7 +1349,10 @@ function HomePage({ go, compareIds, onToggleCompare }) {
         let content = null;
         if (type === "hero") content = <Hero go={go} />;
         if (type === "categories") content = <CategoryGrid go={go} />;
-        if (type === "collections") content = <React.Fragment>{merchandisingSections.map((section, index) => renderCollection(section, index))}</React.Fragment>;
+        if (type === "product-collection") {
+          const collection = merchandisingSections.find(section => section.id === item.collectionId);
+          if (collection) content = renderCollection(collection, merchandisingSections.indexOf(collection));
+        }
         if (type === "tools") content = <ToolsSection onRecommend={() => go("recommend")} onCompare={() => go("compare")} />;
         if (type === "trust") content = <TrustSection />;
         return content ? <div key={item.id} data-homepage-section={item.id} draggable style={sectionStyle}>{content}</div> : null;
