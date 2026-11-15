@@ -799,7 +799,8 @@ function HomepageBuilder({ onError }) {
         expanded.push({id:"collection-"+collection.id,type:"product-collection",collectionId:collection.id,label:collection.name,visible:true,order:expanded.length});
       }
     });
-    return expanded.map((item,index)=>({...item,order:index}));
+    const unique=expanded.filter((item,index,list)=>item.type!=="product-collection"||list.findIndex(candidate=>candidate.type==="product-collection"&&candidate.collectionId===item.collectionId)===index);
+    return unique.map((item,index)=>({...item,order:index}));
   }
   function commitLayout(nextLayout) {
     const snapshot = nextLayout.map(item => ({ ...item }));
@@ -1126,7 +1127,7 @@ function HomepageBuilder({ onError }) {
                 <span className="inspector-type-chip">{titleCase(selected.type||selected.id)}</span>
                 <label className="homepage-toggle"><input type="checkbox" checked={selected.visible!==false} onChange={e=>updateSelectedSection({visible:e.target.checked})}/> Section visible</label>
               </div>
-              {!(["tools","trust","collections"].includes(selected.type||selected.id)) && <details className="inspector-group" open>
+              {!(["tools","trust","collections","product-collection"].includes(selected.type||selected.id)) && <details className="inspector-group" open>
                 <summary><span><b>Content</b><small>Names, headings and messaging</small></span><ChevronDown size={16}/></summary>
                 <div className="inspector-group-body">
                   {field("Section name","label","Section name")}
