@@ -995,8 +995,8 @@ function EditorialFeature({ product, go, config = {} }) {
           <p style={{ color: config.headingColor||T.graphite }} className="text-base max-w-sm mb-8 leading-relaxed">{config.storeDescription||`${product.specs.chip} · ${product.specs.display}`}</p>
           <p style={{ color: T.ink, fontVariantNumeric: "tabular-nums", fontWeight: 600 }} className="text-xl mb-9">{CURRENCY(priceFrom(product))}</p>
           <button onClick={() => go("product", { id: product.id })}
-            style={{ backgroundColor: T.ink }} className="inline-flex self-start text-white text-sm font-medium px-8 py-4 hover:opacity-90 transition-opacity">
-            View {product.name}
+            style={{ backgroundColor: config.accentColor||T.ink }} className="inline-flex self-start text-white text-sm font-medium px-8 py-4 hover:opacity-90 transition-opacity">
+            {config.ctaText||`View ${product.name}`}
           </button>
         </div>
       </div>
