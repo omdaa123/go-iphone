@@ -1118,7 +1118,7 @@ function HomepageBuilder({ onError }) {
               </details>}
               {(selected.id==="categories" || selected.type==="categories") && (() => {
                 const config=siteContent.shopCategoriesSection||{};
-                const shown=categories.filter(c=>!c.parent_key&&!c.parentKey&&c.key!=="other-accessory"&&(c.key==="apple-accessory"||(!["accessories"].includes(String(c.key||"").toLowerCase())&&!/accessor(?:y|ies)/i.test(String(c.label||"")))));
+                const shown=categories.filter(c=>!c.parent_key&&!c.parentKey&&c.key!=="other-accessory"&&(c.key==="apple-accessory"||(!["accessories"].includes(String(c.key||"").toLowerCase())&&!/accessor(?:y|ies)/i.test(String(c.label||""))))); if(!shown.some(c=>c.key==="apple-accessory")) shown.push({key:"apple-accessory",label:"Apple Accessories"});
                 const categoryOrder=Array.isArray(config.order)?config.order:[];
                 const ordered=[...shown].sort((a,b)=>{const ai=categoryOrder.indexOf(a.key),bi=categoryOrder.indexOf(b.key);return (ai<0?999:ai)-(bi<0?999:bi);});
                 const activeKey=shown.some(c=>c.key===liveCategoryKey)?liveCategoryKey:(shown[0]?.key||"");
