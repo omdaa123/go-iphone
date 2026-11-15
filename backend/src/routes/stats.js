@@ -10,7 +10,7 @@ statsRouter.use(requireAuth, requirePermission("dashboard.view"));
 // download every order just to count them.
 statsRouter.get("/", async (req, res, next) => {
   try {
-    // Customer data and revenue only go to roles allowed to see orders / reservations.
+    // Sales totals and order previews are returned only to roles with dashboard.sales.view.
     const perms = (await pool.query(`SELECT permissions FROM roles WHERE name = $1`, [req.admin.role])).rows[0]?.permissions || {};
     const none = Promise.resolve({ rows: [] });
     const [products, orders, revenue, reservations, units, lowStock, recentOrders, recentReservations] = await Promise.all([
