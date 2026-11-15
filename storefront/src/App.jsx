@@ -973,13 +973,13 @@ function CategoryGrid({ go }) {
 /* ============================================================
    EDITORIAL FEATURE
    ============================================================ */
-function EditorialFeature({ product, go }) {
+function EditorialFeature({ product, go, config = {} }) {
   if (!product) return (
-    <section className="max-w-7xl mx-auto px-6 md:px-10 py-16 md:py-24">
+    <section className="max-w-7xl mx-auto px-6 md:px-10" style={{paddingTop:(config.sectionPadding??64)+"px",paddingBottom:(config.sectionPadding??64)+"px",background:config.sectionBackground||"transparent",color:config.headingColor||"inherit",fontFamily:config.headingFont&&config.headingFont!=="inherit"?config.headingFont:"inherit"}}>
       <div style={{ backgroundColor: T.stone, borderColor: T.line }} className="border px-6 py-12 md:px-12 text-center">
-        <p style={{ color: T.graphite, fontSize: "12.5px", letterSpacing: "0.08em" }} className="mb-3 uppercase">Featured</p>
-        <h2 style={{ color: T.ink, fontFamily: FONT_DISPLAY, fontWeight: 700, fontSize: "clamp(1.8rem, 3vw, 2.5rem)" }} className="mb-3">Featured devices coming soon</h2>
-        <p style={{ color: T.graphite }} className="text-sm">Our featured picks will appear here as soon as products are available.</p>
+        <p style={{ color: T.graphite, fontSize: "12.5px", letterSpacing: "0.08em" }} className="mb-3 uppercase">{config.eyebrow||"Featured"}</p>
+        <h2 style={{ color: T.ink, fontFamily: FONT_DISPLAY, fontWeight: 700, fontSize: "clamp(1.8rem, 3vw, 2.5rem)" }} className="mb-3">{config.featuredTitle||"Featured devices coming soon"}</h2>
+        <p style={{ color: T.graphite }} className="text-sm">{config.storeDescription||"Our featured picks will appear here as soon as products are available."}</p>
       </div>
     </section>
   );
@@ -990,9 +990,9 @@ function EditorialFeature({ product, go }) {
           <ProductImage product={product} size={300} />
         </div>
         <div className="order-1 md:order-2 flex flex-col justify-center py-10 md:py-0">
-          <p style={{ color: T.graphite, fontSize: "12.5px", letterSpacing: "0.08em" }} className="mb-5 uppercase">Featured</p>
-          <h2 style={{ color: T.ink, fontFamily: FONT_DISPLAY, fontWeight: 700, letterSpacing: "-0.03em", fontSize: "clamp(2.2rem, 3.4vw, 3.1rem)", lineHeight: 1.06 }} className="mb-5">{product.name}</h2>
-          <p style={{ color: T.graphite }} className="text-base max-w-sm mb-8 leading-relaxed">{product.specs.chip} · {product.specs.display}</p>
+          <p style={{ color: T.graphite, fontSize: "12.5px", letterSpacing: "0.08em" }} className="mb-5 uppercase">{config.eyebrow||"Featured"}</p>
+          <h2 style={{ color: config.headingColor||T.ink, fontFamily: config.headingFont&&config.headingFont!=="inherit"?config.headingFont:FONT_DISPLAY, fontWeight: Number(config.headingWeight||700), letterSpacing: "-0.03em", fontSize: (config.headingSize||42)+"px", lineHeight: 1.06 }} className="mb-5">{config.featuredTitle||product.name}</h2>
+          <p style={{ color: config.headingColor||T.graphite }} className="text-base max-w-sm mb-8 leading-relaxed">{config.storeDescription||`${product.specs.chip} · ${product.specs.display}`}</p>
           <p style={{ color: T.ink, fontVariantNumeric: "tabular-nums", fontWeight: 600 }} className="text-xl mb-9">{CURRENCY(priceFrom(product))}</p>
           <button onClick={() => go("product", { id: product.id })}
             style={{ backgroundColor: T.ink }} className="inline-flex self-start text-white text-sm font-medium px-8 py-4 hover:opacity-90 transition-opacity">
@@ -1313,7 +1313,7 @@ function HomePage({ go, compareIds, onToggleCompare }) {
       "--collection-card-radius": (section.cardRadius ?? 16) + "px",
     };
     let content;
-    if (section.id === "featured") content = <EditorialFeature product={section.products[0]} go={go} />;
+    if (section.id === "featured") content = <EditorialFeature product={section.products[0]} go={go} config={section} />;
     else if (section.id === "certified-refurbished") content = <CertifiedPreownedSection products={section.products} config={section} go={go} onOpen={(id) => go("product", { id })} onToggleCompare={onToggleCompare} compareIds={compareIds} />;
     else {
       const onNavAction = () => go("catalog", { category: section.products[0]?.category || "iphone" });
