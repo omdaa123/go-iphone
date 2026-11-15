@@ -8,7 +8,7 @@ CREATE EXTENSION IF NOT EXISTS citext;     -- case-insensitive email
 -- ===================== Identity & access =====================
 
 CREATE TABLE IF NOT EXISTS roles (
-  name TEXT PRIMARY KEY,                  -- OWNER | MANAGER | STAFF | CONTENT
+  name TEXT PRIMARY KEY,                  -- OWNER | DASHBOARD | CATALOG
   permissions JSONB NOT NULL
 );
 
