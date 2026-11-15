@@ -23,7 +23,7 @@ adminUsersRouter.get("/", async (req, res, next) => {
 const createSchema = z.object({
   email: z.string().email(),
   password: z.string().min(12, "Password must be at least 12 characters."),
-  role: z.enum(["OWNER", "MANAGER", "STAFF", "CONTENT"]),
+  role: z.enum(["OWNER", "DASHBOARD", "CATALOG"]),
 });
 adminUsersRouter.post("/", validateBody(createSchema), async (req, res, next) => {
   try {
@@ -41,7 +41,7 @@ adminUsersRouter.post("/", validateBody(createSchema), async (req, res, next) =>
   }
 });
 
-const roleSchema = z.object({ role: z.enum(["OWNER", "MANAGER", "STAFF", "CONTENT"]) });
+const roleSchema = z.object({ role: z.enum(["OWNER", "DASHBOARD", "CATALOG"]) });
 adminUsersRouter.patch("/:id/role", validateBody(roleSchema), async (req, res, next) => {
   try {
     const { rows } = await pool.query(`UPDATE admin_users SET role = $1 WHERE id = $2 RETURNING id, email, role`, [req.body.role, req.params.id]);
@@ -83,7 +83,7 @@ const permissionMapSchema = z.record(z.boolean());
 adminUsersRouter.patch("/roles/:name", async (req, res, next) => {
   try {
     const roleName = String(req.params.name || "").toUpperCase();
-    if (!["MANAGER", "STAFF", "CONTENT"].includes(roleName)) return res.status(400).json({ error: "This role cannot be edited." });
+    if (!["DASHBOARD", "CATALOG"].includes(roleName)) return res.status(400).json({ error: "This role cannot be edited." });
     const requested = permissionMapSchema.parse(req.body);
     const current = await pool.query(`SELECT permissions FROM roles WHERE name = $1`, [roleName]);
     if (!current.rows[0]) return res.status(404).json({ error: "Role not found." });
