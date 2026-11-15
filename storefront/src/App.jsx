@@ -600,7 +600,7 @@ function Navbar({ go, cartCount, compareCount, onSearch, onCart }) {
           </button>
 
           <nav className="hidden md:flex items-center gap-9">
-            {CATEGORIES.filter((c) => isTopLevelStoreCategory(c) && !["apple-accessory", "other-accessory", "other-devices"].includes(c.key)).map((c) => (
+            {CATEGORIES.filter((c) => isTopLevelStoreCategory(c) && !["apple-accessory", "other-accessory", "other-devices", "accessories"].includes(String(c.key || "").toLowerCase()) && !/accessor(?:y|ies)/i.test(String(c.label || ""))).map((c) => (
               <button key={c.key} onClick={() => go("catalog", { category: c.key })}
                 style={{ color: T.ink, fontSize: "13.5px" }} className="group relative font-medium py-1">
                 {c.label}
@@ -680,7 +680,7 @@ function Navbar({ go, cartCount, compareCount, onSearch, onCart }) {
             <button onClick={() => setMenuOpen(false)} style={{ color: T.ink }} className="p-2 -m-2"><X size={22} /></button>
           </div>
           <div className="flex-1 overflow-y-auto px-6 py-4 flex flex-col">
-            {CATEGORIES.filter((c) => isTopLevelStoreCategory(c) && !["apple-accessory", "other-accessory", "other-devices"].includes(c.key)).map((c) => (
+            {CATEGORIES.filter((c) => isTopLevelStoreCategory(c) && !["apple-accessory", "other-accessory", "other-devices", "accessories"].includes(String(c.key || "").toLowerCase()) && !/accessor(?:y|ies)/i.test(String(c.label || ""))).map((c) => (
               <button key={c.key} onClick={() => { go("catalog", { category: c.key }); setMenuOpen(false); }}
                 style={{ color: T.ink, borderColor: T.line }} className="text-2xl font-medium tracking-tight py-4 border-b text-left">
                 {c.label}
