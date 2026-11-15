@@ -920,29 +920,29 @@ function representativeProduct(categoryKey) {
 }
 
 function CategoryGrid({ go }) {
-  const { categories: CATEGORIES, siteContent } = useStoreData();
+  const { categories: CATEGORIES, siteContent, isAdminPreview } = useStoreData();
   const config = siteContent.shopCategoriesSection || {};
   // API category records may expose the parent relation as parent_key or parentKey.
   const source = CATEGORIES.filter((c) => isTopLevelStoreCategory(c) && c.key !== "other-accessory" && (c.key === "apple-accessory" || (!["accessories"].includes(String(c.key || "").toLowerCase()) && !/accessor(?:y|ies)/i.test(String(c.label || "")))));
   const order = Array.isArray(config.order) ? config.order : [];
   const shown = source.filter(c => config.cards?.[c.key]?.visible !== false).sort((a,b)=>{const ai=order.indexOf(a.key),bi=order.indexOf(b.key);return (ai<0?999:ai)-(bi<0?999:bi);});
   const columns = Math.max(2,Math.min(6,Number(config.columns)||4));
-  const sectionStyle = {backgroundColor:config.backgroundColor||"transparent",color:config.textColor||"inherit",paddingTop:Number(config.paddingY??80),paddingBottom:Number(config.paddingY??80)};
+  const sectionStyle = isAdminPreview?{}:{backgroundColor:config.backgroundColor||"transparent",color:config.textColor||"inherit",paddingTop:Number(config.paddingY??80),paddingBottom:Number(config.paddingY??80)};
   return (
-    <section className="max-w-7xl mx-auto px-6 md:px-10" style={sectionStyle}>
+    <section className={isAdminPreview?"max-w-7xl mx-auto px-6 md:px-10 py-20 md:py-28":"max-w-7xl mx-auto px-6 md:px-10"} style={sectionStyle}>
       <div className="mb-8 md:mb-10">
         {config.eyebrow!=="" && <p style={{color:config.textColor||T.graphite,fontSize:11,letterSpacing:".16em",fontWeight:750,textTransform:"uppercase",opacity:.68,marginBottom:10}}>{config.eyebrow??"EXPLORE"}</p>}
         <SectionHeading title={config.title??"Shop by category"} />
         {config.description && <p style={{color:config.textColor||T.graphite,opacity:.72}} className="text-sm mt-3 max-w-2xl">{config.description}</p>}
       </div>
-      <div style={{display:"grid",gridTemplateColumns:"repeat(var(--category-columns),minmax(0,1fr))","--category-columns":columns,gap:Number(config.gap??16)}} className="shop-category-grid">
+      <div style={isAdminPreview?{}:{display:"grid",gridTemplateColumns:"repeat(var(--category-columns),minmax(0,1fr))","--category-columns":columns,gap:Number(config.gap??16)}} className={isAdminPreview?"grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4":"shop-category-grid"}>
         {shown.map((c) => {
           const card=config.cards?.[c.key]||{};
           const override=card.imageUrl||c.image_url||c.imageUrl||null;
           const rep=representativeProduct(c.key);
           const hasPhoto=!!override||!!(rep&&productImageSrc(rep));
-          const isWide=card.wide??["iphone","apple-accessory","other-devices"].includes(c.key);
-          const span=isWide&&columns>=3?2:1;
+          const isWide=isAdminPreview?["iphone","apple-accessory"].includes(c.key):(card.wide??["iphone","apple-accessory","other-devices"].includes(c.key));
+          const span=isAdminPreview?(isWide?2:1):(isWide&&columns>=3?2:1);
           const imageFit=card.imageFit&&card.imageFit!=="inherit"?card.imageFit:(config.imageFit||"cover");
           const textColor=card.textColor||(hasPhoto?"#fff":(config.textColor||T.ink));
           const overlay=hasPhoto&&config.showOverlay!==false?Number(config.overlayOpacity??35)/100:0;
@@ -950,8 +950,8 @@ function CategoryGrid({ go }) {
           return (
             <article key={c.key} style={{gridColumn:`span ${span}`,minWidth:0}}>
               <button type="button" onClick={() => go("catalog", { category: c.key })}
-                style={{backgroundColor:card.backgroundColor||T.stone,borderRadius:Number(config.cardRadius??4),height:Number(config.cardHeight??240),color:textColor}}
-                className={`group relative w-full flex flex-col ${textPlacement==="top"?"justify-start":textPlacement==="center"?"justify-center":"justify-end"} p-5 md:p-6 text-left overflow-hidden transition-transform duration-300 hover:-translate-y-0.5`}>
+                style={isAdminPreview?{backgroundColor:T.stone}:{backgroundColor:card.backgroundColor||T.stone,borderRadius:Number(config.cardRadius??4),height:Number(config.cardHeight??240),color:textColor}}
+                className={isAdminPreview?`group relative h-48 md:h-60 w-full flex flex-col justify-between p-5 md:p-6 text-left overflow-hidden ${isWide?"col-span-2":"col-span-1"}`:`group relative w-full flex flex-col ${textPlacement==="top"?"justify-start":textPlacement==="center"?"justify-center":"justify-end"} p-5 md:p-6 text-left overflow-hidden transition-transform duration-300 hover:-translate-y-0.5`}>
                 <div className="absolute inset-0 pointer-events-none">
                   {override ? <img src={override} alt="" style={{objectFit:imageFit}} className="absolute inset-0 w-full h-full transition-transform duration-300 ease-out group-hover:scale-105"/> : rep ? <ProductImage product={rep} size={span===2?118:78} className="transition-transform duration-300 ease-out group-hover:-translate-y-1" imgClassName="transition-transform duration-300 ease-out group-hover:-translate-y-1"/> : <div className="absolute inset-0 flex items-center justify-center"><DeviceGlyph category={c.key==="apple-accessory"?"pencil":c.key} hex={DEFAULT_DEVICE_HEX} size={span===2?118:78}/></div>}
                   {overlay>0&&<div className="absolute inset-0" style={{background:`linear-gradient(180deg,rgba(0,0,0,${overlay*.35}) 0%,rgba(0,0,0,${overlay}) 100%)`}}/>}
@@ -1208,21 +1208,22 @@ function ProductGrid({ title, action, products, onOpen, onToggleCompare, compare
    copy of the best-seller / latest-arrivals pattern.
    ============================================================ */
 function CertifiedPreownedSection({ products, go, onOpen, onToggleCompare, compareIds, config = {} }) {
-  const ink=config.headingColor||T.ink, muted=config.bodyColor||T.graphite;
+  const { isAdminPreview } = useStoreData();
+  const ink=isAdminPreview?T.ink:(config.headingColor||T.ink), muted=T.graphite;
   const list=products.slice(0,Math.max(1,Number(config.productLimit)||8));
   const columns=Math.max(2,Math.min(5,Number(config.productColumns)||2));
   const introWidth=config.introWidth==="wide"?"1.1fr 1.2fr":config.introWidth==="balanced"?"1fr 1.3fr":"0.85fr 1.4fr";
-  const gridStyle=config.productsLayout==="rail"?{display:"flex",overflowX:"auto",gap:20,scrollSnapType:"x mandatory"}:{display:"grid",gridTemplateColumns:"repeat(var(--certified-columns),minmax(0,1fr))","--certified-columns":columns,gap:24};
+  const gridStyle=isAdminPreview?{}:(config.productsLayout==="rail"?{display:"flex",overflowX:"auto",gap:20,scrollSnapType:"x mandatory"}:{display:"grid",gridTemplateColumns:"repeat(var(--certified-columns),minmax(0,1fr))","--certified-columns":columns,gap:24});
   return (
-    <section style={{backgroundColor:config.sectionBackground||T.stone,color:ink,paddingTop:Number(config.sectionPadding??80),paddingBottom:Number(config.sectionPadding??80),"--collection-card-radius":(config.cardRadius??16)+"px"}} className="certified-preowned-section">
-      <div className="max-w-7xl mx-auto px-6 md:px-10 grid gap-10 md:gap-16" style={{gridTemplateColumns:`minmax(0,${introWidth.split(" ")[0]}) minmax(0,${introWidth.split(" ")[1]})`}}>
+    <section style={isAdminPreview?{backgroundColor:T.stone}:{backgroundColor:config.sectionBackground||T.stone,color:ink,paddingTop:Number(config.sectionPadding??80),paddingBottom:Number(config.sectionPadding??80),"--collection-card-radius":(config.cardRadius??16)+"px"}} className={isAdminPreview?"py-20 md:py-28":"certified-preowned-section"}>
+      <div className={isAdminPreview?"max-w-7xl mx-auto px-6 md:px-10 grid md:grid-cols-[0.85fr_1.4fr] gap-10 md:gap-16":"max-w-7xl mx-auto px-6 md:px-10 grid gap-10 md:gap-16"} style={isAdminPreview?{}:{gridTemplateColumns:`minmax(0,${introWidth.split(" ")[0]}) minmax(0,${introWidth.split(" ")[1]})`}}>
         <div>
           <p style={{color:config.accentColor||muted,fontSize:12,letterSpacing:".12em"}} className="mb-5 uppercase font-semibold">{config.eyebrow??"CERTIFIED PRE-OWNED"}</p>
-          <h2 style={{color:ink,fontFamily:config.headingFont&&config.headingFont!=="inherit"?config.headingFont:FONT_DISPLAY,fontWeight:config.headingWeight||700,letterSpacing:"-.02em",fontSize:`clamp(1.5rem,2.6vw,${Number(config.headingSize)||40}px)`,lineHeight:1.14}} className="mb-5 max-w-xl">{config.heroTitle??"Carefully checked. Clearly graded. Honestly priced."}</h2>
-          <p style={{color:muted}} className="text-sm leading-relaxed max-w-xl mb-8">{config.heroDescription??"Every unit is individually inspected — battery health, cosmetic condition, and storage are disclosed upfront, backed by a Go iPhone warranty."}</p>
-          <button onClick={() => go("catalog",{category:config.ctaCategory||"iphone"})} style={{backgroundColor:config.accentColor||ink}} className="text-white text-sm font-medium px-7 py-3.5 hover:opacity-90 transition-opacity">{config.ctaText??"Browse certified pre-owned"}</button>
+          <h2 style={isAdminPreview?{color:T.ink,fontFamily:FONT_DISPLAY,fontWeight:700,letterSpacing:"-.02em",fontSize:"clamp(1.9rem,2.6vw,2.5rem)",lineHeight:1.14}:{color:ink,fontFamily:config.headingFont&&config.headingFont!=="inherit"?config.headingFont:FONT_DISPLAY,fontWeight:config.headingWeight||700,letterSpacing:"-.02em",fontSize:`clamp(1.5rem,2.6vw,${Number(config.headingSize)||40}px)`,lineHeight:1.14}} className="mb-5 max-w-xs">{config.heroTitle??"Carefully checked. Clearly graded. Honestly priced."}</h2>
+          <p style={{color:muted}} className="text-sm leading-relaxed max-w-xs mb-8">{config.heroDescription??"Every unit is individually inspected — battery health, cosmetic condition, and storage are disclosed upfront, backed by a Go iPhone warranty."}</p>
+          <button onClick={() => go("catalog",{category:config.ctaCategory||"iphone"})} style={{backgroundColor:isAdminPreview?T.ink:(config.accentColor||ink)}} className="text-white text-sm font-medium px-7 py-3.5 hover:opacity-90 transition-opacity">{config.ctaText??"Browse certified pre-owned"}</button>
         </div>
-        {list.length ? <div style={gridStyle} className={config.productsLayout==="rail"?"certified-product-rail":"certified-product-grid"}>{list.map(p=><div key={p.id} style={{minWidth:config.productsLayout==="rail"?260:0,scrollSnapAlign:"start"}}><ProductCard product={p} onOpen={onOpen} onToggleCompare={onToggleCompare} isComparing={compareIds.includes(p.id)} compareDisabled={compareIds.length>=3}/></div>)}</div> : <div className="flex items-center justify-center border border-dashed px-6 py-12 text-center" style={{borderColor:T.line}}><div><p style={{color:ink}} className="text-base font-medium">Certified pre-owned devices coming soon</p><p style={{color:muted}} className="text-sm mt-2">Quality-checked devices will be listed here soon.</p></div></div>}
+        {list.length ? <div style={gridStyle} className={isAdminPreview?"grid grid-cols-2 gap-5 md:gap-6":(config.productsLayout==="rail"?"certified-product-rail":"certified-product-grid")}>{list.map(p=><div key={p.id} style={isAdminPreview?{}:{minWidth:config.productsLayout==="rail"?260:0,scrollSnapAlign:"start"}}><ProductCard product={p} onOpen={onOpen} onToggleCompare={onToggleCompare} isComparing={compareIds.includes(p.id)} compareDisabled={compareIds.length>=3}/></div>)}</div> : <div className="flex items-center justify-center border border-dashed px-6 py-12 text-center" style={{borderColor:T.line}}><div><p style={{color:ink}} className="text-base font-medium">Certified pre-owned devices coming soon</p><p style={{color:muted}} className="text-sm mt-2">Quality-checked devices will be listed here soon.</p></div></div>}
       </div>
     </section>
   );
@@ -2558,6 +2559,7 @@ function StoreDataProvider({ children }) {
     units: catalog.deviceUnits,
     categories: catalog.categories,
     heroSlides: previewDraft?.heroSlides || catalog.heroSlides,
+    isAdminPreview: adminPreview,
     siteContent: previewDraft?.siteContent ? {
       ...catalog.siteContent,
       ...previewDraft.siteContent,
