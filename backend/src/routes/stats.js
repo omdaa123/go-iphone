@@ -16,14 +16,14 @@ statsRouter.get("/", async (req, res, next) => {
     const [products, orders, revenue, reservations, units, lowStock, recentOrders, recentReservations] = await Promise.all([
       pool.query(`SELECT visibility AS k, count(*)::int AS n FROM products GROUP BY visibility`),
       perms["dashboard.sales.view"] ? pool.query(`SELECT status AS k, count(*)::int AS n FROM orders GROUP BY status`) : none,
-      perms["orders.write"] ? pool.query(`SELECT COALESCE(SUM(total_cents),0) AS total FROM orders WHERE status <> 'Cancelled'`) : none,
+      perms["dashboard.sales.view"] ? pool.query(`SELECT COALESCE(SUM(total_cents),0) AS total FROM orders WHERE status <> 'Cancelled'`) : none,
       perms["reservations.write"] ? pool.query(`SELECT status AS k, count(*)::int AS n FROM reservations GROUP BY status`) : none,
       pool.query(`SELECT status AS k, count(*)::int AS n FROM inventory_units GROUP BY status`),
       pool.query(
         `SELECT p.id AS product_id, p.name, v.storage, v.stock_qty FROM product_variants v JOIN products p ON p.id = v.product_id
          WHERE v.stock_qty IS NOT NULL AND v.stock_qty <= 3 ORDER BY v.stock_qty, p.name LIMIT 10`
       ),
-      perms["orders.write"] ? pool.query(`SELECT id, customer_name, total_cents, status, created_at FROM orders ORDER BY created_at DESC LIMIT 5`) : none,
+      perms["dashboard.sales.view"] ? pool.query(`SELECT id, customer_name, total_cents, status, created_at FROM orders ORDER BY created_at DESC LIMIT 5`) : none,
       perms["reservations.write"] ? pool.query(
         `SELECT r.id, r.customer_name, r.status, r.created_at, p.name AS product_name
          FROM reservations r JOIN products p ON p.id = r.product_id ORDER BY r.created_at DESC LIMIT 5`
