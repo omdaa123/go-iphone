@@ -291,23 +291,71 @@ function Dashboard({ stats, loading, onRefresh, onNavigate }) {
   const totalOrders = Object.values(orders).reduce((a, b) => a + Number(b || 0), 0);
   const totalUnits = Object.values(units).reduce((a, b) => a + Number(b || 0), 0);
   const lowStock = stats?.lowStock || [];
+  const newOrders = Number(orders.New || 0);
+  const activeOrders = ["New","Confirmed","Preparing","Ready"].reduce((sum,key)=>sum+Number(orders[key]||0),0);
+  const publishedProducts = Number(products.published || 0);
+  const availableUnits = Number(units.available || 0);
+  const now = new Date();
+  const hour = now.getHours();
+  const greeting = hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";
+  const today = now.toLocaleDateString("en-EG",{weekday:"long",day:"numeric",month:"long",year:"numeric"});
   return <>
-    <div className="page-heading"><div><div className="eyebrow">OVERVIEW</div><h1>Dashboard</h1><p>Your store, at a glance.</p></div><button className="btn secondary" onClick={onRefresh}><RefreshCw size={15}/> Refresh</button></div>
-    {loading ? <div className="loading-panel"><span className="spinner"/> Loading store data…</div> : <div className="stats-grid">
-      <StatCard label="Total products" value={totalProducts.toLocaleString()} detail={`${products.published || 0} published · ${products.draft || 0} drafts`} icon={Package}/>
-      <StatCard label="Total orders" value={totalOrders.toLocaleString()} detail={`${orders.New || 0} new orders`} icon={ShoppingCart} tone="violet"/>
-      <StatCard label="Inventory units" value={totalUnits.toLocaleString()} detail={`${units.available || 0} available right now`} icon={Boxes} tone="green"/>
-      <StatCard label="Gross revenue" value={stats?.revenueCents == null ? "—" : money(stats.revenueCents)} detail="Excludes cancelled orders" icon={CreditCard} tone="amber"/>
-    </div>}
-    <div className="dashboard-grid">
-      <section className="panel"><div className="panel-head"><div><h2>Recent orders</h2><p>Latest customer activity</p></div><button className="link-btn" onClick={() => onNavigate("orders")}>View all <ChevronRight size={14}/></button></div>
-        {(stats?.recentOrders || []).length ? <div className="table-wrap"><table><thead><tr><th>ORDER</th><th>CUSTOMER</th><th>DATE</th><th>STATUS</th><th className="right">TOTAL</th></tr></thead><tbody>{stats.recentOrders.map(o => <tr key={o.id}><td className="mono">#{String(o.id).slice(-7).toUpperCase()}</td><td>{o.customer_name || "Guest"}</td><td>{date(o.created_at)}</td><td><span className={`status ${String(o.status).toLowerCase()}`}>{o.status}</span></td><td className="right">{money(o.total_cents)}</td></tr>)}</tbody></table></div> : <EmptyState icon={ShoppingCart} title="No orders yet" detail="New customer orders will appear here."/>}
+    <section className="dashboard-welcome">
+      <div className="dashboard-welcome-copy">
+        <div className="dashboard-kicker"><span className="dashboard-kicker-dot"/> GO IPHONE / BUSINESS OVERVIEW</div>
+        <h1>{greeting}, welcome back.</h1>
+        <p>Your store command center. Here's what's happening across sales, orders and inventory.</p>
+        <div className="dashboard-date"><Clock3 size={14}/>{today}</div>
+      </div>
+      <div className="dashboard-welcome-actions">
+        <span className="dashboard-live-label"><i/> STORE DATA CONNECTED</span>
+        <button className="btn dashboard-refresh" onClick={onRefresh} disabled={loading}><RefreshCw size={15} className={loading?"dashboard-spin":""}/> {loading?"Updating…":"Refresh overview"}</button>
+      </div>
+      <div className="dashboard-welcome-mark">G<span>O</span></div>
+    </section>
+    {loading ? <div className="loading-panel"><span className="spinner"/> Loading store performance…</div> : <>
+      <section className="dashboard-kpi-grid">
+        <article className="dashboard-kpi-card revenue">
+          <div className="dashboard-kpi-top"><span>GROSS REVENUE</span><span className="dashboard-kpi-icon"><CreditCard size={18}/></span></div>
+          <strong>{stats?.revenueCents == null ? "—" : money(stats.revenueCents)}</strong>
+          <div className="dashboard-kpi-foot"><span className="dashboard-kpi-indicator"><ArrowUpRight size={13}/> Sales performance</span><small>Excludes cancelled orders</small></div>
+        </article>
+        <article className="dashboard-kpi-card orders">
+          <div className="dashboard-kpi-top"><span>TOTAL ORDERS</span><span className="dashboard-kpi-icon"><ShoppingCart size={18}/></span></div>
+          <strong>{totalOrders.toLocaleString()}</strong>
+          <div className="dashboard-kpi-foot"><span className="dashboard-kpi-indicator">{newOrders} need attention</span><small>{activeOrders} active in workflow</small></div>
+        </article>
+        <article className="dashboard-kpi-card catalog">
+          <div className="dashboard-kpi-top"><span>LIVE CATALOG</span><span className="dashboard-kpi-icon"><Package size={18}/></span></div>
+          <strong>{totalProducts.toLocaleString()}</strong>
+          <div className="dashboard-kpi-foot"><span className="dashboard-kpi-indicator">{publishedProducts} published</span><small>{Number(products.draft||0)} drafts</small></div>
+        </article>
+        <article className="dashboard-kpi-card inventory">
+          <div className="dashboard-kpi-top"><span>AVAILABLE UNITS</span><span className="dashboard-kpi-icon"><Boxes size={18}/></span></div>
+          <strong>{availableUnits.toLocaleString()}</strong>
+          <div className="dashboard-kpi-foot"><span className="dashboard-kpi-indicator">{totalUnits.toLocaleString()} total units</span><small>{lowStock.length} low-stock alerts</small></div>
+        </article>
       </section>
-      <section className="panel"><div className="panel-head"><div><h2>Stock watch</h2><p>Products with 3 or fewer units</p></div><span className="count-pill">{lowStock.length} alerts</span></div>
-        {lowStock.length ? <div className="stock-list">{lowStock.map((item, i) => <div className="stock-row" key={item.product_id + i}><div className="product-avatar"><Smartphone size={17}/></div><div className="stock-name"><b>{item.name}</b><span>{item.storage || "Standard variant"}</span></div><span className={`stock-qty ${Number(item.stock_qty) === 0 ? "danger" : ""}`}>{item.stock_qty} left</span></div>)}</div> : <EmptyState icon={CheckCircle2} title="Stock looks healthy" detail="No low-stock variants were reported."/>}
+      <section className="dashboard-operations">
+        <div className="dashboard-section-title"><div><span className="dashboard-section-kicker">AT A GLANCE</span><h2>Today's operations</h2><p>A quick read on the areas that keep the store moving.</p></div><span className="dashboard-section-status"><i/> LIVE SNAPSHOT</span></div>
+        <div className="dashboard-operation-grid">
+          <button className="dashboard-operation-card" onClick={()=>onNavigate("orders")}><span className="dashboard-operation-icon gold"><ShoppingCart size={18}/></span><span className="dashboard-operation-copy"><b>Order management</b><small>{newOrders} new orders awaiting review</small></span><strong>{newOrders}</strong><ArrowRight size={16}/></button>
+          <button className="dashboard-operation-card" onClick={()=>onNavigate("inventory")}><span className="dashboard-operation-icon blue"><Boxes size={18}/></span><span className="dashboard-operation-copy"><b>Inventory control</b><small>{lowStock.length} products at or below stock threshold</small></span><strong>{lowStock.length}</strong><ArrowRight size={16}/></button>
+          <button className="dashboard-operation-card" onClick={()=>onNavigate("products")}><span className="dashboard-operation-icon green"><Package size={18}/></span><span className="dashboard-operation-copy"><b>Product catalogue</b><small>{publishedProducts} products currently published</small></span><strong>{publishedProducts}</strong><ArrowRight size={16}/></button>
+          <button className="dashboard-operation-card" onClick={()=>onNavigate("customers")}><span className="dashboard-operation-icon violet"><Users size={18}/></span><span className="dashboard-operation-copy"><b>Customer relationships</b><small>Open customer profiles and purchase history</small></span><ArrowRight size={16}/></button>
+        </div>
       </section>
-    </div>
-    <section className="quick-actions"><div><div className="eyebrow">QUICK ACCESS</div><h2>Keep things moving.</h2></div><button onClick={() => onNavigate("products")}><Plus size={17}/> Manage products</button><button onClick={() => onNavigate("orders")}><ShoppingCart size={17}/> Review orders</button><button onClick={() => onNavigate("inventory")}><Boxes size={17}/> Check inventory</button></section>
+      <div className="dashboard-grid dashboard-detail-grid">
+        <section className="panel dashboard-orders-panel"><div className="panel-head"><div><span className="dashboard-panel-kicker">CUSTOMER ACTIVITY</span><h2>Recent orders</h2><p>The latest orders placed through your store.</p></div><button className="link-btn" onClick={() => onNavigate("orders")}>All orders <ChevronRight size={14}/></button></div>
+          {(stats?.recentOrders || []).length ? <div className="table-wrap"><table><thead><tr><th>ORDER</th><th>CUSTOMER</th><th>DATE</th><th>STATUS</th><th className="right">TOTAL</th></tr></thead><tbody>{stats.recentOrders.map(o => <tr key={o.id}><td className="mono">#{String(o.id).slice(-7).toUpperCase()}</td><td>{o.customer_name || "Guest"}</td><td>{date(o.created_at)}</td><td><span className={`status ${String(o.status).toLowerCase()}`}>{o.status}</span></td><td className="right">{money(o.total_cents)}</td></tr>)}</tbody></table></div> : <EmptyState icon={ShoppingCart} title="Your next sale starts here" detail="New customer orders will appear in this activity feed."/>}
+        </section>
+        <section className="panel dashboard-stock-panel"><div className="panel-head"><div><span className="dashboard-panel-kicker">INVENTORY HEALTH</span><h2>Stock watch</h2><p>Products that need a replenishment check.</p></div><span className={`dashboard-alert-count ${lowStock.length?"has-alerts":""}`}>{lowStock.length} alerts</span></div>
+          {lowStock.length ? <div className="stock-list">{lowStock.slice(0,6).map((item, i) => <div className="stock-row" key={item.product_id + i}><div className="product-avatar"><Smartphone size={17}/></div><div className="stock-name"><b>{item.name}</b><span>{item.storage || "Standard variant"}</span></div><span className={`stock-qty ${Number(item.stock_qty) === 0 ? "danger" : ""}`}>{item.stock_qty} left</span></div>)}</div> : <EmptyState icon={CheckCircle2} title="Inventory is looking healthy" detail="No low-stock variants were reported. Keep your best sellers ready."/>}
+          <button className="dashboard-panel-action" onClick={()=>onNavigate("inventory")}>Open inventory <ArrowRight size={14}/></button>
+        </section>
+      </div>
+    </>}
+    <section className="dashboard-bottom-bar"><div><span className="dashboard-section-kicker">YOUR NEXT MOVE</span><h2>Run the store with confidence.</h2><p>Jump straight into the work that matters.</p></div><div className="dashboard-bottom-actions"><button onClick={() => onNavigate("products")}><Plus size={16}/> Add a product</button><button onClick={() => onNavigate("orders")}><ShoppingCart size={16}/> Review orders</button><button onClick={() => onNavigate("inventory")}><Boxes size={16}/> Manage stock</button></div></section>
   </>;
 }
 
