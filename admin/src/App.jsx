@@ -739,7 +739,7 @@ function MediaLibrary({ onError }) {
 
 
 function HomepageBuilder({ onError }) {
-  const blank = { eyebrow: "GO IPHONE", title: "", subtitle: "", badge: "", ctaText: "Shop now", linkCategoryKey: "iphone", linkProductId: "", imageMediaId: "", mobileImageMediaId: "", active: true, durationMs: 6500 };
+  const blank = { eyebrow: "GO IPHONE", title: "", subtitle: "", badge: "", ctaText: "Shop now", linkCategoryKey: "iphone", linkProductId: "", imageMediaId: "", mobileImageMediaId: "", videoUrl: "", mobileVideoUrl: "", active: true, durationMs: 6500 };
   const [slides, setSlides] = useState([]);
   const [categories, setCategories] = useState([]);
   const [collections, setCollections] = useState([]);
@@ -926,7 +926,8 @@ function HomepageBuilder({ onError }) {
       eyebrow: slide.eyebrow || "", title: slide.title || "", subtitle: slide.subtitle || "",
       badge: slide.badge || "", ctaText: slide.cta_text || "", linkCategoryKey: slide.link_category_key || "iphone",
       linkProductId: slide.link_product_id || "", imageMediaId: slide.image_media_id || "",
-      mobileImageMediaId: slide.mobile_image_media_id || "", active: slide.active !== false,
+      mobileImageMediaId: slide.mobile_image_media_id || "", videoUrl: slide.video_url || "",
+      mobileVideoUrl: slide.mobile_video_url || "", active: slide.active !== false,
       durationMs: Number(slide.duration_ms || 6500),
     });
     setEditing(slide.id);
@@ -971,6 +972,7 @@ function HomepageBuilder({ onError }) {
       badge: form.badge || null, ctaText: form.ctaText || null,
       linkCategoryKey: form.linkCategoryKey || null, linkProductId: form.linkProductId || null,
       imageMediaId: form.imageMediaId || null, mobileImageMediaId: form.mobileImageMediaId || null,
+      videoUrl: form.videoUrl.trim() || null, mobileVideoUrl: form.mobileVideoUrl.trim() || null,
       active: form.active, durationMs: Number(form.durationMs),
     };
     try {
@@ -1005,6 +1007,7 @@ function HomepageBuilder({ onError }) {
       duration: Number(slide.duration_ms || 6500),
       image: selectedImage(slide.image_media_id) || slide.image_url || "",
       mobileImage: selectedImage(slide.mobile_image_media_id) || slide.mobile_image_url || "",
+      video: slide.video_url || "", mobileVideo: slide.mobile_video_url || "",
       target: slide.link_product_id
         ? { view: "product", params: { id: slide.link_product_id } }
         : { view: "catalog", params: { category: slide.link_category_key || "iphone" } },
@@ -1229,6 +1232,8 @@ function HomepageBuilder({ onError }) {
         <label className="homepage-toggle"><input type="checkbox" checked={form.active} onChange={e => setForm(f => ({ ...f, active: e.target.checked }))}/> Publish this slide on the storefront</label>
       </div>
       <div className="homepage-image-fields">
+        <div className="homepage-image-field field-wide"><div><b>Desktop video (optional)</b><span>Paste a direct MP4 or WebM URL. Video takes priority over the desktop image.</span></div><input type="url" value={form.videoUrl} onChange={e => setForm(f => ({ ...f, videoUrl: e.target.value }))} placeholder="https://cdn.example.com/hero.mp4"/></div>
+        <div className="homepage-image-field field-wide"><div><b>Mobile video (optional)</b><span>Optional smaller video for phones. Leave blank to reuse the desktop video.</span></div><input type="url" value={form.mobileVideoUrl} onChange={e => setForm(f => ({ ...f, mobileVideoUrl: e.target.value }))} placeholder="https://cdn.example.com/hero-mobile.mp4"/></div>
         {["imageMediaId","mobileImageMediaId"].map((key, i) => <div className="homepage-image-field" key={key}><div><b>{i ? "Mobile banner" : "Desktop banner"}</b><span>{i ? "Optional image optimized for phones." : "Recommended wide landscape image."}</span></div>{selectedImage(form[key]) ? <img src={selectedImage(form[key])} alt={i ? "Mobile banner" : "Desktop banner"}/> : <div className="homepage-image-empty"><Image size={20}/><span>No image selected</span></div>}<div className="homepage-image-buttons"><label className="btn secondary small upload-label">{uploading ? "Uploading…" : "Upload image"}<input type="file" accept="image/jpeg,image/png,image/webp,image/gif" disabled={uploading} onChange={e => upload(e.target.files?.[0], key)}/></label><button type="button" className="btn secondary small" onClick={() => setMediaTarget(mediaTarget === key ? "" : key)}>Choose from library</button>{form[key] && <button type="button" className="text-btn danger-text" onClick={() => setForm(f => ({ ...f, [key]: "" }))}>Remove</button>}</div>{mediaTarget === key && <div className="homepage-media-grid">{media.map(m => <button type="button" key={m.id} className={form[key] === m.id ? "selected" : ""} onClick={() => { setForm(f => ({ ...f, [key]: m.id })); setMediaTarget(""); }}><img src={m.url} alt={m.file_name || "Media"}/><span>{m.file_name || "Image"}</span></button>)}</div>}</div>)}
       </div>
       <div className="modal-foot"><button type="button" className="btn secondary" onClick={() => setEditing(null)}>Cancel</button><button className="btn primary" disabled={saving || uploading || !form.title.trim()}>{saving ? "Saving…" : editing === "new" ? "Create slide" : "Save changes"}</button></div>
