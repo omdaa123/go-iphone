@@ -789,11 +789,15 @@ function HomepageBuilder({ onError }) {
     const builtIns=[{id:"featured",name:"Featured"},{id:"new-arrivals",name:"New Arrivals"},{id:"best-sellers",name:"Best Sellers"},{id:"certified-refurbished",name:"Certified Pre-Owned"}];
     const all=[...builtIns,...rows.filter(row=>!builtIns.some(base=>base.id===row.id)).map(row=>({id:row.id,name:row.name||row.title||row.id}))];
     const source=Array.isArray(layout)?layout:[];
-    if(!source.some(item=>(item.type||item.id)==="collections")) return source;
     const expanded=[];
     source.forEach(item=>{
       if((item.type||item.id)!=="collections"){expanded.push(item);return;}
       all.forEach((collection,index)=>expanded.push({id:"collection-"+collection.id,type:"product-collection",collectionId:collection.id,label:collection.name,visible:true,order:(item.order??0)+index/100}));
+    });
+    all.forEach(collection=>{
+      if(!expanded.some(item=>item.type==="product-collection"&&item.collectionId===collection.id)){
+        expanded.push({id:"collection-"+collection.id,type:"product-collection",collectionId:collection.id,label:collection.name,visible:true,order:expanded.length});
+      }
     });
     return expanded.map((item,index)=>({...item,order:index}));
   }
@@ -844,7 +848,7 @@ function HomepageBuilder({ onError }) {
     commitLayout(items);
   }
   const sectionPresets = [
-    {type:"hero",label:"Hero banner",group:"Store essentials"},{type:"categories",label:"Shop categories",group:"Store essentials"},{type:"collections",label:"Product collections",group:"Store essentials"},{type:"tools",label:"Shopping tools",group:"Store essentials"},{type:"trust",label:"Trust & benefits",group:"Store essentials"},
+    {type:"hero",label:"Hero banner",group:"Store essentials"},{type:"categories",label:"Shop categories",group:"Store essentials"},{type:"tools",label:"Shopping tools",group:"Store essentials"},{type:"trust",label:"Trust & benefits",group:"Store essentials"},
     {type:"announcement",label:"Announcement bar",group:"Content & marketing"},{type:"image-text",label:"Image with text",group:"Content & marketing"},{type:"promo-banners",label:"Promotional banner grid",group:"Content & marketing"},{type:"featured-product",label:"Featured product",group:"Content & marketing"},{type:"testimonials",label:"Customer testimonials",group:"Content & marketing"},{type:"rich-text",label:"Rich text / story",group:"Content & marketing"}
   ];
   function addHomepageSection(type, afterId = "") {
