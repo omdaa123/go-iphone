@@ -15,7 +15,7 @@ statsRouter.get("/", async (req, res, next) => {
     const none = Promise.resolve({ rows: [] });
     const [products, orders, revenue, reservations, units, lowStock, recentOrders, recentReservations] = await Promise.all([
       pool.query(`SELECT visibility AS k, count(*)::int AS n FROM products GROUP BY visibility`),
-      perms["orders.write"] ? pool.query(`SELECT status AS k, count(*)::int AS n FROM orders GROUP BY status`) : none,
+      perms["dashboard.sales.view"] ? pool.query(`SELECT status AS k, count(*)::int AS n FROM orders GROUP BY status`) : none,
       perms["orders.write"] ? pool.query(`SELECT COALESCE(SUM(total_cents),0) AS total FROM orders WHERE status <> 'Cancelled'`) : none,
       perms["reservations.write"] ? pool.query(`SELECT status AS k, count(*)::int AS n FROM reservations GROUP BY status`) : none,
       pool.query(`SELECT status AS k, count(*)::int AS n FROM inventory_units GROUP BY status`),
@@ -31,7 +31,7 @@ statsRouter.get("/", async (req, res, next) => {
     ]);
     const countMap = (rows) => Object.fromEntries(rows.map((r) => [r.k, r.n]));
     const out = { products: countMap(products.rows), units: countMap(units.rows), lowStock: lowStock.rows };
-    if (perms["orders.write"]) { out.orders = countMap(orders.rows); out.revenueCents = Number(revenue.rows[0].total); out.recentOrders = recentOrders.rows; }
+    if (perms["dashboard.sales.view"]) { out.orders = countMap(orders.rows); out.revenueCents = Number(revenue.rows[0].total); out.recentOrders = recentOrders.rows; }
     if (perms["reservations.write"]) { out.reservations = countMap(reservations.rows); out.recentReservations = recentReservations.rows; }
     res.json(out);
   } catch (err) { next(err); }
