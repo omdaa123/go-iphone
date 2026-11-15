@@ -2065,7 +2065,6 @@ export default function App() {
   const visibleNavGroups = navGroups.map(group=>({...group,items:group.items.filter(item=>permissions[item.permission])})).filter(group=>group.items.length);
   const allowedPageIds = new Set(visibleNavGroups.flatMap(group=>group.items.map(item=>item.id)));
   function navigate(id) { if (!allowedPageIds.has(id)) { setError("You do not have permission to open this section."); setPage("dashboard"); } else { setPage(id); setError(""); } setSidebarOpen(false); }
-  useEffect(()=>{ if(user && !allowedPageIds.has(page)) setPage("dashboard"); },[user?.role,page]);
   const pageTitle = [...visibleNavGroups.flatMap(g => g.items)].find(i => i.id === page)?.label || "Dashboard";
   return <div className="app-shell">
     <aside className={`sidebar ${sidebarOpen ? "open" : ""}`}>
