@@ -2055,8 +2055,6 @@ export default function App() {
     try { await request("/auth/logout", { method: "POST" }); } catch { /* Clear local state regardless. */ }
     setUser(null); setStats(null); setPage("dashboard");
   }
-  function navigate(id) { setPage(id); setSidebarOpen(false); setError(""); }
-
   if (checking) return <div className="boot-screen"><div className="brand-mark">G</div><span className="spinner"/>Preparing your workspace…</div>;
   if (!user) return <Login onLogin={handleLogin}/>;
   if (!securityReady || user.twoFactorRequired) return <TwoFactorSetup onComplete={finishSecuritySetup} onError={showError}/>;
