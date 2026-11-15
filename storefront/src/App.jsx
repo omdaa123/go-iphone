@@ -845,7 +845,12 @@ const heroProduct = heroProductFor(products, slide);
     <section style={{ backgroundColor: T.ink }} className="relative overflow-hidden min-h-[560px] md:min-h-[640px]">
       {/* Full-bleed image layer — always covers the entire hero, edge to edge */}
       <div key={slide.id} className="hero-fade absolute inset-0">
-        {customImage ? (
+        {(slide.video || slide.mobileVideo) ? (
+          <>
+            {(slide.mobileVideo || slide.video) && <video key={(slide.mobileVideo || slide.video) + "-mobile"} src={slide.mobileVideo || slide.video} autoPlay muted loop playsInline preload="metadata" aria-hidden="true" className="md:hidden absolute inset-0 w-full h-full object-cover object-center" />}
+            {slide.video && <video key={slide.video + "-desktop"} src={slide.video} autoPlay muted loop playsInline preload="metadata" aria-hidden="true" className="hidden md:block absolute inset-0 w-full h-full object-cover object-center" />}
+          </>
+        ) : customImage ? (
           <>
             <img src={customMobileImage} alt="" className="md:hidden absolute inset-0 w-full h-full object-cover object-center" />
             <img src={customImage} alt="" className="hidden md:block absolute inset-0 w-full h-full object-cover object-center" />
