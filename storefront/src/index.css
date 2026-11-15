@@ -11,7 +11,7 @@
 .certified-preowned-section .group.relative.flex.flex-col>div[role="button"]>div:first-child{border-radius:var(--collection-card-radius,16px);overflow:hidden}
 @media(max-width:767px){
   .shop-category-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}
-  .shop-category-grid article{grid-column:span 1!important}
+  .shop-category-grid article{min-width:0}
   .shop-category-grid button{height:190px!important}
   .certified-preowned-section>div{grid-template-columns:1fr!important}
   .certified-preowned-section .certified-product-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}
