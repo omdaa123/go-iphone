@@ -168,6 +168,16 @@ CREATE TABLE IF NOT EXISTS inventory_units (
 );
 CREATE INDEX IF NOT EXISTS idx_units_product_status ON inventory_units(product_id, status);
 
+-- ===================== Customer relationship management =====================
+
+CREATE TABLE IF NOT EXISTS customer_profiles (
+  customer_key TEXT PRIMARY KEY,
+  notes TEXT NOT NULL DEFAULT '',
+  tags JSONB NOT NULL DEFAULT '[]'::jsonb,
+  segment TEXT NOT NULL DEFAULT 'Regular' CHECK (segment IN ('Regular','VIP','Wholesale','At Risk','New')),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
 -- ===================== Commerce =====================
 
 CREATE TABLE IF NOT EXISTS orders (
