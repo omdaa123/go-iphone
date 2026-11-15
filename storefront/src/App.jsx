@@ -848,7 +848,7 @@ const heroProduct = heroProductFor(products, slide);
         {(slide.video || slide.mobileVideo) ? (
           <>
             {(slide.mobileVideo || slide.video) && <video key={(slide.mobileVideo || slide.video) + "-mobile"} src={slide.mobileVideo || slide.video} autoPlay muted loop playsInline preload="metadata" aria-hidden="true" className="md:hidden absolute inset-0 w-full h-full object-cover object-center" />}
-            {slide.video && <video key={slide.video + "-desktop"} src={slide.video} autoPlay muted loop playsInline preload="metadata" aria-hidden="true" className="hidden md:block absolute inset-0 w-full h-full object-cover object-center" />}
+            {(slide.video || slide.mobileVideo) && <video key={(slide.video || slide.mobileVideo) + "-desktop"} src={slide.video || slide.mobileVideo} autoPlay muted loop playsInline preload="metadata" aria-hidden="true" className="hidden md:block absolute inset-0 w-full h-full object-cover object-center" />}
           </>
         ) : customImage ? (
           <>
