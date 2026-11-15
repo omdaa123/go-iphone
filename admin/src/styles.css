@@ -1256,7 +1256,7 @@ table td{font-size:12px;padding:15px 16px}
 .customer-segment{display:inline-flex;border-radius:30px;padding:5px 9px;background:#edf2f8;color:#53647c;font-size:10px;font-weight:800}
 .customer-segment.vip{background:#fff1d8;color:#99600b}
 .customer-segment.wholesale{background:#e9e5ff;color:#6550a7}
-.customer-segment.at\ risk{background:#ffe9e9;color:#b34a4a}
+.customer-segment.at-risk{background:#ffe9e9;color:#b34a4a}
 .customer-segment.new{background:#e4f7ef;color:#247b58}
 .customer-profile-backdrop{z-index:120}
 .customer-profile-modal{width:min(1080px,96vw);max-height:92vh;overflow:auto}
