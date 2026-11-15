@@ -935,7 +935,7 @@ function CategoryGrid({ go }) {
         <SectionHeading title={config.title??"Shop by category"} />
         {config.description && <p style={{color:config.textColor||T.graphite,opacity:.72}} className="text-sm mt-3 max-w-2xl">{config.description}</p>}
       </div>
-      <div style={{display:"grid",gridTemplateColumns:"repeat(var(--category-columns),minmax(0,1fr))","--category-columns":columns,gap:Number(config.gap??16)}} className="shop-category-grid">
+      <div style={{display:"grid",gridTemplateColumns:"repeat(var(--category-columns),minmax(0,1fr))","--category-columns":columns,gap:Number(config.gap??12)}} className="shop-category-grid">
         {shown.map((c) => {
           const card=config.cards?.[c.key]||{};
           const override=card.imageUrl||c.image_url||c.imageUrl||null;
@@ -950,7 +950,7 @@ function CategoryGrid({ go }) {
           return (
             <article key={c.key} style={{gridColumn:`span ${span}`,minWidth:0}}>
               <button type="button" onClick={() => go("catalog", { category: c.key })}
-                style={{backgroundColor:card.backgroundColor||T.stone,borderRadius:Number(config.cardRadius??4),height:Number(config.cardHeight??240),color:textColor}}
+                style={{backgroundColor:card.backgroundColor||T.stone,borderRadius:Number(config.cardRadius??4),height:Number(config.cardHeight??192),color:textColor}}
                 className={`group relative w-full flex flex-col ${textPlacement==="top"?"justify-start":textPlacement==="center"?"justify-center":"justify-end"} p-5 md:p-6 text-left overflow-hidden transition-transform duration-300 hover:-translate-y-0.5`}>
                 <div className="absolute inset-0 pointer-events-none">
                   {override ? <img src={override} alt="" style={{objectFit:imageFit}} className="absolute inset-0 w-full h-full transition-transform duration-300 ease-out group-hover:scale-105"/> : rep ? <ProductImage product={rep} size={span===2?118:78} className="transition-transform duration-300 ease-out group-hover:-translate-y-1" imgClassName="transition-transform duration-300 ease-out group-hover:-translate-y-1"/> : <div className="absolute inset-0 flex items-center justify-center"><DeviceGlyph category={c.key==="apple-accessory"?"pencil":c.key} hex={DEFAULT_DEVICE_HEX} size={span===2?118:78}/></div>}
