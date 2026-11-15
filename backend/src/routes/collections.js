@@ -7,7 +7,7 @@ import { validateBody } from "../middleware/validate.js";
 import { logAudit } from "../lib/audit.js";
 
 export const collectionsRouter = Router();
-collectionsRouter.use(requireAuth);
+collectionsRouter.use(requireAuth, requirePermission("cms.write"));
 
 collectionsRouter.get("/", async (req, res, next) => {
   try {
