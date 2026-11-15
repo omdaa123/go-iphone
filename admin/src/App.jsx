@@ -745,11 +745,14 @@ function HomepageBuilder({ onError }) {
   const [collections, setCollections] = useState([]);
   const [siteContent, setSiteContent] = useState({
     homepageLayout: [
-      { id: "hero", label: "Hero banner", visible: true, order: 0 },
-      { id: "categories", label: "Categories", visible: true, order: 1 },
-      { id: "collections", label: "Product collections", visible: true, order: 2 },
-      { id: "tools", label: "Tools", visible: true, order: 3 },
-      { id: "trust", label: "Trust", visible: true, order: 4 },
+      { id: "hero", type: "hero", label: "Hero banner", visible: true, order: 0 },
+      { id: "categories", type: "categories", label: "Categories", visible: true, order: 1 },
+      { id: "collection-featured", type: "product-collection", collectionId: "featured", label: "Featured", visible: true, order: 2 },
+      { id: "collection-new-arrivals", type: "product-collection", collectionId: "new-arrivals", label: "New Arrivals", visible: true, order: 3 },
+      { id: "collection-best-sellers", type: "product-collection", collectionId: "best-sellers", label: "Best Sellers", visible: true, order: 4 },
+      { id: "collection-certified-refurbished", type: "product-collection", collectionId: "certified-refurbished", label: "Certified Pre-Owned", visible: true, order: 5 },
+      { id: "tools", type: "tools", label: "Tools", visible: true, order: 6 },
+      { id: "trust", type: "trust", label: "Trust", visible: true, order: 7 },
     ],
     toolsSection: { visible: true, eyebrow: "Tools", title: "Not sure which to choose?" },
     trustSection: { visible: true, points: [
@@ -782,6 +785,18 @@ function HomepageBuilder({ onError }) {
   const [liveCategoryKey, setLiveCategoryKey] = useState("");
   const [editingHomepageCollectionId, setEditingHomepageCollectionId] = useState("best-sellers");
   const [layoutDirty, setLayoutDirty] = useState(false);
+  function expandProductCollectionSections(layout, rows = []) {
+    const builtIns=[{id:"featured",name:"Featured"},{id:"new-arrivals",name:"New Arrivals"},{id:"best-sellers",name:"Best Sellers"},{id:"certified-refurbished",name:"Certified Pre-Owned"}];
+    const all=[...builtIns,...rows.filter(row=>!builtIns.some(base=>base.id===row.id)).map(row=>({id:row.id,name:row.name||row.title||row.id}))];
+    const source=Array.isArray(layout)?layout:[];
+    if(!source.some(item=>(item.type||item.id)==="collections")) return source;
+    const expanded=[];
+    source.forEach(item=>{
+      if((item.type||item.id)!=="collections"){expanded.push(item);return;}
+      all.forEach((collection,index)=>expanded.push({id:"collection-"+collection.id,type:"product-collection",collectionId:collection.id,label:collection.name,visible:true,order:(item.order??0)+index/100}));
+    });
+    return expanded.map((item,index)=>({...item,order:index}));
+  }
   function commitLayout(nextLayout) {
     const snapshot = nextLayout.map(item => ({ ...item }));
     setSiteContent(current => ({ ...current, homepageLayout: snapshot }));
@@ -813,11 +828,11 @@ function HomepageBuilder({ onError }) {
       setSiteContent(current => ({
         ...current,
         ...saved,
-        homepageLayout: Array.isArray(saved.homepageLayout) ? saved.homepageLayout : current.homepageLayout,
+        homepageLayout: Array.isArray(saved.homepageLayout) ? expandProductCollectionSections(saved.homepageLayout, results[4].collections || []) : expandProductCollectionSections(current.homepageLayout, results[4].collections || []),
         toolsSection: { ...current.toolsSection, ...(saved.toolsSection || {}) },
         trustSection: { ...current.trustSection, ...(saved.trustSection || {}), points: Array.isArray(saved.trustSection?.points) ? saved.trustSection.points : current.trustSection.points },
       }));
-      const initialLayout = Array.isArray(saved.homepageLayout) ? saved.homepageLayout : siteContent.homepageLayout;
+      const initialLayout = Array.isArray(saved.homepageLayout) ? expandProductCollectionSections(saved.homepageLayout, results[4].collections || []) : expandProductCollectionSections(siteContent.homepageLayout, results[4].collections || []);
       setLayoutHistory([initialLayout.map(item => ({ ...item }))]);
       setHistoryIndex(0);
     } catch (e) { onError(e.message); }
