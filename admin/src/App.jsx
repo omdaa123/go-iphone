@@ -1181,7 +1181,7 @@ function HomepageBuilder({ onError }) {
                   <button type="button" className="btn primary small" disabled={saving} onClick={save}>{saving?"Saving…":"Save Shop by category design"}</button>
                 </div>;
               })()}
-              {(selected.id==="collections" || selected.type==="collections") && (() => {
+              {(selected.type==="product-collection" || selected.id==="collections") && (() => {
                 const builtIns=[{id:"featured",name:"Featured"},{id:"new-arrivals",name:"New Arrivals"},{id:"best-sellers",name:"Best Sellers"},{id:"certified-refurbished",name:"Certified Refurbished"}];
                 const collectionItems=[...builtIns,...collections.filter(c=>!builtIns.some(b=>b.id===c.id))];
                 const defaultOrder=new Map(collectionItems.map((item,index)=>[item.id,index]));
@@ -1189,7 +1189,7 @@ function HomepageBuilder({ onError }) {
                   Number(siteContent.collectionDetails?.[a.id]?.homepageOrder ?? defaultOrder.get(a.id))-
                   Number(siteContent.collectionDetails?.[b.id]?.homepageOrder ?? defaultOrder.get(b.id))
                 );
-                const activeId=collectionItems.some(c=>c.id===liveCollectionId)?liveCollectionId:(collectionItems[0]?.id||"");
+                const activeId=selected.collectionId || (collectionItems[0]?.id||"");
                 const config=siteContent.collectionDetails?.[activeId]||{};
                 const updateConfig=patch=>setSiteContent(current=>({...current,collectionDetails:{...(current.collectionDetails||{}),[activeId]:{...(current.collectionDetails?.[activeId]||{}),...patch}}}));
                 const moveCollection=(id,direction)=>{
@@ -1201,17 +1201,9 @@ function HomepageBuilder({ onError }) {
                 };
                 const saveConfig=async()=>{await saveSiteSection("collectionDetails",siteContent.collectionDetails||{});};
                 return <div className="live-collection-inspector">
-                  <div className="live-collection-inspector-title"><b>Product collections inside this section</b><small>Select each collection and customize it separately. The preview updates as you edit.</small></div>
-                  <label>Choose collection<select value={activeId} onChange={e=>setLiveCollectionId(e.target.value)}>{collectionItems.map(item=><option key={item.id} value={item.id}>{item.name}</option>)}</select></label>
-                  <div className="live-collection-order">
-                    <b>Homepage order</b><small>Move collections up or down to change their order on the storefront.</small>
-                    {orderedItems.map((item,index)=><div className={item.id===activeId?"live-collection-order-row active": "live-collection-order-row"} key={item.id}>
-                      <button type="button" className="text-btn" onClick={()=>setLiveCollectionId(item.id)}>{index+1}. {item.name}</button>
-                      <span className="live-collection-order-actions">
-                        <button type="button" className="icon-btn" title="Move up" aria-label={"Move "+item.name+" up"} disabled={index===0} onClick={()=>moveCollection(item.id,-1)}>↑</button>
-                        <button type="button" className="icon-btn" title="Move down" aria-label={"Move "+item.name+" down"} disabled={index===orderedItems.length-1} onClick={()=>moveCollection(item.id,1)}>↓</button>
-                      </span>
-                    </div>)}
+                  <div className="collection-section-editor-heading">
+                    <span className="collection-section-editor-icon"><Sparkles size={18}/></span>
+                    <div><b>{collectionItems.find(item=>item.id===activeId)?.name || config.name || activeId}</b><small>Independent collection section · Edit its design and product presentation below.</small></div>
                   </div>
                   {activeId==="certified-refurbished" && <details className="inspector-group" open><summary><span><b>Certified pre-owned · Full section design</b><small>All content and product presentation settings</small></span><ChevronDown size={16}/></summary><div className="inspector-group-body">
                     <label>Eyebrow<input value={config.eyebrow??"CERTIFIED PRE-OWNED"} onChange={e=>updateConfig({eyebrow:e.target.value})}/></label>
