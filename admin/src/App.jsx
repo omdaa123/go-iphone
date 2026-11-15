@@ -153,22 +153,22 @@ async function request(path, options = {}) {
 }
 
 const navGroups = [
-  { label: "OVERVIEW", items: [{ id: "dashboard", label: "Dashboard", icon: LayoutDashboard }] },
+  { label: "OVERVIEW", items: [{ id: "dashboard", label: "Dashboard", icon: LayoutDashboard, permission: "dashboard.view" }] },
   { label: "COMMERCE", items: [
-    { id: "products", label: "Products", icon: Package },
-    { id: "inventory", label: "Inventory", icon: Boxes },
-    { id: "orders", label: "Orders", icon: ShoppingCart },
-    { id: "reservations", label: "Reservations", icon: Clock3 },
-    { id: "customers", label: "Customers", icon: Users },
+    { id: "products", label: "Products", icon: Package, permission: "products.write" },
+    { id: "inventory", label: "Inventory", icon: Boxes, permission: "inventory.write" },
+    { id: "orders", label: "Orders", icon: ShoppingCart, permission: "orders.write" },
+    { id: "reservations", label: "Reservations", icon: Clock3, permission: "reservations.write" },
+    { id: "customers", label: "Customers", icon: Users, permission: "orders.write" },
   ]},
   { label: "STORE EXPERIENCE", items: [
-    { id: "homepage", label: "Visual Store Editor", icon: Layers3 },
-    { id: "media", label: "Media Library", icon: Image },
-    { id: "collections", label: "Collections", icon: ShoppingBag },
+    { id: "homepage", label: "Visual Store Editor", icon: Layers3, permission: "cms.write" },
+    { id: "media", label: "Media Library", icon: Image, permission: "media.write" },
+    { id: "collections", label: "Collections", icon: ShoppingBag, permission: "cms.write" },
   ]},
   { label: "SYSTEM", items: [
-    { id: "team", label: "Team & Access", icon: ShieldCheck },
-    { id: "settings", label: "Settings", icon: Settings },
+    { id: "team", label: "Team & Access", icon: ShieldCheck, permission: "admin.manage" },
+    { id: "settings", label: "Settings", icon: Settings, permission: "settings.write" },
   ]},
 ];
 
@@ -1948,26 +1948,25 @@ function CustomersPage({ onError }) {
 }
 
 function TeamAccessPage({ user, onError }) {
-  const [users,setUsers]=useState([]),[roles,setRoles]=useState([]),[roleDrafts,setRoleDrafts]=useState({}),[roleSaving,setRoleSaving]=useState(""),[loading,setLoading]=useState(true),[refresh,setRefresh]=useState(0),[creating,setCreating]=useState(false),[saving,setSaving]=useState(false);
-  const [email,setEmail]=useState(""),[password,setPassword]=useState(""),[role,setRole]=useState("STAFF");
+  const [users,setUsers]=useState([]),[loading,setLoading]=useState(true),[refresh,setRefresh]=useState(0),[creating,setCreating]=useState(false),[saving,setSaving]=useState(false);
+  const [email,setEmail]=useState(""),[password,setPassword]=useState(""),[role,setRole]=useState("DASHBOARD");
   const localPreview=import.meta.env.DEV;
-  const load=useCallback(()=>{setLoading(true);request("/users").then(d=>{setUsers(d.adminUsers||[]);setRoles(d.roles||[]);setRoleDrafts(Object.fromEntries((d.roles||[]).map(r=>[r.name,{...(r.permissions||{})}])));}).catch(e=>onError(e.message)).finally(()=>setLoading(false));},[onError]);
+  const roleLabels={OWNER:"Full access",DASHBOARD:"Dashboard only",CATALOG:"Products & Store Design"};
+  const load=useCallback(()=>{setLoading(true);request("/users").then(d=>setUsers(d.adminUsers||[])).catch(e=>onError(e.message)).finally(()=>setLoading(false));},[onError]);
   useEffect(()=>{load();},[load,refresh]);
-  async function createMember(e){e.preventDefault();setSaving(true);try{await request("/users",{method:"POST",body:JSON.stringify({email,password,role})});setEmail("");setPassword("");setRole("STAFF");setCreating(false);setRefresh(v=>v+1);}catch(err){onError(err.message);}finally{setSaving(false);}}
+  async function createMember(e){e.preventDefault();setSaving(true);try{await request("/users",{method:"POST",body:JSON.stringify({email,password,role})});setEmail("");setPassword("");setRole("DASHBOARD");setCreating(false);setRefresh(v=>v+1);}catch(err){onError(err.message);}finally{setSaving(false);}}
   async function changeRole(member,nextRole){try{await request("/users/"+member.id+"/role",{method:"PATCH",body:JSON.stringify({role:nextRole})});setUsers(list=>list.map(u=>u.id===member.id?{...u,role:nextRole}:u));}catch(e){onError(e.message);}}
   async function toggleActive(member){const isActive=!member.is_active;try{await request("/users/"+member.id+"/active",{method:"PATCH",body:JSON.stringify({isActive})});setUsers(list=>list.map(u=>u.id===member.id?{...u,is_active:isActive}:u));}catch(e){onError(e.message);}}
-  async function saveRolePermissions(roleName){setRoleSaving(roleName);try{const d=await request("/users/roles/"+roleName,{method:"PATCH",body:JSON.stringify(roleDrafts[roleName]||{})});setRoles(list=>list.map(r=>r.name===roleName?d.role:r));setRoleDrafts(v=>({...v,[roleName]:{...(d.role.permissions||{})}}));}catch(e){onError(e.message);}finally{setRoleSaving("");}}
   return <>
-    <div className="page-heading"><div><div className="eyebrow">SECURITY & PERMISSIONS</div><h1>Team & Access</h1><p>Control who can enter your workspace and what each role can manage.</p></div><button className="btn primary" disabled={localPreview} onClick={()=>setCreating(v=>!v)}><Plus size={15}/> Add team member</button></div>
+    <div className="page-heading"><div><div className="eyebrow">SECURITY & PERMISSIONS</div><h1>Team & Access</h1><p>Three clear access levels for your store team.</p></div><button className="btn primary" disabled={localPreview} onClick={()=>setCreating(v=>!v)}><Plus size={15}/> Add team member</button></div>
     {localPreview&&<div className="design-safety-note"><ShieldCheck size={17}/><div><b>Read-only local preview</b><span>Team changes are disabled in local preview. Use the live admin workspace to manage access.</span></div></div>}
+    <div className="editor-grid" style={{marginBottom:20}}>{["OWNER","DASHBOARD","CATALOG"].map((key,i)=><section className="panel" key={key} style={{padding:20}}><div className="eyebrow">ROLE 0{i+1}</div><h2 style={{margin:"8px 0"}}>{roleLabels[key]}</h2><p className="muted" style={{fontSize:13,margin:0}}>{key==="OWNER"?"Full control of products, sales, customers, design, settings and team access.":key==="DASHBOARD"?"Can open the dashboard and view sales and store overview only.":"Can add and edit products, collections, media and storefront design. Sales, orders and customer data stay hidden."}</p></section>)}</div>
     <section className="panel"><div className="panel-head"><div><h2>Team members</h2><p>{users.length} accounts · role-based access</p></div><button className="btn secondary small" onClick={()=>setRefresh(v=>v+1)}><RefreshCw size={14}/> Refresh</button></div>
-      {loading?<div className="loading-panel"><span className="spinner"/> Loading team…</div>:users.length?<div className="table-wrap"><table><thead><tr><th>MEMBER</th><th>ROLE</th><th>2-STEP VERIFICATION</th><th>LAST LOGIN</th><th>STATUS</th><th>ACTION</th></tr></thead><tbody>{users.map(m=><tr key={m.id}><td><b>{m.email}</b><span className="subline">Added {date(m.created_at)}</span></td><td><select className="status-select" disabled={localPreview||m.id===user?.id||m.role==="OWNER"||!m.is_active} value={m.role} onChange={e=>changeRole(m,e.target.value)}>{["OWNER","MANAGER","STAFF","CONTENT"].map(v=><option key={v}>{v}</option>)}</select></td><td><span className={m.totp_enabled?"status paid":"status pending"}>{m.totp_enabled?"Enabled":"Not enabled"}</span></td><td>{date(m.last_login_at)}</td><td><span className={m.is_active?"status paid":"status cancelled"}>{m.is_active?"Active":"Inactive"}</span></td><td><button className="btn secondary small" disabled={localPreview||m.id===user?.id} onClick={()=>toggleActive(m)}>{m.is_active?"Deactivate":"Reactivate"}</button></td></tr>)}</tbody></table></div>:<EmptyState icon={ShieldCheck} title="No team members" detail="Admin accounts will appear here."/>}
+      {loading?<div className="loading-panel"><span className="spinner"/> Loading team…</div>:users.length?<div className="table-wrap"><table><thead><tr><th>MEMBER</th><th>ROLE</th><th>2-STEP VERIFICATION</th><th>LAST LOGIN</th><th>STATUS</th><th>ACTION</th></tr></thead><tbody>{users.map(m=><tr key={m.id}><td><b>{m.email}</b><span className="subline">Added {date(m.created_at)}</span></td><td><select className="status-select" disabled={localPreview||m.id===user?.id||m.role==="OWNER"||!m.is_active} value={m.role} onChange={e=>changeRole(m,e.target.value)}>{["OWNER","DASHBOARD","CATALOG"].map(v=><option key={v} value={v}>{roleLabels[v]}</option>)}</select></td><td><span className={m.totp_enabled?"status paid":"status pending"}>{m.totp_enabled?"Enabled":"Not enabled"}</span></td><td>{date(m.last_login_at)}</td><td><span className={m.is_active?"status paid":"status cancelled"}>{m.is_active?"Active":"Inactive"}</span></td><td><button className="btn secondary small" disabled={localPreview||m.id===user?.id} onClick={()=>toggleActive(m)}>{m.is_active?"Deactivate":"Reactivate"}</button></td></tr>)}</tbody></table></div>:<EmptyState icon={ShieldCheck} title="No team members" detail="Admin accounts will appear here."/>}
     </section>
-    <section className="panel" style={{marginTop:20}}><div className="panel-head"><div><h2>Role permissions</h2><p>Choose exactly what each non-owner role can access. Changes take effect on the next request.</p></div></div><div className="editor-grid" style={{padding:16}}>{roles.map(r=><div key={r.name} style={{padding:16,border:"1px solid var(--line)",borderRadius:12,background:"var(--panel-2)"}}><div style={{display:"flex",justifyContent:"space-between",alignItems:"center",gap:8}}><b>{titleCase(r.name)}</b>{r.name!=="OWNER"&&<button className="btn secondary small" disabled={localPreview||roleSaving===r.name} onClick={()=>saveRolePermissions(r.name)}>{roleSaving===r.name?"Saving…":"Save role"}</button>}</div><div style={{display:"grid",gap:9,marginTop:14}}>{Object.entries(roleDrafts[r.name]||{}).map(([permission,enabled])=><label key={permission} className="settings-toggle"><span>{titleCase(permission.replaceAll("."," "))}</span><input type="checkbox" checked={!!enabled} disabled={localPreview||r.name==="OWNER"||permission==="admin.manage"} onChange={e=>setRoleDrafts(v=>({...v,[r.name]:{...v[r.name],[permission]:e.target.checked}}))}/></label>)}</div>{r.name==="OWNER"&&<p className="muted" style={{fontSize:11,marginTop:10}}>Owner permissions are protected and cannot be edited here.</p>}</div>)}</div></section>
-    {creating&&<div className="modal-backdrop"><form className="editor-modal" onSubmit={createMember}><div className="modal-head"><div><div className="eyebrow">TEAM INVITATION</div><h2>Add team member</h2></div><button type="button" className="icon-btn" onClick={()=>setCreating(false)}><X size={18}/></button></div><div className="editor-grid"><label className="field-wide">Email address<input type="email" required value={email} onChange={e=>setEmail(e.target.value)} placeholder="teammate@company.com"/></label><label className="field-wide">Temporary password<input type="password" required minLength={12} value={password} onChange={e=>setPassword(e.target.value)} placeholder="At least 12 characters"/></label><label className="field-wide">Access role<select value={role} onChange={e=>setRole(e.target.value)}>{["MANAGER","STAFF","CONTENT"].map(v=><option key={v}>{v}</option>)}</select></label></div><p className="muted" style={{fontSize:12}}>Share the temporary password securely. The new member should change it after signing in.</p><div className="modal-foot"><button type="button" className="btn secondary" onClick={()=>setCreating(false)}>Cancel</button><button className="btn primary" disabled={saving}>{saving?"Creating…":"Create account"}</button></div></form></div>}
+    {creating&&<div className="modal-backdrop"><form className="editor-modal" onSubmit={createMember}><div className="modal-head"><div><div className="eyebrow">TEAM INVITATION</div><h2>Add team member</h2></div><button type="button" className="icon-btn" onClick={()=>setCreating(false)}><X size={18}/></button></div><div className="editor-grid"><label className="field-wide">Email address<input type="email" required value={email} onChange={e=>setEmail(e.target.value)} placeholder="teammate@company.com"/></label><label className="field-wide">Temporary password<input type="password" required minLength={12} value={password} onChange={e=>setPassword(e.target.value)} placeholder="At least 12 characters"/></label><label className="field-wide">Access role<select value={role} onChange={e=>setRole(e.target.value)}>{["DASHBOARD","CATALOG"].map(v=><option key={v}>{v}</option>)}</select></label></div><p className="muted" style={{fontSize:12}}>Share the temporary password securely. The new member should change it after signing in.</p><div className="modal-foot"><button type="button" className="btn secondary" onClick={()=>setCreating(false)}>Cancel</button><button className="btn primary" disabled={saving}>{saving?"Creating…":"Create account"}</button></div></form></div>}
   </>;
 }
-
 function SettingsPage({ onError }) {
   const defaults={
     store_profile:{storeName:"GO iPhone",tagline:"Discover your next favorite.",currency:"EGP",timezone:"Africa/Cairo"},
@@ -2061,12 +2060,17 @@ export default function App() {
   if (!user) return <Login onLogin={handleLogin}/>;
   if (!securityReady || user.twoFactorRequired) return <TwoFactorSetup onComplete={finishSecuritySetup} onError={showError}/>;
 
-  const pageTitle = [...navGroups.flatMap(g => g.items)].find(i => i.id === page)?.label || "Dashboard";
+  const permissions = user?.permissions || {};
+  const visibleNavGroups = navGroups.map(group=>({...group,items:group.items.filter(item=>permissions[item.permission])})).filter(group=>group.items.length);
+  const allowedPageIds = new Set(visibleNavGroups.flatMap(group=>group.items.map(item=>item.id)));
+  function navigate(id) { if (!allowedPageIds.has(id)) { setError("You do not have permission to open this section."); setPage("dashboard"); } else { setPage(id); setError(""); } setSidebarOpen(false); }
+  useEffect(()=>{ if(user && !allowedPageIds.has(page)) setPage("dashboard"); },[user?.role,page]);
+  const pageTitle = [...visibleNavGroups.flatMap(g => g.items)].find(i => i.id === page)?.label || "Dashboard";
   return <div className="app-shell">
     <aside className={`sidebar ${sidebarOpen ? "open" : ""}`}>
       <div className="sidebar-brand"><Brand/><button className="icon-btn mobile-close" onClick={() => setSidebarOpen(false)}><X size={18}/></button></div>
       <div className="store-switch"><div className="store-icon">G</div><div><b>GO iPhone Store</b><span>Production workspace</span></div><ChevronDown size={15}/></div>
-      <nav>{navGroups.map(group => <div className="nav-group" key={group.label}><div className="nav-label">{group.label}</div>{group.items.map(item => { const Icon = item.icon; return <button key={item.id} className={`nav-item ${page === item.id ? "active" : ""}`} onClick={() => navigate(item.id)}><Icon size={17}/><span>{item.label}</span>{item.id === "orders" && stats?.orders?.New > 0 && <i className="nav-badge">{stats.orders.New}</i>}</button>; })}</div>)}</nav>
+      <nav>{visibleNavGroups.map(group => <div className="nav-group" key={group.label}><div className="nav-label">{group.label}</div>{group.items.map(item => { const Icon = item.icon; return <button key={item.id} className={`nav-item ${page === item.id ? "active" : ""}`} onClick={() => navigate(item.id)}><Icon size={17}/><span>{item.label}</span>{item.id === "orders" && stats?.orders?.New > 0 && <i className="nav-badge">{stats.orders.New}</i>}</button>; })}</div>)}</nav>
       <div className="sidebar-bottom"><div className="secure-note"><ShieldCheck size={16}/><div><b>Secure workspace</b><span>Role-based access enabled</span></div></div><div className="user-card"><div className="user-avatar">{(user.email || "A").slice(0,1).toUpperCase()}</div><div className="user-info"><b>{user.email}</b><span>{titleCase(user.role)}</span></div><button className="icon-btn" title="Sign out" onClick={logout}><LogOut size={16}/></button></div></div>
     </aside>
     {sidebarOpen && <button className="mobile-backdrop" onClick={() => setSidebarOpen(false)} aria-label="Close menu"/>}
@@ -2074,7 +2078,7 @@ export default function App() {
       <header className="topbar"><div className="topbar-left"><button className="icon-btn mobile-menu" onClick={() => setSidebarOpen(true)}><Menu size={19}/></button><span className="breadcrumb">GO iPhone <ChevronRight size={13}/> <b>{pageTitle}</b></span></div><div className="topbar-right"><span className={`live-dot ${import.meta.env.DEV ? "preview-dot" : ""}`}/> <span className="environment">{import.meta.env.DEV ? "READ-ONLY PREVIEW" : "LIVE STORE"}</span><span className="topbar-divider"/><button className="icon-btn" title="Help"><CircleHelp size={18}/></button><a className="icon-btn" href="https://go-iphone-storefront1.vercel.app/" target="_blank" rel="noreferrer" title="Open storefront"><ExternalLink size={17}/></a></div></header>
       <div className="content-area">
         {error && <div className="toast error"><AlertTriangle size={16}/>{error}<button onClick={() => setError("")}><X size={14}/></button></div>}
-        {page === "dashboard" && <Dashboard stats={stats} loading={statsLoading} onRefresh={loadStats} onNavigate={navigate}/>}
+        {page === "dashboard" && <Dashboard stats={stats} loading={statsLoading} onRefresh={loadStats} onNavigate={navigate} permissions={permissions}/>}
         {page === "products" && <Products onError={showError}/>}
         {page === "orders" && <Orders onError={showError}/>}
         {page === "inventory" && <Inventory onError={showError}/>}
