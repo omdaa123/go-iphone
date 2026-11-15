@@ -1208,7 +1208,7 @@ function ProductGrid({ title, action, products, onOpen, onToggleCompare, compare
    copy of the best-seller / latest-arrivals pattern.
    ============================================================ */
 function CertifiedPreownedSection({ products, go, onOpen, onToggleCompare, compareIds, config = {} }) {
-  const ink=config.headingColor||T.ink, muted=config.bodyColor||T.graphite;
+  const ink=config.headingColor||T.ink, muted=config.bodyColor||config.headingColor||T.graphite;
   const list=products.slice(0,Math.max(1,Number(config.productLimit)||8));
   const columns=Math.max(2,Math.min(5,Number(config.productColumns)||2));
   const introWidth=config.introWidth==="wide"?"1.1fr 1.2fr":config.introWidth==="balanced"?"1fr 1.3fr":"0.85fr 1.4fr";
@@ -1245,7 +1245,7 @@ function HomePage({ go, compareIds, onToggleCompare }) {
     { id: "featured", name: "Featured", order: 0, visible: true, homepageVisible: true, system: true },
     { id: "new-arrivals", name: "New Arrivals", order: 1, visible: true, homepageVisible: true, system: true },
     { id: "best-sellers", name: "Best Sellers", order: 2, visible: true, homepageVisible: true, system: true },
-    { id: "certified-refurbished", name: "Certified Refurbished", order: 3, visible: true, homepageVisible: true, system: true },
+    { id: "certified-refurbished", name: "Certified Pre-Owned", order: 3, visible: true, homepageVisible: true, system: true },
   ];
   const mergedCollections = builtInCollections.map((base) => ({
     ...base,
