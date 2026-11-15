@@ -1035,7 +1035,7 @@ function ToolsSection({ onRecommend, onCompare }) {
         {rec.visible !== false && (
           <ToolCard
             icon={Sparkles}
-            image={settings.recommendationImage || rec.image}
+            image={rec.image || settings.recommendationImage}
             eyebrow={rec.eyebrow || "Guided shopping"}
             title={rec.title}
             description={rec.description}
@@ -1046,7 +1046,7 @@ function ToolsSection({ onRecommend, onCompare }) {
         {cmp.visible !== false && (
           <ToolCard
             icon={Scale}
-            image={settings.comparisonImage || cmp.image}
+            image={cmp.image || settings.comparisonImage}
             eyebrow={cmp.eyebrow || "Side by side"}
             title={cmp.title}
             description={cmp.description}
