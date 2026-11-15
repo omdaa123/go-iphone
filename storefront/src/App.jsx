@@ -984,7 +984,7 @@ function EditorialFeature({ product, go, config = {} }) {
     </section>
   );
   return (
-    <section className="max-w-7xl mx-auto px-6 md:px-10 py-16 md:py-24">
+    <section className="max-w-7xl mx-auto px-6 md:px-10" style={{paddingTop:(config.sectionPadding??64)+"px",paddingBottom:(config.sectionPadding??64)+"px",background:config.sectionBackground||"transparent",color:config.headingColor||"inherit",fontFamily:config.headingFont&&config.headingFont!=="inherit"?config.headingFont:"inherit"}}>
       <div className="grid md:grid-cols-[1.3fr_1fr] gap-0 md:gap-16 items-stretch">
         <div style={{ backgroundColor: T.stone }} className="relative order-2 md:order-1 aspect-[4/3] md:aspect-auto overflow-hidden">
           <ProductImage product={product} size={300} />
