@@ -951,7 +951,7 @@ function CategoryGrid({ go }) {
             <article key={c.key} style={{gridColumn:`span ${span}`,minWidth:0}}>
               <button type="button" onClick={() => go("catalog", { category: c.key })}
                 style={{backgroundColor:card.backgroundColor||T.stone,borderRadius:Number(config.cardRadius??4),height:Number(config.cardHeight??240),color:textColor}}
-                className="group relative w-full flex flex-col justify-between p-5 md:p-6 text-left overflow-hidden transition-transform duration-300 hover:-translate-y-0.5">
+                className={`group relative w-full flex flex-col ${textPlacement==="top"?"justify-start":textPlacement==="center"?"justify-center":"justify-end"} p-5 md:p-6 text-left overflow-hidden transition-transform duration-300 hover:-translate-y-0.5`}>
                 <div className="absolute inset-0 pointer-events-none">
                   {override ? <img src={override} alt="" style={{objectFit:imageFit}} className="absolute inset-0 w-full h-full transition-transform duration-300 ease-out group-hover:scale-105"/> : rep ? <ProductImage product={rep} size={span===2?118:78} className="transition-transform duration-300 ease-out group-hover:-translate-y-1" imgClassName="transition-transform duration-300 ease-out group-hover:-translate-y-1"/> : <div className="absolute inset-0 flex items-center justify-center"><DeviceGlyph category={c.key==="apple-accessory"?"pencil":c.key} hex={DEFAULT_DEVICE_HEX} size={span===2?118:78}/></div>}
                   {overlay>0&&<div className="absolute inset-0" style={{background:`linear-gradient(180deg,rgba(0,0,0,${overlay*.35}) 0%,rgba(0,0,0,${overlay}) 100%)`}}/>}
@@ -1212,7 +1212,7 @@ function CertifiedPreownedSection({ products, go, onOpen, onToggleCompare, compa
   const list=products.slice(0,Math.max(1,Number(config.productLimit)||8));
   const columns=Math.max(2,Math.min(5,Number(config.productColumns)||2));
   const introWidth=config.introWidth==="wide"?"1.1fr 1.2fr":config.introWidth==="balanced"?"1fr 1.3fr":"0.85fr 1.4fr";
-  const gridStyle=config.productsLayout==="rail"?{display:"flex",overflowX:"auto",gap:20,scrollSnapType:"x mandatory"}:{display:"grid",gridTemplateColumns:`repeat(${columns},minmax(0,1fr))`,gap:24};
+  const gridStyle=config.productsLayout==="rail"?{display:"flex",overflowX:"auto",gap:20,scrollSnapType:"x mandatory"}:{display:"grid",gridTemplateColumns:"repeat(var(--certified-columns),minmax(0,1fr))","--certified-columns":columns,gap:24};
   return (
     <section style={{backgroundColor:config.sectionBackground||T.stone,color:ink,paddingTop:Number(config.sectionPadding??80),paddingBottom:Number(config.sectionPadding??80),"--collection-card-radius":(config.cardRadius??16)+"px"}} className="certified-preowned-section">
       <div className="max-w-7xl mx-auto px-6 md:px-10 grid gap-10 md:gap-16" style={{gridTemplateColumns:`minmax(0,${introWidth.split(" ")[0]}) minmax(0,${introWidth.split(" ")[1]})`}}>
@@ -1222,7 +1222,7 @@ function CertifiedPreownedSection({ products, go, onOpen, onToggleCompare, compa
           <p style={{color:muted}} className="text-sm leading-relaxed max-w-xl mb-8">{config.heroDescription??"Every unit is individually inspected — battery health, cosmetic condition, and storage are disclosed upfront, backed by a Go iPhone warranty."}</p>
           <button onClick={() => go("catalog",{category:config.ctaCategory||"iphone"})} style={{backgroundColor:config.accentColor||ink}} className="text-white text-sm font-medium px-7 py-3.5 hover:opacity-90 transition-opacity">{config.ctaText??"Browse certified pre-owned"}</button>
         </div>
-        {list.length ? <div style={gridStyle} className={config.productsLayout==="rail"?"certified-product-rail":""}>{list.map(p=><div key={p.id} style={{minWidth:config.productsLayout==="rail"?260:0,scrollSnapAlign:"start"}}><ProductCard product={p} onOpen={onOpen} onToggleCompare={onToggleCompare} isComparing={compareIds.includes(p.id)} compareDisabled={compareIds.length>=3}/></div>)}</div> : <div className="flex items-center justify-center border border-dashed px-6 py-12 text-center" style={{borderColor:T.line}}><div><p style={{color:ink}} className="text-base font-medium">Certified pre-owned devices coming soon</p><p style={{color:muted}} className="text-sm mt-2">Quality-checked devices will be listed here soon.</p></div></div>}
+        {list.length ? <div style={gridStyle} className={config.productsLayout==="rail"?"certified-product-rail":"certified-product-grid"}>{list.map(p=><div key={p.id} style={{minWidth:config.productsLayout==="rail"?260:0,scrollSnapAlign:"start"}}><ProductCard product={p} onOpen={onOpen} onToggleCompare={onToggleCompare} isComparing={compareIds.includes(p.id)} compareDisabled={compareIds.length>=3}/></div>)}</div> : <div className="flex items-center justify-center border border-dashed px-6 py-12 text-center" style={{borderColor:T.line}}><div><p style={{color:ink}} className="text-base font-medium">Certified pre-owned devices coming soon</p><p style={{color:muted}} className="text-sm mt-2">Quality-checked devices will be listed here soon.</p></div></div>}
       </div>
     </section>
   );
