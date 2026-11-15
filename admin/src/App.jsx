@@ -302,10 +302,10 @@ function Dashboard({ stats, loading, onRefresh, onNavigate, permissions = {} }) 
   const greeting = hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";
   const today = new Date().toLocaleDateString("en-EG",{weekday:"long",day:"numeric",month:"long",year:"numeric"});
   const tasks = [
-    {id:"orders",icon:ShoppingCart,tone:"gold",title:"Process new orders",detail:newOrders?newOrders+" orders are waiting for your team":"Review order progress and customer updates",count:newOrders,cta:"Open orders",urgent:newOrders>0},
-    {id:"reservations",icon:Clock3,tone:"violet",title:"Confirm reservations",detail:pendingReservations?pendingReservations+" reservations need a response":"Check reservation requests and availability",count:pendingReservations,cta:"Open reservations",urgent:pendingReservations>0},
-    {id:"inventory",icon:Boxes,tone:"red",title:"Resolve stock alerts",detail:lowStock.length?lowStock.length+" products have 3 units or fewer":"Review stock levels before they run out",count:lowStock.length,cta:"Check inventory",urgent:lowStock.length>0},
-    {id:"customers",icon:Users,tone:"blue",title:"Look after customers",detail:"Review customer profiles, notes and purchase history",cta:"Open customers"}
+    ...(permissions["orders.write"] ? [{id:"orders",icon:ShoppingCart,tone:"gold",title:"Process new orders",detail:newOrders?newOrders+" orders are waiting for your team":"Review order progress and customer updates",count:newOrders,cta:"Open orders",urgent:newOrders>0}] : []),
+    ...(permissions["reservations.write"] ? [{id:"reservations",icon:Clock3,tone:"violet",title:"Confirm reservations",detail:pendingReservations?pendingReservations+" reservations need a response":"Check reservation requests and availability",count:pendingReservations,cta:"Open reservations",urgent:pendingReservations>0}] : []),
+    ...(permissions["inventory.write"] ? [{id:"inventory",icon:Boxes,tone:"red",title:"Resolve stock alerts",detail:lowStock.length?lowStock.length+" products have 3 units or fewer":"Review stock levels before they run out",count:lowStock.length,cta:"Check inventory",urgent:lowStock.length>0}] : []),
+    ...(permissions["orders.write"] ? [{id:"customers",icon:Users,tone:"blue",title:"Look after customers",detail:"Review customer profiles, notes and purchase history",cta:"Open customers"}] : [])
   ];
   return <>
     <section className="dashboard-welcome">
@@ -336,10 +336,10 @@ function Dashboard({ stats, loading, onRefresh, onNavigate, permissions = {} }) 
         <div><span className="dashboard-section-kicker">QUICK ACCESS</span><h2>Get straight to work</h2></div>
         <div className="dashboard-shortcut-actions">
           <button onClick={()=>onNavigate("products")}><Plus size={19}/> Add product</button>
-          <button onClick={()=>onNavigate("orders")}><ShoppingCart size={19}/> All orders</button>
-          <button onClick={()=>onNavigate("inventory")}><Boxes size={19}/> Manage stock</button>
-          <button onClick={()=>onNavigate("customers")}><Users size={19}/> Customers</button>
-          <button onClick={()=>onNavigate("homepage")}><Monitor size={19}/> Edit storefront</button>
+          {permissions["orders.write"] && <button onClick={()=>onNavigate("orders")}><ShoppingCart size={19}/> All orders</button>}
+          {permissions["inventory.write"] && <button onClick={()=>onNavigate("inventory")}><Boxes size={19}/> Manage stock</button>}
+          {permissions["orders.write"] && <button onClick={()=>onNavigate("customers")}><Users size={19}/> Customers</button>}
+          {permissions["cms.write"] && <button onClick={()=>onNavigate("homepage")}><Monitor size={19}/> Edit storefront</button>}
         </div>
       </section>
       <div className="dashboard-grid dashboard-detail-grid">
