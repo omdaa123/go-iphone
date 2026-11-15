@@ -935,7 +935,7 @@ function CategoryGrid({ go }) {
         <SectionHeading title={config.title??"Shop by category"} />
         {config.description && <p style={{color:config.textColor||T.graphite,opacity:.72}} className="text-sm mt-3 max-w-2xl">{config.description}</p>}
       </div>
-      <div style={{display:"grid",gridTemplateColumns:`repeat(${columns},minmax(0,1fr))`,gap:Number(config.gap??16)}}>
+      <div style={{display:"grid",gridTemplateColumns:"repeat(var(--category-columns),minmax(0,1fr))","--category-columns":columns,gap:Number(config.gap??16)}} className="shop-category-grid">
         {shown.map((c) => {
           const card=config.cards?.[c.key]||{};
           const override=card.imageUrl||c.image_url||c.imageUrl||null;
