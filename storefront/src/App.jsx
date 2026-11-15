@@ -1311,6 +1311,8 @@ function HomePage({ go, compareIds, onToggleCompare }) {
       "--collection-heading-weight": section.headingWeight || "700",
       "--collection-accent": section.accentColor || "#ad8642",
       "--collection-card-radius": (section.cardRadius ?? 16) + "px",
+      paddingTop: section.id === "certified-refurbished" ? undefined : (section.sectionPadding != null ? Number(section.sectionPadding) : undefined),
+      paddingBottom: section.id === "certified-refurbished" ? undefined : (section.sectionPadding != null ? Number(section.sectionPadding) : undefined),
     };
     let content;
     if (section.id === "featured") content = <EditorialFeature product={section.products[0]} go={go} config={section} />;
