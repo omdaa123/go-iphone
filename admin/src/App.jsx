@@ -1186,7 +1186,7 @@ function HomepageBuilder({ onError }) {
                 </div>;
               })()}
               {(selected.type==="product-collection" || selected.id==="collections") && (() => {
-                const builtIns=[{id:"featured",name:"Featured"},{id:"new-arrivals",name:"New Arrivals"},{id:"best-sellers",name:"Best Sellers"},{id:"certified-refurbished",name:"Certified Refurbished"}];
+                const builtIns=[{id:"featured",name:"Featured"},{id:"new-arrivals",name:"New Arrivals"},{id:"best-sellers",name:"Best Sellers"},{id:"certified-refurbished",name:"Certified Pre-Owned"}];
                 const collectionItems=[...builtIns,...collections.filter(c=>!builtIns.some(b=>b.id===c.id))];
                 const defaultOrder=new Map(collectionItems.map((item,index)=>[item.id,index]));
                 const orderedItems=[...collectionItems].sort((a,b)=>
@@ -1222,7 +1222,7 @@ function HomepageBuilder({ onError }) {
                     <label>Product layout<select value={config.productsLayout||"grid"} onChange={e=>updateConfig({productsLayout:e.target.value})}><option value="grid">Grid</option><option value="rail">Horizontal slider</option></select></label>
                     <label>Desktop product columns <b>{config.productColumns??2}</b><input type="range" min="2" max="5" value={config.productColumns??2} onChange={e=>updateConfig({productColumns:Number(e.target.value)})}/></label>
                     <label>Section background<input type="color" value={config.sectionBackground||"#f5f3ef"} onChange={e=>updateConfig({sectionBackground:e.target.value})}/></label>
-                    <label>Heading and body color<input type="color" value={config.headingColor||"#20242b"} onChange={e=>updateConfig({headingColor:e.target.value})}/></label>
+                    <label>Heading and body color<input type="color" value={config.headingColor||"#20242b"} onChange={e=>updateConfig({headingColor:e.target.value,bodyColor:e.target.value})}/></label>
                     <label>Accent color<input type="color" value={config.accentColor||"#ad8642"} onChange={e=>updateConfig({accentColor:e.target.value})}/></label>
                     <label>Section spacing <b>{config.sectionPadding??80}px</b><input type="range" min="20" max="180" value={config.sectionPadding??80} onChange={e=>updateConfig({sectionPadding:Number(e.target.value)})}/></label>
                     <label>Product card radius <b>{config.cardRadius??16}px</b><input type="range" min="0" max="32" value={config.cardRadius??16} onChange={e=>updateConfig({cardRadius:Number(e.target.value)})}/></label>
