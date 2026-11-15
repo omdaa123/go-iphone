@@ -1029,14 +1029,14 @@ function ToolsSection({ onRecommend, onCompare }) {
   const settings = siteContent.toolsSection || {};
   if (settings.visible === false || (rec.visible === false && cmp.visible === false)) return null;
   return (
-    <section className="max-w-7xl mx-auto px-6 md:px-10 py-16 md:py-32">
+    <section style={{ backgroundColor: settings.backgroundColor || "transparent", paddingTop: (settings.paddingY ?? 96) + "px", paddingBottom: (settings.paddingY ?? 96) + "px" }} className="max-w-7xl mx-auto px-6 md:px-10">
       <SectionHeading eyebrow={settings.eyebrow || "Tools"} title={settings.title || "Not sure which to choose?"} />
       <div className="grid md:grid-cols-2 gap-10 md:gap-14">
         {rec.visible !== false && (
           <ToolCard
             icon={Sparkles}
             image={settings.recommendationImage || rec.image}
-            eyebrow="Guided shopping"
+            eyebrow={rec.eyebrow || "Guided shopping"}
             title={rec.title}
             description={rec.description}
             cta={rec.cta}
@@ -1047,7 +1047,7 @@ function ToolsSection({ onRecommend, onCompare }) {
           <ToolCard
             icon={Scale}
             image={settings.comparisonImage || cmp.image}
-            eyebrow="Side by side"
+            eyebrow={cmp.eyebrow || "Side by side"}
             title={cmp.title}
             description={cmp.description}
             cta={cmp.cta}
@@ -1081,14 +1081,14 @@ function TrustSection() {
   }).filter(point => point.visible !== false);
   if (settings.visible === false || !points.length) return null;
   return (
-    <section style={{ borderColor: T.line }} className="max-w-7xl mx-auto px-6 md:px-10 py-20 md:py-24 border-t">
+    <section style={{ borderColor: T.line, backgroundColor: settings.backgroundColor || "transparent", color: settings.textColor || T.ink, paddingTop: (settings.paddingY ?? 80) + "px", paddingBottom: (settings.paddingY ?? 80) + "px" }} className="max-w-7xl mx-auto px-6 md:px-10 border-t">
       <div className="grid grid-cols-2 md:grid-cols-4 gap-x-8 gap-y-10">
         {points.map(({ icon: Icon, title, desc, image }) => (
           <div key={title} className="flex flex-col gap-3">
             {image ? <img src={image} alt="" loading="lazy" style={{ width: 34, height: 34, objectFit: "contain" }} /> : <Icon size={18} strokeWidth={1.5} style={{ color: T.graphite }} />}
             <div>
-              <p style={{ color: T.ink }} className="text-sm font-medium mb-1">{title}</p>
-              <p style={{ color: T.graphite }} className="text-xs leading-relaxed">{desc}</p>
+              <p style={{ color: settings.textColor || T.ink }} className="text-sm font-medium mb-1">{title}</p>
+              <p style={{ color: settings.descriptionColor || T.graphite }} className="text-xs leading-relaxed">{desc}</p>
             </div>
           </div>
         ))}
