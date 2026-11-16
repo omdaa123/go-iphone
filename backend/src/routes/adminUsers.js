@@ -23,10 +23,11 @@ adminUsersRouter.get("/", async (req, res, next) => {
 const createSchema = z.object({
   email: z.string().email(),
   password: z.string().min(12, "Password must be at least 12 characters."),
-  role: z.enum(["OWNER", "DASHBOARD", "CATALOG"]),
+  role: z.enum(["OWNER", "FULL_ACCESS_NO_DASHBOARD", "DASHBOARD", "CATALOG"]),
 });
 adminUsersRouter.post("/", validateBody(createSchema), async (req, res, next) => {
   try {
+    if (req.body.role === "OWNER" && req.admin.role !== "OWNER") return res.status(403).json({ error: "Only a Super Admin can create another Super Admin." });
     const hash = await argon2.hash(req.body.password, { type: argon2.argon2id });
     const { rows } = await pool.query(
       `INSERT INTO admin_users (email, password_hash, role) VALUES ($1,$2,$3)
@@ -41,10 +42,11 @@ adminUsersRouter.post("/", validateBody(createSchema), async (req, res, next) =>
   }
 });
 
-const roleSchema = z.object({ role: z.enum(["DASHBOARD", "CATALOG"]) });
+const roleSchema = z.object({ role: z.enum(["FULL_ACCESS_NO_DASHBOARD", "DASHBOARD", "CATALOG"]) });
 adminUsersRouter.patch("/:id/role", validateBody(roleSchema), async (req, res, next) => {
   try {
-    const { rows } = await pool.query(`UPDATE admin_users SET role = $1 WHERE id = $2 RETURNING id, email, role`, [req.body.role, req.params.id]);
+    if (req.params.id === req.admin.id) return res.status(400).json({ error: "You cannot change your own role." });
+    const { rows } = await pool.query(`UPDATE admin_users SET role = $1 WHERE id = $2 AND role <> 'OWNER' RETURNING id, email, role`, [req.body.role, req.params.id]);
     if (!rows[0]) return res.status(404).json({ error: "Admin not found." });
     await logAudit({ adminUserId: req.admin.id, action: "admin_user.role_change", resourceType: "admin_user", resourceId: req.params.id, after: rows[0], ip: req.ip });
     res.json({ adminUser: rows[0] });
