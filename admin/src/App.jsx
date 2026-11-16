@@ -135,7 +135,7 @@ const WATCH_SCREEN_INCHES = {
 };
 async function request(path, options = {}) {
   const method = String(options.method || "GET").toUpperCase();
-  if (import.meta.env.DEV && method !== "GET" && !path.startsWith("/auth/")) {
+  if (import.meta.env.DEV && method !== "GET" && !path.startsWith("/auth/") && !(method === "POST" && path === "/media")) {
     throw new Error("Local preview is read-only. Changes are blocked to protect your live store.");
   }
   const response = await fetch(`${API}${path}`, {
@@ -782,7 +782,7 @@ function MediaLibrary({ onError }) {
 
   return <>
     <div className="page-heading"><div><div className="eyebrow">STORE EXPERIENCE</div><h1>Media Library</h1><p>Upload, search and organize product photography and store assets.</p></div><label className="btn primary upload-label">{uploading ? "Uploading…" : <><Plus size={15}/> Upload images</>}<input type="file" multiple accept="image/jpeg,image/png,image/webp,image/gif" disabled={uploading} onChange={e => { uploadFiles(e.target.files); e.target.value = ""; }}/></label></div>
-    {localPreview && <div className="design-safety-note"><ShieldCheck size={17}/><div><b>Safe local preview</b><span>Uploads and deletes are disabled in development so this workspace cannot change live store media.</span></div></div>}
+    {localPreview && <div className="design-safety-note"><ShieldCheck size={17}/><div><b>Safe local preview</b><span>Image uploads are enabled for testing ImageKit. Deleting media and all other store changes remain blocked in local preview.</span></div></div>}
     <section className="panel">
       <div className="panel-head"><div><h2>All media <span className="count-pill">{items.length} assets</span></h2><p>Images are compressed before upload. Maximum 8MB per image.</p></div><button className="btn secondary" onClick={() => setRefresh(v => v + 1)}><RefreshCw size={14}/> Refresh</button></div>
       {uploadProgress && <div className="media-upload-progress"><span className="spinner"/>{uploadProgress}</div>}
