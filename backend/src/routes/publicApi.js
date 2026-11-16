@@ -21,7 +21,7 @@ const egp = (piastres) => Math.round(Number(piastres) / 100); // DB stores piast
 // hundred products fit comfortably in a single cached response.
 publicRouter.get("/catalog", async (req, res, next) => {
   try {
-    const [cats, cols, prods, variants, units, hero, content, pcs, sales] = await Promise.all([
+    const [cats, cols, prods, variants, units, hero, content, pcs, sales, settings] = await Promise.all([
       pool.query(`SELECT c.key, c.label, c.sort_order, c.parent_key, m.url AS image_url FROM categories c LEFT JOIN media m ON m.id = c.image_media_id ORDER BY c.sort_order`),
       pool.query(`SELECT id, name, description, is_system, visible, sort_order FROM collections ORDER BY sort_order`),
       pool.query(
@@ -51,6 +51,7 @@ publicRouter.get("/catalog", async (req, res, next) => {
          WHERE o.status <> 'Cancelled'
          GROUP BY oi.product_id`
       ),
+      pool.query(`SELECT key, value FROM site_settings`),
     ]);
 
     const soldByProduct = Object.fromEntries(sales.rows.map((r) => [r.product_id, Number(r.sold_qty) || 0]));
