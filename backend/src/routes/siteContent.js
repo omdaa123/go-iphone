@@ -43,7 +43,7 @@ siteContentRouter.put("/:section", requirePermission("cms.write"), validateBody(
 export const settingsRouter = Router();
 settingsRouter.use(requireAuth);
 
-settingsRouter.get("/", async (req, res, next) => {
+settingsRouter.get("/", requirePermission("settings.write"), async (req, res, next) => {
   try {
     const { rows } = await pool.query(`SELECT key, value FROM site_settings`);
     res.json({ settings: Object.fromEntries(rows.map((r) => [r.key, r.value])) });
