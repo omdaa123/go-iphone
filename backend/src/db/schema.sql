@@ -8,14 +8,15 @@ CREATE EXTENSION IF NOT EXISTS citext;     -- case-insensitive email
 -- ===================== Identity & access =====================
 
 CREATE TABLE IF NOT EXISTS roles (
-  name TEXT PRIMARY KEY,                  -- OWNER | DASHBOARD | CATALOG
+  name TEXT PRIMARY KEY,
   permissions JSONB NOT NULL
 );
 
 INSERT INTO roles (name, permissions) VALUES
   ('OWNER', '{"admin.manage":true,"dashboard.view":true,"dashboard.sales.view":true,"products.write":true,"inventory.write":true,"orders.write":true,"reservations.write":true,"cms.write":true,"media.write":true,"settings.write":true}'),
+  ('FULL_ACCESS_NO_DASHBOARD', '{"admin.manage":true,"dashboard.view":false,"dashboard.sales.view":false,"products.write":true,"inventory.write":true,"orders.write":true,"reservations.write":true,"cms.write":true,"media.write":true,"settings.write":true}'),
   ('DASHBOARD', '{"admin.manage":false,"dashboard.view":true,"dashboard.sales.view":true,"products.write":false,"inventory.write":false,"orders.write":false,"reservations.write":false,"cms.write":false,"media.write":false,"settings.write":false}'),
-  ('CATALOG', '{"admin.manage":false,"dashboard.view":true,"dashboard.sales.view":false,"products.write":true,"inventory.write":false,"orders.write":false,"reservations.write":false,"cms.write":true,"media.write":true,"settings.write":false}')
+  ('CATALOG', '{"admin.manage":false,"dashboard.view":false,"dashboard.sales.view":false,"products.write":true,"inventory.write":false,"orders.write":false,"reservations.write":false,"cms.write":true,"media.write":true,"settings.write":false}')
 ON CONFLICT (name) DO UPDATE SET permissions = EXCLUDED.permissions;
 
 CREATE TABLE IF NOT EXISTS admin_users (
