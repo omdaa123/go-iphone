@@ -1,7 +1,7 @@
 import { pool } from "../db.js";
 import { hashToken } from "../lib/tokens.js";
 
-export const PRIVILEGED_ROLES = ["OWNER"];
+export const PRIVILEGED_ROLES = ["OWNER", "FULL_ACCESS_NO_DASHBOARD"];
 export function twoFactorRequired(role, totpEnabled) {
   return process.env.REQUIRE_2FA !== "false" && PRIVILEGED_ROLES.includes(role) && !totpEnabled;
 }
