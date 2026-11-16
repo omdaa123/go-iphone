@@ -8,7 +8,7 @@ import { validateBody } from "../middleware/validate.js";
 import { logAudit } from "../lib/audit.js";
 
 export const adminUsersRouter = Router();
-adminUsersRouter.use(requireAuth, requirePermission("admin.manage")); // OWNER only, per the seeded role permissions
+adminUsersRouter.use(requireAuth, requirePermission("admin.manage")); // OWNER and FULL_ACCESS_NO_DASHBOARD after 2FA enrollment
 
 adminUsersRouter.get("/", async (req, res, next) => {
   try {
