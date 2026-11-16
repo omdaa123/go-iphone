@@ -28,6 +28,11 @@ jobs:
       - name: Check backend JavaScript syntax
         run: find backend/src -type f -name '*.js' -print0 | xargs -0 -n1 node --check
 
+      - name: Report backend dependency advisories
+        run: |
+          npm audit --prefix backend --json > /tmp/backend-audit.json || true
+          node -e 'const a=require("/tmp/backend-audit.json"); for (const [name,v] of Object.entries(a.vulnerabilities || {})) console.log(name + ": " + v.severity + ", fix=" + JSON.stringify(v.fixAvailable)); console.log("Counts:", JSON.stringify(a.metadata?.vulnerabilities || {}));'
+
       - name: Check backend test syntax
         run: find backend/tests -type f -name '*.mjs' -print0 | xargs -0 -n1 node --check
 
