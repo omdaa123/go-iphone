@@ -246,6 +246,7 @@ CREATE TABLE IF NOT EXISTS order_items (
   order_id UUID NOT NULL REFERENCES orders(id) ON DELETE CASCADE,
   product_id UUID REFERENCES products(id),
   inventory_unit_id UUID REFERENCES inventory_units(id),
+  variant_id UUID REFERENCES product_variants(id),
   variant_label TEXT,
   unit_price_cents BIGINT NOT NULL,
   qty INT NOT NULL
