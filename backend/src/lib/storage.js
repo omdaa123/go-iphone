@@ -171,13 +171,15 @@ const LOCAL_DIR = () => process.env.LOCAL_UPLOAD_DIR || "./uploads";
 const LOCAL_URL = () => (process.env.LOCAL_UPLOAD_PUBLIC_URL || "http://localhost:4000/uploads").replace(/\/$/, "");
 
 export async function saveFile(buffer, extension, mimeType = CONTENT_TYPES[extension] || "application/octet-stream") {
-  if (imageKitConfigured()) return uploadToImageKit(buffer, extension, mimeType);
-  if (imageKitPartiallyConfigured()) {
-    throw new Error("ImageKit storage is partially configured. Set IMAGEKIT_PRIVATE_KEY and IMAGEKIT_URL_ENDPOINT.");
-  }
+  // Cloudinary is the primary production provider. ImageKit and S3 remain
+  // supported fallbacks for deployments that have not configured Cloudinary.
   if (cloudinaryConfigured()) return uploadToCloudinary(buffer, extension, mimeType);
   if (cloudinaryPartiallyConfigured()) {
     throw new Error("Cloudinary storage is partially configured. Set CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, and CLOUDINARY_API_SECRET.");
+  }
+  if (imageKitConfigured()) return uploadToImageKit(buffer, extension, mimeType);
+  if (imageKitPartiallyConfigured()) {
+    throw new Error("ImageKit storage is partially configured. Set IMAGEKIT_PRIVATE_KEY and IMAGEKIT_URL_ENDPOINT.");
   }
 
   if (s3Enabled()) {
@@ -208,10 +210,10 @@ export async function saveFile(buffer, extension, mimeType = CONTENT_TYPES[exten
 /** Best-effort removal of the stored file. */
 export async function deleteFile(url) {
   try {
-    if (imageKitConfigured() && url.startsWith(process.env.IMAGEKIT_URL_ENDPOINT.replace(/\/$/, "") + "/")) {
-      await deleteFromImageKit(url);
-    } else if (cloudinaryConfigured() && url.includes("res.cloudinary.com/")) {
+    if (cloudinaryConfigured() && url.includes("res.cloudinary.com/")) {
       await deleteFromCloudinary(url);
+    } else if (imageKitConfigured() && url.startsWith(process.env.IMAGEKIT_URL_ENDPOINT.replace(/\/$/, "") + "/")) {
+      await deleteFromImageKit(url);
     } else if (s3Enabled() && url.startsWith(`${publicBase()}/`)) {
       await s3().send(new DeleteObjectCommand({ Bucket: process.env.S3_BUCKET, Key: url.slice(publicBase().length + 1) }));
     } else if (process.env.NODE_ENV !== "production" && url.startsWith(`${LOCAL_URL()}/`)) {
