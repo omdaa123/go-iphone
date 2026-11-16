@@ -44,7 +44,7 @@ Before production, configure Cloudinary or an S3-compatible persistent object st
 
 ## Tests
 
-The end-to-end suites create users, products, orders, and reservations. Run them **only against a disposable test database** with a separate test server:
+The end-to-end suites create users, products, orders, and reservations. Run them **only against a disposable test database** with a separate test server. For the test server only, set `NODE_ENV=development`, `ENABLE_ADMIN_WRITES=true`, and `ENABLE_COMMERCE_WRITES=true`; the normal local defaults keep these writes disabled. The admin/security suites also use `REQUIRE_2FA=false` for the initial setup phase. Do not set these write overrides when connected to Production:
 
 - `npm run test:e2e:admin-api`
 - `npm run test:e2e:security`
