@@ -21,3 +21,12 @@ services:
         value: "false"
       - key: ENABLE_COMMERCE_WRITES
         value: "false"
+      # Required for persistent production image uploads (Cloudinary).
+      - key: CLOUDINARY_CLOUD_NAME
+        sync: false
+      - key: CLOUDINARY_API_KEY
+        sync: false
+      - key: CLOUDINARY_API_SECRET
+        sync: false
+      - key: CLOUDINARY_FOLDER
+        value: go-iphone
