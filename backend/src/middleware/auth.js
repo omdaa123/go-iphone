@@ -33,7 +33,7 @@ export async function requireAuth(req, res, next) {
   req.admin = { id: session.user_id, email: session.email, role: session.role, sessionId: session.session_id };
 
   // Mandatory 2FA for privileged roles — enforced HERE on the server, not in the
-  // UI. Until an OWNER has enrolled, the only thing their session can do
+  // UI. Until a privileged admin has enrolled, the only thing their session can do
   // is the /admin/auth/* endpoints (needed to enroll). Set REQUIRE_2FA=false only
   // for local testing.
   if (twoFactorRequired(session.role, session.totp_enabled) && !req.baseUrl.startsWith("/admin/auth")) {
