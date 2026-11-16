@@ -1482,6 +1482,10 @@ function StoreCategoriesManager({ onError }) {
   const [newLabel,setNewLabel]=useState("");
   const [parentKey,setParentKey]=useState("");
   const [creatingBusy,setCreatingBusy]=useState(false);
+  const [editingCategory,setEditingCategory]=useState(false);
+  const [editLabel,setEditLabel]=useState("");
+  const [editParentKey,setEditParentKey]=useState("");
+  const [editBusy,setEditBusy]=useState(false);
   const selected=categories.find(c=>c.key===selectedKey);
   const label=c=>c.name||c.label||c.title||titleCase(c.key);
   const roots=categories.filter(c=>!c.parent_key);
@@ -1501,6 +1505,30 @@ function StoreCategoriesManager({ onError }) {
       setNewLabel("");setParentKey("");setCreating(false);setRefresh(v=>v+1);
     }catch(e){onError(e.message);}
     finally{setCreatingBusy(false);}
+  }
+  function openCategoryEdit(){
+    if(!selected)return;
+    setEditLabel(label(selected));
+    setEditParentKey(selected.parent_key||"");
+    setEditingCategory(true);
+  }
+  async function saveCategoryEdit(event){
+    event.preventDefault();
+    if(!selected)return;
+    setEditBusy(true);
+    try{
+      await request("/categories/"+encodeURIComponent(selected.key),{method:"PATCH",body:JSON.stringify({label:editLabel.trim(),parentKey:editParentKey||null})});
+      setEditingCategory(false);setRefresh(v=>v+1);
+    }catch(e){onError(e.message);}
+    finally{setEditBusy(false);}
+  }
+  async function deleteCategory(){
+    if(!selected)return;
+    if(!window.confirm("Delete "+label(selected)+"? Categories with products or subcategories cannot be deleted."))return;
+    try{
+      await request("/categories/"+encodeURIComponent(selected.key),{method:"DELETE"});
+      setSelectedKey("");setRefresh(v=>v+1);
+    }catch(e){onError(e.message);}
   }
   const productCount=key=>products.filter(p=>p.category_key===key).length;
   const totalBranches=roots.reduce((n,c)=>n+childrenOf(c.key).length,0);
@@ -1531,11 +1559,12 @@ function StoreCategoriesManager({ onError }) {
         </div>}
       </section>
     </>:<>
-      <div className="store-category-detail-top"><div><button className="text-btn" onClick={()=>{setSelectedKey(selected.parent_key||"");setPickerOpen(false);}}><ArrowLeft size={15}/> {selected.parent_key?label(categories.find(c=>c.key===selected.parent_key)||{key:""}):"All departments"}</button><div className="eyebrow">CATEGORY WORKSPACE</div><h1>{label(selected)}</h1><p>Manage products and subcategories in this department.</p></div><div className="store-category-detail-actions"><div className="store-category-stat compact"><span>ASSIGNED PRODUCTS</span><strong>{assigned.length}</strong></div><button className="btn primary" onClick={()=>setPickerOpen(true)}><Plus size={15}/> Move products here</button></div></div>
+      <div className="store-category-detail-top"><div><button className="text-btn" onClick={()=>{setSelectedKey(selected.parent_key||"");setPickerOpen(false);}}><ArrowLeft size={15}/> {selected.parent_key?label(categories.find(c=>c.key===selected.parent_key)||{key:""}):"All departments"}</button><div className="eyebrow">CATEGORY WORKSPACE</div><h1>{label(selected)}</h1><p>Manage products and subcategories in this department.</p></div><div className="store-category-detail-actions"><div className="store-category-stat compact"><span>ASSIGNED PRODUCTS</span><strong>{assigned.length}</strong></div><button className="btn secondary" onClick={openCategoryEdit}><Pencil size={14}/> Edit category</button><button className="btn secondary" onClick={deleteCategory}>Delete</button><button className="btn primary" onClick={()=>setPickerOpen(true)}><Plus size={15}/> Move products here</button></div></div>
       {childrenOf(selectedKey).length>0&&<section className="store-category-library store-category-subpanel"><div className="store-category-section-head"><div><div className="eyebrow">NESTED STRUCTURE</div><h2>Subcategories</h2><p>Open a branch to view and manage its products.</p></div><span className="store-category-count">{childrenOf(selectedKey).length} branches</span></div><div className="store-category-subgrid">{childrenOf(selectedKey).map(child=><button className="store-category-subcard" key={child.key} onClick={()=>setSelectedKey(child.key)}><span className="store-category-branch-dot"/><span><b>{label(child)}</b><small>{productCount(child.key)} products</small></span><ChevronRight size={17}/></button>)}</div></section>}
       <section className="panel collection-products-panel store-category-products"><div className="panel-head"><div><h2>Products <span>({assigned.length})</span></h2><p>Products currently assigned to this category.</p></div></div>{assigned.length===0?<div className="store-category-empty"><Package size={26}/><b>No products in this category</b><span>Move existing products here to organize your catalog.</span></div>:<div className="collection-assigned-grid">{assigned.map(p=><article className="collection-assigned-product" key={p.id}>{p.image_url?<img src={p.image_url} alt=""/>:<div className="product-avatar"><Smartphone size={20}/></div>}<div><b>{p.name}</b><small>{titleCase(p.product_type)}</small></div><select value={p.category_key} disabled={savingId===p.id} onChange={e=>move(p,e.target.value)}>{categories.map(c=><option key={c.key} value={c.key}>{c.parent_key?"↳ ":""}{label(c)}</option>)}</select></article>)}</div>}</section>
       {pickerOpen&&<div className="modal-backdrop collection-picker-backdrop"><section className="editor-modal collection-picker-modal"><div className="modal-head"><div><h2>Move products to {label(selected)}</h2><p>Choose products to add to this category.</p></div><button className="icon-btn" onClick={()=>setPickerOpen(false)}><X size={19}/></button></div><div className="collection-picker-search"><input value={query} onChange={e=>setQuery(e.target.value)} placeholder="Search products…"/></div><div className="collection-picker-list">{candidates.map(p=><article className="collection-picker-product" key={p.id}><div><b>{p.name}</b><small>Currently: {titleCase(p.category_key)}</small></div><button className="btn secondary small" disabled={savingId===p.id} onClick={()=>move(p,selectedKey)}>{savingId===p.id?"Moving…":"Move here"}</button></article>)}</div><div className="modal-foot"><button className="btn primary" onClick={()=>setPickerOpen(false)}>Done</button></div></section></div>}
     </>}
+    {editingCategory&&selected&&<div className="modal-backdrop"><form className="editor-modal" onSubmit={saveCategoryEdit}><div className="modal-head"><div><div className="eyebrow">STORE CATALOG</div><h2>Edit category</h2></div><button type="button" className="icon-btn" onClick={()=>setEditingCategory(false)}><X size={19}/></button></div><div className="editor-grid"><label className="field-wide">Category name<input required minLength={2} maxLength={80} value={editLabel} onChange={e=>setEditLabel(e.target.value)}/></label><label className="field-wide">Parent category<select value={editParentKey} onChange={e=>setEditParentKey(e.target.value)}><option value="">Main category (no parent)</option>{roots.filter(c=>c.key!==selected.key).map(c=><option key={c.key} value={c.key}>{label(c)}</option>)}</select></label></div><div className="modal-foot"><button type="button" className="btn secondary" onClick={()=>setEditingCategory(false)}>Cancel</button><button className="btn primary" disabled={editBusy||!editLabel.trim()}>{editBusy?"Saving…":"Save category"}</button></div></form></div>}
     {creating&&<div className="modal-backdrop"><form className="editor-modal" onSubmit={createCategory}><div className="modal-head"><div><div className="eyebrow">STORE CATALOG</div><h2>Add store category</h2><p>Create a main department or add a branch to an existing one.</p></div><button type="button" className="icon-btn" onClick={()=>setCreating(false)}><X size={19}/></button></div><div className="editor-grid"><label className="field-wide">Category name<input required minLength={2} maxLength={80} autoFocus value={newLabel} onChange={e=>setNewLabel(e.target.value)} placeholder="e.g. Speakers"/></label><label className="field-wide">Parent category<select value={parentKey} onChange={e=>setParentKey(e.target.value)}><option value="">Main category (no parent)</option>{roots.map(c=><option key={c.key} value={c.key}>{label(c)}</option>)}</select><small className="field-hint">Choose a parent to create a nested branch.</small></label></div><div className="modal-foot"><button type="button" className="btn secondary" onClick={()=>setCreating(false)}>Cancel</button><button className="btn primary" disabled={creatingBusy||!newLabel.trim()}>{creatingBusy?"Creating…":"Create category"}</button></div></form></div>}
   </>;
 }
