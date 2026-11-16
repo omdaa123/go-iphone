@@ -11,47 +11,13 @@ categoriesRouter.use(requireAuth, requirePermission("products.write"));
 
 categoriesRouter.get("/", async (req, res, next) => {
   try {
-    await pool.query("ALTER TABLE categories ADD COLUMN IF NOT EXISTS parent_key TEXT REFERENCES categories(key) ON DELETE SET NULL");
-    await pool.query(`INSERT INTO categories (key, label, sort_order) VALUES ($1, $2, $3) ON CONFLICT (key) DO NOTHING`, ["other-devices", "Other Devices", 7]);
-    await pool.query(
-      `INSERT INTO categories (key, label, sort_order, parent_key)
-       VALUES ('accessories', 'Accessories', 6, NULL)
-       ON CONFLICT (key) DO UPDATE SET label = 'Accessories', parent_key = NULL`
-    );
-    const accessoryBranches = [
-      ["apple-accessory", "Apple Accessories", 14],
-      ["other-accessory", "Other Accessories", 15],
-    ];
-    for (const [key, label, sortOrder] of accessoryBranches) {
-      await pool.query(
-        `INSERT INTO categories (key, label, sort_order, parent_key)
-         VALUES ($1, $2, $3, 'accessories')
-         ON CONFLICT (key) DO UPDATE SET label = EXCLUDED.label, parent_key = 'accessories'`,
-        [key, label, sortOrder]
-      );
-    }
-    // Consolidate duplicate branch keys from the earlier plural-key version.
-    await pool.query(`UPDATE products SET category_key = 'apple-accessory' WHERE category_key = 'apple-accessories'`);
-    await pool.query(`UPDATE products SET category_key = 'other-accessory' WHERE category_key = 'other-accessories'`);
-    await pool.query(`DELETE FROM categories WHERE key IN ('apple-accessories', 'other-accessories')`);
-    const otherDeviceBranches = [
-      ["smartphone", "Smartphones", 8],
-      ["smartwatch", "Smart Watches", 9],
-      ["tablet", "Tablets", 10],
-      ["speakers", "Speakers", 11],
-      ["headphones", "Headphones", 12],
-      ["other-electronics", "Other Electronics", 13],
-    ];
-    for (const [key, label, sortOrder] of otherDeviceBranches) {
-      await pool.query(
-        `INSERT INTO categories (key, label, sort_order, parent_key)
-         VALUES ($1, $2, $3, 'other-devices')
-         ON CONFLICT (key) DO UPDATE SET parent_key = 'other-devices'`,
-        [key, label, sortOrder]
-      );
-    }
+    // Reads must remain side-effect free. Category hierarchy and legacy-key
+    // normalization are handled by the explicit schema migration instead.
     const { rows } = await pool.query(
-      `SELECT c.*, m.url AS image_url FROM categories c LEFT JOIN media m ON m.id = c.image_media_id ORDER BY c.sort_order`
+      `SELECT c.*, m.url AS image_url
+       FROM categories c
+       LEFT JOIN media m ON m.id = c.image_media_id
+       ORDER BY c.sort_order, c.label`
     );
     res.json({ categories: rows });
   } catch (err) { next(err); }
@@ -65,7 +31,6 @@ const createCategorySchema = z.object({
 
 categoriesRouter.post("/", requirePermission("cms.write"), validateBody(createCategorySchema), async (req, res, next) => {
   try {
-    await pool.query("ALTER TABLE categories ADD COLUMN IF NOT EXISTS parent_key TEXT REFERENCES categories(key) ON DELETE SET NULL");
     const parentKey = req.body.parentKey || null;
     if (parentKey) {
       const parent = await pool.query("SELECT key FROM categories WHERE key = $1", [parentKey]);
