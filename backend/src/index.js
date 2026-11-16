@@ -30,7 +30,28 @@ app.set("trust proxy", 1);
 
 app.use(helmet());
 
-const ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGINS || "").split(",").map((s) => s.trim()).filter(Boolean);
+const ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGINS || "")
+  .split(",")
+  .map((value) => value.trim())
+  .filter(Boolean)
+  .map((value) => {
+    if (value === "*") throw new Error("ALLOWED_ORIGINS must never contain a wildcard.");
+    let parsed;
+    try {
+      parsed = new URL(value);
+    } catch {
+      throw new Error(`Invalid ALLOWED_ORIGINS entry: ${value}`);
+    }
+    if (!["http:", "https:"].includes(parsed.protocol) || parsed.pathname !== "/" || parsed.search || parsed.hash) {
+      throw new Error(`ALLOWED_ORIGINS entries must be origins only (scheme + host): ${value}`);
+    }
+    return parsed.origin;
+  });
+
+if (process.env.NODE_ENV === "production" && ALLOWED_ORIGINS.length === 0) {
+  console.warn("ALLOWED_ORIGINS is empty: browser requests from the deployed storefront/admin will be blocked until their exact HTTPS origins are configured.");
+}
+
 app.use(cors({
   origin(origin, callback) {
     // Allow server-to-server/tooling requests with no Origin header, but
