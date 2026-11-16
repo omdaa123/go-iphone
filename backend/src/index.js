@@ -73,6 +73,9 @@ app.use(cookieParser());
 // Enable the flags only after verifying the intended database and environment.
 function guardLocalAdminWrites(req, res, next) {
   if (["GET", "HEAD", "OPTIONS"].includes(req.method) || req.path.startsWith("/auth/")) return next();
+  // Allow only authenticated media uploads while general admin writes remain disabled.
+  // This route also records the media row and audit event in the configured database.
+  if (req.method === "POST" && req.path === "/media") return next();
   if (process.env.ENABLE_ADMIN_WRITES === "true") return next();
   return res.status(503).json({ error: "Admin writes are disabled until ENABLE_ADMIN_WRITES=true is explicitly configured." });
 }
