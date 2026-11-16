@@ -105,7 +105,11 @@ app.use("/uploads", express.static(process.env.LOCAL_UPLOAD_DIR || "./uploads", 
   setHeaders: (res) => res.setHeader("Cross-Origin-Resource-Policy", "cross-origin"),
 }));
 
-app.get("/health", async (req, res) => {
+// Liveness check: confirms the API process is running without depending on
+// external services. Use /ready to verify the database before enabling writes.
+app.get("/health", (req, res) => res.json({ ok: true }));
+
+app.get("/ready", async (req, res) => {
   try {
     await pool.query("SELECT 1");
     return res.json({ ok: true, database: "connected" });
