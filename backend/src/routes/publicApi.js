@@ -155,7 +155,12 @@ function httpError(status, message) {
   return err;
 }
 
-publicRouter.post("/orders", writeLimiter, validateBody(orderSchema), async (req, res, next) => {
+function guardLocalCommerceWrites(req, res, next) {
+  if (process.env.NODE_ENV === "production" || process.env.ENABLE_COMMERCE_WRITES === "true") return next();
+  return res.status(503).json({ error: "Checkout is disabled in local development. Verify a Dev database before enabling commerce writes." });
+}
+
+publicRouter.post("/orders", guardLocalCommerceWrites, writeLimiter, validateBody(orderSchema), async (req, res, next) => {
   try {
     const b = req.body;
 
@@ -248,7 +253,7 @@ const reservationSchema = z.object({
   notes: z.string().max(500).optional().nullable(),
 });
 
-publicRouter.post("/reservations", writeLimiter, validateBody(reservationSchema), async (req, res, next) => {
+publicRouter.post("/reservations", guardLocalCommerceWrites, writeLimiter, validateBody(reservationSchema), async (req, res, next) => {
   try {
     const b = req.body;
     const prod = await pool.query(`SELECT id, sales_mode, visibility FROM products WHERE id = $1`, [b.productId]);
