@@ -34,9 +34,9 @@ await call(owner,"PATCH",`/admin/products/${pid}`,{visibility:"published"});
 r = await call(jar("anon"),"GET","/api/catalog");
 check("after publishing, product IS visible publicly", r.data.products.some(p=>p.id===pid));
 
-// RBAC: create STAFF + CONTENT users
+// RBAC: create DASHBOARD + CATALOG users
 r = await call(owner,"POST","/admin/users",{email:"staff@test.com",password:"staff-password-long-1",role:"DASHBOARD"});
-check("OWNER can create STAFF user", r.status===201, JSON.stringify(r.data));
+check("OWNER can create DASHBOARD user", r.status===201, JSON.stringify(r.data));
 await call(owner,"POST","/admin/users",{email:"content@test.com",password:"content-password-long-1",role:"CATALOG"});
 const staff = jar("staff");
 await call(staff,"POST","/admin/auth/login",{email:"staff@test.com",password:"staff-password-long-1"});
@@ -71,6 +71,13 @@ r = await call(jar("anon"),"GET","/api/catalog");
 check("sold unit no longer exposed to storefront", !r.data.deviceUnits.some(u=>u.id===uid));
 r = await call(owner,"GET","/admin/orders");
 check("order visible in Admin → Orders", r.data.orders.length>=1);
+const usedOrder = r.data.orders.find(o => o.items.some(item => item.unitId === uid));
+r = await call(owner,"PATCH",`/admin/orders/${usedOrder.id}/status`,{status:"Cancelled"});
+check("cancelling a used-device order succeeds",r.status===200);
+r = await call(owner,"GET",`/admin/products/${pid}/units`);
+check("cancelled used device returns to available inventory",r.status===200 && r.data.units.some(u=>u.id===uid && u.status==="available"));
+r = await call(jar("anon"),"GET","/api/catalog");
+check("released used device is visible in storefront again",r.status===200 && r.data.deviceUnits.some(u=>u.id===uid));
 
 // 2FA
 r = await call(owner,"POST","/admin/auth/totp-setup");
