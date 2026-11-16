@@ -24,10 +24,10 @@ function imageKitAuthHeaders() {
   return { Authorization: `Basic ${Buffer.from(`${privateKey}:`).toString("base64")}` };
 }
 
-async function uploadToImageKit(buffer, extension) {
+async function uploadToImageKit(buffer, extension, mimeType = "application/octet-stream") {
   const form = new FormData();
   const fileName = `${crypto.randomUUID()}.${extension}`;
-  form.append("file", new Blob([buffer]), fileName);
+  form.append("file", new Blob([buffer], { type: mimeType }), fileName);
   form.append("fileName", fileName);
   form.append("folder", `/${IMAGEKIT_FOLDER()}`);
   form.append("useUniqueFileName", "true");
@@ -94,19 +94,19 @@ function cloudinarySignature(params) {
   return crypto.createHash("sha1").update(serialized + process.env.CLOUDINARY_API_SECRET).digest("hex");
 }
 
-async function uploadToCloudinary(buffer, extension) {
+async function uploadToCloudinary(buffer, extension, mimeType = "image/jpeg") {
   const timestamp = Math.floor(Date.now() / 1000);
   const publicId = crypto.randomUUID();
   const params = { folder: CLOUDINARY_FOLDER(), public_id: publicId, timestamp };
   const form = new FormData();
-  form.append("file", new Blob([buffer]), `image.${extension}`);
+  form.append("file", new Blob([buffer], { type: mimeType }), `upload.${extension}`);
   form.append("api_key", process.env.CLOUDINARY_API_KEY);
   form.append("timestamp", String(timestamp));
   form.append("folder", CLOUDINARY_FOLDER());
   form.append("public_id", publicId);
   form.append("signature", cloudinarySignature(params));
 
-  const response = await fetch(`https://api.cloudinary.com/v1_1/${encodeURIComponent(process.env.CLOUDINARY_CLOUD_NAME)}/image/upload`, {
+  const response = await fetch(`https://api.cloudinary.com/v1_1/${encodeURIComponent(process.env.CLOUDINARY_CLOUD_NAME)}/${mimeType.startsWith("video/") ? "video" : "image"}/upload`, {
     method: "POST",
     body: form,
   });
@@ -166,16 +166,16 @@ function s3() {
   return client;
 }
 
-const CONTENT_TYPES = { jpg: "image/jpeg", jpeg: "image/jpeg", png: "image/png", webp: "image/webp", gif: "image/gif" };
+const CONTENT_TYPES = { jpg: "image/jpeg", jpeg: "image/jpeg", png: "image/png", webp: "image/webp", gif: "image/gif", mp4: "video/mp4", webm: "video/webm", mov: "video/quicktime" };
 const LOCAL_DIR = () => process.env.LOCAL_UPLOAD_DIR || "./uploads";
 const LOCAL_URL = () => (process.env.LOCAL_UPLOAD_PUBLIC_URL || "http://localhost:4000/uploads").replace(/\/$/, "");
 
-export async function saveFile(buffer, extension) {
-  if (imageKitConfigured()) return uploadToImageKit(buffer, extension);
+export async function saveFile(buffer, extension, mimeType = CONTENT_TYPES[extension] || "application/octet-stream") {
+  if (imageKitConfigured()) return uploadToImageKit(buffer, extension, mimeType);
   if (imageKitPartiallyConfigured()) {
     throw new Error("ImageKit storage is partially configured. Set IMAGEKIT_PRIVATE_KEY and IMAGEKIT_URL_ENDPOINT.");
   }
-  if (cloudinaryConfigured()) return uploadToCloudinary(buffer, extension);
+  if (cloudinaryConfigured()) return uploadToCloudinary(buffer, extension, mimeType);
   if (cloudinaryPartiallyConfigured()) {
     throw new Error("Cloudinary storage is partially configured. Set CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, and CLOUDINARY_API_SECRET.");
   }
@@ -189,7 +189,7 @@ export async function saveFile(buffer, extension) {
     const key = `${keyPrefix()}/${name}`;
     await s3().send(new PutObjectCommand({
       Bucket: process.env.S3_BUCKET, Key: key, Body: buffer,
-      ContentType: CONTENT_TYPES[extension] || "application/octet-stream",
+      ContentType: mimeType,
       CacheControl: "public, max-age=31536000, immutable",
     }));
     return `${publicBase()}/${key}`;
