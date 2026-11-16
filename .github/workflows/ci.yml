@@ -42,6 +42,17 @@ jobs:
       - name: Check backend test syntax
         run: find backend/tests -type f -name '*.mjs' -print0 | xargs -0 -n1 node --check
 
+      - name: Verify local write protection
+        run: |
+          NODE_ENV=development PORT=4060 node backend/src/index.js > /tmp/go-iphone-api.log 2>&1 &
+          api_pid=$!
+          trap 'kill "$api_pid" 2>/dev/null || true' EXIT
+          for attempt in $(seq 1 20); do
+            if curl -fsS http://127.0.0.1:4060/health >/dev/null; then break; fi
+            sleep 1
+          done
+          API_URL=http://127.0.0.1:4060 node backend/tests/local-write-guard.e2e.mjs
+
       - name: Install storefront dependencies
         run: npm ci --prefix storefront
 
