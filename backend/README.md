@@ -38,6 +38,10 @@ Permissions are checked by backend middleware on each protected request. OWNER a
 - Orders currently use the database default payment method (cash on delivery). There is no online payment-gateway integration yet; do not present online payments as active until a provider and verified webhook flow are implemented.
 - Reservations are separate from orders.
 
+## Production environment
+
+Set `NODE_ENV=production`, `COOKIE_SECURE=true`, an exact comma-separated `ALLOWED_ORIGINS` list for the deployed storefront/Admin origins, a production-only `DATABASE_URL`, and persistent media credentials. Keep the default 2FA requirement enabled. Never copy a Production connection string into a local `.env`. In local development, the backend blocks admin mutations and customer checkout/reservations unless the matching explicit write override is enabled.
+
 ## Persistent media and operations
 
 Before production, configure Cloudinary or an S3-compatible persistent object store. Local disk uploads are for development only and can disappear on redeploy. Enable database backups and point-in-time recovery with the database provider. In-memory rate limits are suitable only for a single API instance; use a shared store such as Redis before horizontal scaling.
