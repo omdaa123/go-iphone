@@ -40,7 +40,7 @@ Permissions are checked by backend middleware on each protected request. OWNER a
 
 ## Production environment
 
-Set `NODE_ENV=production`, `COOKIE_SECURE=true`, an exact comma-separated `ALLOWED_ORIGINS` list for the deployed storefront/Admin origins, a production-only `DATABASE_URL`, and persistent media credentials. Keep the default 2FA requirement enabled. Never copy a Production connection string into a local `.env`. In local development, the backend blocks admin mutations and customer checkout/reservations unless the matching explicit write override is enabled.
+Set `NODE_ENV=production`, `COOKIE_SECURE=true`, `ENABLE_ADMIN_WRITES=true`, `ENABLE_COMMERCE_WRITES=true`, an exact comma-separated `ALLOWED_ORIGINS` list for the deployed storefront/Admin origins, a production-only `DATABASE_URL`, and persistent media credentials. The two write flags are mandatory explicit opt-ins in every environment. Keep the default 2FA requirement enabled. Never copy a Production connection string into a local `.env`. In local development, the backend blocks admin mutations and customer checkout/reservations unless the matching explicit write override is enabled.
 
 ## Persistent media and operations
 
