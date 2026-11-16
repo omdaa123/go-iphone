@@ -13,7 +13,7 @@ export const authRouter = Router();
 
 const SESSION_COOKIE_OPTS = {
   httpOnly: true,
-  secure: process.env.COOKIE_SECURE !== "false", // HTTPS-only in production; set COOKIE_SECURE=false ONLY for local http:// dev
+  secure: process.env.NODE_ENV === "production" || process.env.COOKIE_SECURE !== "false", // Never allow insecure auth cookies in production.
   sameSite: "strict",
   path: "/",
 };
