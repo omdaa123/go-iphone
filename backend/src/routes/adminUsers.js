@@ -58,8 +58,11 @@ adminUsersRouter.patch("/:id/role", validateBody(roleSchema), async (req, res, n
 adminUsersRouter.post("/:id/deactivate", async (req, res, next) => {
   try {
     if (req.params.id === req.admin.id) return res.status(400).json({ error: "You can't deactivate your own account." });
-    const { rows } = await pool.query(`UPDATE admin_users SET is_active = false WHERE id = $1 RETURNING id, email`, [req.params.id]);
-    if (!rows[0]) return res.status(404).json({ error: "Admin not found." });
+    const { rows } = await pool.query(
+      `UPDATE admin_users SET is_active = false WHERE id = $1 AND (role <> 'OWNER' OR $2 = 'OWNER') RETURNING id, email`,
+      [req.params.id, req.admin.role]
+    );
+    if (!rows[0]) return res.status(404).json({ error: "Admin not found or protected Super Admin account." });
     await pool.query(`UPDATE sessions SET revoked_at = now() WHERE admin_user_id = $1 AND revoked_at IS NULL`, [req.params.id]);
     await logAudit({ adminUserId: req.admin.id, action: "admin_user.deactivate", resourceType: "admin_user", resourceId: req.params.id, ip: req.ip });
     res.json({ ok: true });
@@ -71,8 +74,8 @@ adminUsersRouter.patch("/:id/active", async (req, res, next) => {
     const active = z.object({ isActive: z.boolean() }).parse(req.body);
     if (req.params.id === req.admin.id && !active.isActive) return res.status(400).json({ error: "You can't deactivate your own account." });
     const { rows } = await pool.query(
-      `UPDATE admin_users SET is_active = $1 WHERE id = $2 RETURNING id, email, role, is_active`,
-      [active.isActive, req.params.id]
+      `UPDATE admin_users SET is_active = $1 WHERE id = $2 AND (role <> 'OWNER' OR $3 = 'OWNER') RETURNING id, email, role, is_active`,
+      [active.isActive, req.params.id, req.admin.role]
     );
     if (!rows[0]) return res.status(404).json({ error: "Admin not found." });
     if (!active.isActive) await pool.query(`UPDATE sessions SET revoked_at = now() WHERE admin_user_id = $1 AND revoked_at IS NULL`, [req.params.id]);
