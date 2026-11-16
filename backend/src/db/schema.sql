@@ -252,6 +252,8 @@ CREATE TABLE IF NOT EXISTS order_items (
   qty INT NOT NULL
 );
 CREATE INDEX IF NOT EXISTS idx_order_items_order ON order_items(order_id);
+-- Upgrade existing databases as well as fresh installs.
+ALTER TABLE order_items ADD COLUMN IF NOT EXISTS variant_id UUID REFERENCES product_variants(id);
 
 CREATE TABLE IF NOT EXISTS reservations (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
