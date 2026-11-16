@@ -40,6 +40,10 @@ check("OWNER can create DASHBOARD user", r.status===201, JSON.stringify(r.data))
 await call(owner,"POST","/admin/users",{email:"content@test.com",password:"content-password-long-1",role:"CATALOG"});
 const staff = jar("staff");
 await call(staff,"POST","/admin/auth/login",{email:"staff@test.com",password:"staff-password-long-1"});
+r = await call(staff,"GET","/admin/stats");
+check("DASHBOARD can view dashboard statistics (200)",r.status===200);
+r = await call(staff,"GET","/admin/products");
+check("DASHBOARD cannot open product management (403)",r.status===403);
 r = await call(staff,"DELETE",`/admin/products/${pid}`);
 check("DASHBOARD cannot DELETE product (403, enforced by API)", r.status===403);
 r = await call(staff,"PATCH",`/admin/products/${pid}`,{name:"hacked"});
