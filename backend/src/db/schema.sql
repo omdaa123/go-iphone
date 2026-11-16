@@ -100,8 +100,39 @@ CREATE TABLE IF NOT EXISTS categories (
   key TEXT PRIMARY KEY,
   label TEXT NOT NULL,
   image_media_id UUID REFERENCES media(id) ON DELETE SET NULL,
-  sort_order INT NOT NULL DEFAULT 0
+  sort_order INT NOT NULL DEFAULT 0,
+  parent_key TEXT REFERENCES categories(key) ON DELETE SET NULL
 );
+
+-- Category hierarchy and legacy-key normalization belong in migrations,
+-- never in the admin GET endpoint.
+ALTER TABLE categories ADD COLUMN IF NOT EXISTS parent_key TEXT REFERENCES categories(key) ON DELETE SET NULL;
+
+INSERT INTO categories (key, label, sort_order)
+VALUES ('other-devices', 'Other Devices', 7)
+ON CONFLICT (key) DO NOTHING;
+
+INSERT INTO categories (key, label, sort_order, parent_key)
+VALUES ('accessories', 'Accessories', 6, NULL)
+ON CONFLICT (key) DO UPDATE SET label = EXCLUDED.label, parent_key = NULL;
+
+INSERT INTO categories (key, label, sort_order, parent_key)
+VALUES
+  ('apple-accessory', 'Apple Accessories', 14, 'accessories'),
+  ('other-accessory', 'Other Accessories', 15, 'accessories'),
+  ('smartphone', 'Smartphones', 8, 'other-devices'),
+  ('smartwatch', 'Smart Watches', 9, 'other-devices'),
+  ('tablet', 'Tablets', 10, 'other-devices'),
+  ('speakers', 'Speakers', 11, 'other-devices'),
+  ('headphones', 'Headphones', 12, 'other-devices'),
+  ('other-electronics', 'Other Electronics', 13, 'other-devices')
+ON CONFLICT (key) DO UPDATE
+SET label = EXCLUDED.label, parent_key = EXCLUDED.parent_key;
+
+-- Consolidate duplicate branch keys from the earlier plural-key version.
+UPDATE products SET category_key = 'apple-accessory' WHERE category_key = 'apple-accessories';
+UPDATE products SET category_key = 'other-accessory' WHERE category_key = 'other-accessories';
+DELETE FROM categories WHERE key IN ('apple-accessories', 'other-accessories');
 
 CREATE TABLE IF NOT EXISTS collections (
   id TEXT PRIMARY KEY,
