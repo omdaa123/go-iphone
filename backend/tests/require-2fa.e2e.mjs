@@ -3,10 +3,10 @@
 import { authenticator } from "otplib";
 const B = process.env.API_URL || "http://localhost:4059";
 const j = { cookies: {} };
-async function call(method, path, body) {
-  const cookie = Object.entries(j.cookies).map(([k, v]) => `${k}=${v}`).join("; ");
+async function call(method, path, body, jar = j) {
+  const cookie = Object.entries(jar.cookies).map(([k, v]) => `${k}=${v}`).join("; ");
   const r = await fetch(B + path, { method, headers: { "content-type": "application/json", ...(cookie ? { cookie } : {}) }, body: body ? JSON.stringify(body) : undefined });
-  for (const c of r.headers.getSetCookie?.() || []) { const [kv] = c.split(";"); const [k, v] = kv.split("="); if (/Max-Age=0|1970/.test(c)) delete j.cookies[k]; else j.cookies[k] = v; }
+  for (const c of r.headers.getSetCookie?.() || []) { const [kv] = c.split(";"); const [k, v] = kv.split("="); if (/Max-Age=0|1970/.test(c)) delete jar.cookies[k]; else jar.cookies[k] = v; }
   let data; try { data = await r.json(); } catch { data = null; }
   return { status: r.status, data };
 }
@@ -29,4 +29,30 @@ r = await call("GET", "/admin/products");
 check("after enrolling, the same session works normally", r.status === 200);
 r = await call("GET", "/admin/auth/me");
 check("/me now reports twoFactorRequired=false", r.data.user.twoFactorRequired === false && r.data.user.totpEnabled === true);
+
+// Full-access admins can manage the store/team, but must also enroll in 2FA.
+r = await call("POST", "/admin/users", {
+  email: "fullaccess@test.com",
+  password: "full-access-test-password-1",
+  role: "FULL_ACCESS_NO_DASHBOARD",
+});
+check("OWNER can create a Full Access account", r.status === 201);
+
+const fullAccess = { cookies: {} };
+r = await call("POST", "/admin/auth/login", {
+  email: "fullaccess@test.com",
+  password: "full-access-test-password-1",
+}, fullAccess);
+check("Full Access account can start sign-in", r.status === 200);
+r = await call("GET", "/admin/auth/me", undefined, fullAccess);
+check("Full Access account is required to enroll in 2FA", r.status === 200 && r.data.user.twoFactorRequired === true);
+r = await call("GET", "/admin/orders", undefined, fullAccess);
+check("Full Access cannot use admin APIs before 2FA", r.status === 403 && r.data.error === "2FA_REQUIRED");
+r = await call("POST", "/admin/auth/totp-setup", undefined, fullAccess);
+check("Full Access can open 2FA enrollment", r.status === 200 && r.data.secret);
+const fullAccessSecret = r.data.secret;
+r = await call("POST", "/admin/auth/totp-confirm", { code: authenticator.generate(fullAccessSecret) }, fullAccess);
+check("Full Access completes 2FA enrollment", r.status === 200);
+r = await call("GET", "/admin/orders", undefined, fullAccess);
+check("Full Access can access orders after 2FA", r.status === 200);
 console.log(`\n${pass} passed, ${fail} failed`);
