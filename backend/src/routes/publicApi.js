@@ -44,7 +44,7 @@ publicRouter.get("/catalog", async (req, res, next) => {
          WHERE s.active = true ORDER BY s.sort_order`
       ),
       pool.query(`SELECT section_key, data FROM homepage_content`),
-      pool.query(`SELECT key, value FROM site_settings`),
+      pool.query(`SELECT key, value FROM site_settings WHERE key = ANY($1::text[])`, [["store_profile", "store_contact", "store_fulfillment", "store_checkout"]]),
       pool.query(`SELECT product_id, collection_id FROM product_collections`),
       pool.query(
         `SELECT oi.product_id, SUM(oi.qty)::int AS sold_qty
