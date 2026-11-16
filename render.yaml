@@ -1,0 +1,23 @@
+services:
+  - type: web
+    name: go-iphone-api
+    runtime: node
+    rootDir: backend
+    buildCommand: npm ci
+    startCommand: npm start
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        sync: false
+      - key: DATABASE_SSL
+        value: "true"
+      - key: ALLOWED_ORIGINS
+        sync: false
+      - key: COOKIE_SECURE
+        value: "true"
+      - key: ENABLE_ADMIN_WRITES
+        value: "false"
+      - key: ENABLE_COMMERCE_WRITES
+        value: "false"
