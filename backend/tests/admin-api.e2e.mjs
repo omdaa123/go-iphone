@@ -54,6 +54,8 @@ check("low-stock list present", Array.isArray(r.data.lowStock));
 r = await call(owner, "GET", "/admin/orders");
 const o = r.data.orders.find((x) => x.items.some((i) => i.productName === "Stock Test Phone"));
 check("admin orders list includes items with product names", !!o && o.items[0].qty === 2 && o.items[0].unitPriceCents == 1500000, JSON.stringify(r.data.orders[0]).slice(0, 200));
+r = await call(owner, "PATCH", `/admin/orders/${o.id}/payment-status`, { paymentStatus: "paid" });
+check("Admin can update an order payment status", r.status === 200 && r.data.order.payment_status === "paid");
 r = await call(owner, "PATCH", `/admin/orders/${o.id}/status`, { status: "Cancelled" });
 const afterCancel = await call(owner, "GET", `/admin/products/${pid}`);
 check("cancelling an order restores its reserved variant stock", r.status === 200 && afterCancel.data.variants[0].stock_qty === 2, JSON.stringify(afterCancel.data.variants[0]));
