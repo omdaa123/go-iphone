@@ -129,10 +129,7 @@ VALUES
 ON CONFLICT (key) DO UPDATE
 SET label = EXCLUDED.label, parent_key = EXCLUDED.parent_key;
 
--- Consolidate duplicate branch keys from the earlier plural-key version.
-UPDATE products SET category_key = 'apple-accessory' WHERE category_key = 'apple-accessories';
-UPDATE products SET category_key = 'other-accessory' WHERE category_key = 'other-accessories';
-DELETE FROM categories WHERE key IN ('apple-accessories', 'other-accessories');
+
 
 CREATE TABLE IF NOT EXISTS collections (
   id TEXT PRIMARY KEY,
@@ -167,6 +164,11 @@ CREATE TABLE IF NOT EXISTS products (
 );
 CREATE INDEX IF NOT EXISTS idx_products_category ON products(category_key);
 CREATE INDEX IF NOT EXISTS idx_products_visibility ON products(visibility) WHERE visibility = 'published';
+
+-- Consolidate duplicate branch keys from the earlier plural-key version.
+UPDATE products SET category_key = 'apple-accessory' WHERE category_key = 'apple-accessories';
+UPDATE products SET category_key = 'other-accessory' WHERE category_key = 'other-accessories';
+DELETE FROM categories WHERE key IN ('apple-accessories', 'other-accessories');
 
 CREATE TABLE IF NOT EXISTS product_collections (
   product_id UUID REFERENCES products(id) ON DELETE CASCADE,
