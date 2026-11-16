@@ -75,28 +75,28 @@ check("OWNER can read audit logs, with actor emails", r.status === 200 && r.data
 r = await call(owner, "GET", "/admin/login-events");
 check("OWNER can read login events", r.status === 200 && r.data.events.length > 0);
 const mgr = jar();
-await call(owner, "POST", "/admin/users", { email: "mgr@test.com", password: "manager-password-long-1", role: "MANAGER" });
+await call(owner, "POST", "/admin/users", { email: "mgr@test.com", password: "manager-password-long-1", role: "CATALOG" });
 await call(mgr, "POST", "/admin/auth/login", { email: "mgr@test.com", password: "manager-password-long-1" });
 r = await call(mgr, "GET", "/admin/audit-logs");
-check("MANAGER cannot read audit logs (403)", r.status === 403);
+check("CATALOG cannot read audit logs (403)", r.status === 403);
 r = await call(mgr, "GET", "/admin/products");
-check("MANAGER can list products (200)", r.status === 200);
+check("CATALOG can list products (200)", r.status === 200);
 r = await call(mgr, "POST", "/admin/products", { categoryKey: "iphone", productType: "iphone", name: "Mgr Phone", visibility: "draft" });
-check("MANAGER can create products (201)", r.status === 201);
+check("CATALOG can create products (201)", r.status === 201);
 r = await call(mgr, "PUT", "/admin/settings/storeInfo", { name: "x" });
-check("MANAGER cannot change store settings (403)", r.status === 403);
+check("CATALOG cannot change store settings (403)", r.status === 403);
 r = await call(owner, "PUT", "/admin/settings/storeInfo", { name: "Go iPhone", phone: "0100" });
 check("OWNER can change store settings", r.status === 200);
 // reading customer data is restricted by role, not just editing
-await call(owner, "POST", "/admin/users", { email: "writer@test.com", password: "writer-password-long-1", role: "CONTENT" });
+await call(owner, "POST", "/admin/users", { email: "writer@test.com", password: "writer-password-long-1", role: "CATALOG" });
 const writer = jar();
 await call(writer, "POST", "/admin/auth/login", { email: "writer@test.com", password: "writer-password-long-1" });
 r = await call(writer, "GET", "/admin/orders");
-check("CONTENT role cannot READ customer orders (403)", r.status === 403);
+check("CATALOG role cannot READ customer orders (403)", r.status === 403);
 r = await call(writer, "GET", "/admin/reservations");
-check("CONTENT role cannot READ customer reservations (403)", r.status === 403);
+check("CATALOG role cannot READ customer reservations (403)", r.status === 403);
 r = await call(writer, "GET", "/admin/stats");
-check("CONTENT role's dashboard stats contain no revenue or customer data", r.status === 200 && !("revenueCents" in r.data) && !("recentOrders" in r.data) && !("orders" in r.data) && !("recentReservations" in r.data), JSON.stringify(Object.keys(r.data)));
+check("CONTENT role's dashboard stats contain no revenue or customer data", r.status === 403, JSON.stringify(Object.keys(r.data)));
 r = await call(writer, "GET", "/admin/products");
 check("CONTENT role can still list products (needed to link hero slides)", r.status === 200);
 
