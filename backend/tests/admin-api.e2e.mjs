@@ -93,10 +93,12 @@ r = await call(mgr, "GET", "/admin/products");
 check("CATALOG can list products (200)", r.status === 200);
 r = await call(mgr, "POST", "/admin/products", { categoryKey: "iphone", productType: "iphone", name: "Mgr Phone", visibility: "draft" });
 check("CATALOG can create products (201)", r.status === 201);
-r = await call(mgr, "PUT", "/admin/settings/storeInfo", { name: "x" });
+r = await call(mgr, "PUT", "/admin/settings/store_profile", { name: "x" });
 check("CATALOG cannot change store settings (403)", r.status === 403);
 r = await call(owner, "PUT", "/admin/settings/storeInfo", { name: "Go iPhone", phone: "0100" });
 check("OWNER can change store settings", r.status === 200);
+r = await call(owner, "PUT", "/admin/settings/private_api_key", { secret: "should-not-be-public" });
+check("unknown/private settings keys are rejected", r.status === 400);
 // reading customer data is restricted by role, not just editing
 await call(owner, "POST", "/admin/users", { email: "writer@test.com", password: "writer-password-long-1", role: "CATALOG" });
 const writer = jar();
