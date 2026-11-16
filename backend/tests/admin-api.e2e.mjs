@@ -57,6 +57,9 @@ check("admin orders list includes items with product names", !!o && o.items[0].q
 r = await call(owner, "PATCH", `/admin/orders/${o.id}/status`, { status: "Cancelled" });
 const afterCancel = await call(owner, "GET", `/admin/products/${pid}`);
 check("cancelling an order restores its reserved variant stock", r.status === 200 && afterCancel.data.variants[0].stock_qty === 2, JSON.stringify(afterCancel.data.variants[0]));
+r = await call(owner, "PATCH", `/admin/orders/${o.id}/status`, { status: "Cancelled" });
+const afterCancel = await call(owner, "GET", `/admin/products/${pid}`);
+check("cancelling an order restores its reserved variant stock", r.status === 200 && afterCancel.data.variants[0].stock_qty === 2, JSON.stringify(afterCancel.data.variants[0]));
 
 r = await call(owner, "POST", "/admin/hero-slides", { title: "Image Hero", imageMediaId: mediaId, ctaText: "Go", linkCategoryKey: "iphone" });
 check("hero slide with independent image (no product link)", r.status === 201, JSON.stringify(r.data));
@@ -68,6 +71,8 @@ await call(owner, "PATCH", "/admin/categories/mac/image", { imageMediaId: mediaI
 r = await call(owner, "GET", "/admin/categories");
 check("category image set and listed with url", r.data.categories.find((c) => c.key === "mac").image_url);
 check("category image reaches storefront siteContent", (await (await fetch(B + "/api/catalog")).json()).siteContent.categoryImages.mac);
+r = await call(owner, "PATCH", "/admin/categories/mac", { label: "Mac Computers" });
+check("category edit updates label with parameterized SQL", r.status === 200 && r.data.category.label === "Mac Computers", JSON.stringify(r.data));
 r = await call(owner, "PATCH", "/admin/categories/mac", { label: "Mac Computers" });
 check("category edit updates label with parameterized SQL", r.status === 200 && r.data.category.label === "Mac Computers", JSON.stringify(r.data));
 
