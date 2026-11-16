@@ -7,7 +7,7 @@ on:
     branches: [main]
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   verify:
@@ -55,6 +55,11 @@ jobs:
           if [ "$ready" != "true" ]; then cat /tmp/go-iphone-api.log; exit 1; fi
           API_URL=http://127.0.0.1:4060 node backend/tests/local-write-guard.e2e.mjs
 
+      - name: Refresh and patch storefront dependency lockfile
+        run: |
+          npm install --package-lock-only --prefix storefront --ignore-scripts
+          npm audit fix --prefix storefront
+
       - name: Install storefront dependencies
         run: npm ci --prefix storefront
 
@@ -63,12 +68,39 @@ jobs:
           npm audit --prefix storefront --json > /tmp/storefront-audit.json || true
           node -e 'const a=require("/tmp/storefront-audit.json"); for (const [name,v] of Object.entries(a.vulnerabilities || {})) console.log(name + ": " + v.severity + ", fix=" + JSON.stringify(v.fixAvailable) + ", advisories=" + JSON.stringify(v.via)); console.log("Counts:", JSON.stringify(a.metadata?.vulnerabilities || {}));'
 
+      - name: Fail on moderate or higher storefront advisories
+        run: npm audit --prefix storefront --audit-level=moderate
+
       - name: Build storefront
         run: npm run build --prefix storefront
 
+      - name: Refresh and patch admin dependency lockfile
+        run: |
+          npm install --package-lock-only --prefix admin --ignore-scripts
+          npm audit fix --prefix admin
+
       - name: Install admin dependencies
-        run: npm install --prefix admin --no-package-lock --no-audit --no-fund
+        run: npm ci --prefix admin
+
+      - name: Report admin dependency advisories
+        run: |
+          npm audit --prefix admin --json > /tmp/admin-audit.json || true
+          node -e 'const a=require("/tmp/admin-audit.json"); for (const [name,v] of Object.entries(a.vulnerabilities || {})) console.log(name + ": " + v.severity + ", fix=" + JSON.stringify(v.fixAvailable) + ", advisories=" + JSON.stringify(v.via)); console.log("Counts:", JSON.stringify(a.metadata?.vulnerabilities || {}));'
+
+      - name: Fail on moderate or higher admin advisories
+        run: npm audit --prefix admin --audit-level=moderate
 
       - name: Build admin
         run: npm run build --prefix admin
+
+      - name: Commit refreshed frontend lockfiles
+        if: github.ref == 'refs/heads/work/design-studio-upgrade'
+        run: |
+          if ! git diff --quiet -- storefront/package-lock.json admin/package-lock.json; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add storefront/package-lock.json admin/package-lock.json
+            git commit -m "chore: refresh frontend dependency lockfiles"
+            git push origin "HEAD:${GITHUB_REF_NAME}"
+          fi
 
