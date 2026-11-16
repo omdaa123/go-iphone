@@ -788,7 +788,7 @@ function MediaLibrary({ onError }) {
 
   return <>
     <div className="page-heading"><div><div className="eyebrow">STORE EXPERIENCE</div><h1>Media Library</h1><p>Upload, search and organize product photography and store assets.</p></div><label className="btn primary upload-label">{uploading ? "Uploading…" : <><Plus size={15}/> Upload media</>}<input type="file" multiple accept="image/jpeg,image/png,image/webp,image/gif,video/mp4,video/webm,video/quicktime" disabled={uploading} onChange={e => { uploadFiles(e.target.files); e.target.value = ""; }}/></label></div>
-    {localPreview && <div className="design-safety-note"><ShieldCheck size={17}/><div><b>Safe local preview</b><span>Image uploads are enabled for testing ImageKit. Deleting media is enabled for testing. All other store changes remain blocked in local preview.</span></div></div>}
+    {localPreview && <div className="design-safety-note"><ShieldCheck size={17}/><div><b>Safe local preview</b><span>Image and video uploads are enabled for testing ImageKit. Deleting media is enabled for testing. All other store changes remain blocked in local preview.</span></div></div>}
     <section className="panel">
       <div className="panel-head"><div><h2>All media <span className="count-pill">{items.length} assets</span></h2><p>Images are compressed before upload (8MB max); videos: MP4, WebM, or MOV (50MB max).</p></div><button className="btn secondary" onClick={() => setRefresh(v => v + 1)}><RefreshCw size={14}/> Refresh</button></div>
       {uploadProgress && <div className="media-upload-progress"><span className="spinner"/>{uploadProgress}</div>}
