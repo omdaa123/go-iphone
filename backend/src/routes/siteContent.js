@@ -43,6 +43,8 @@ siteContentRouter.put("/:section", requirePermission("cms.write"), validateBody(
 export const settingsRouter = Router();
 settingsRouter.use(requireAuth);
 
+const KNOWN_SETTINGS = ["store_profile", "store_contact", "store_fulfillment", "store_checkout"];
+
 settingsRouter.get("/", requirePermission("settings.write"), async (req, res, next) => {
   try {
     const { rows } = await pool.query(`SELECT key, value FROM site_settings`);
@@ -52,6 +54,9 @@ settingsRouter.get("/", requirePermission("settings.write"), async (req, res, ne
 
 settingsRouter.put("/:key", requirePermission("settings.write"), validateBody(z.any()), async (req, res, next) => {
   try {
+    if (!KNOWN_SETTINGS.includes(req.params.key)) {
+      return res.status(400).json({ error: "Unknown store settings group." });
+    }
     const { rows } = await pool.query(
       `INSERT INTO site_settings (key, value) VALUES ($1, $2)
        ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value RETURNING *`,
