@@ -2089,7 +2089,7 @@ export default function App() {
         {activePage === "homepage" && <HomepageBuilder onError={showError}/>}
         {activePage === "collections" && <CollectionsManager onError={showError}/>}
         
-        {!["dashboard","products","orders","inventory","reservations","customers","team","settings","media","homepage","collections"].includes(activePage) && <Placeholder id={page} onNavigate={navigate}/>}
+        {!["dashboard","products","orders","inventory","reservations","customers","team","settings","media","homepage","collections"].includes(activePage) && <Placeholder id={activePage} onNavigate={navigate}/>}
         <footer className="app-footer"><span>© {new Date().getFullYear()} GO iPhone</span><span>Admin workspace <i/> Built for your store</span></footer>
       </div>
     </main>
