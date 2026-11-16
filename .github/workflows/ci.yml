@@ -58,6 +58,11 @@ jobs:
       - name: Install storefront dependencies
         run: npm ci --prefix storefront
 
+      - name: Report storefront dependency advisories
+        run: |
+          npm audit --prefix storefront --json > /tmp/storefront-audit.json || true
+          node -e 'const a=require("/tmp/storefront-audit.json"); for (const [name,v] of Object.entries(a.vulnerabilities || {})) console.log(name + ": " + v.severity + ", fix=" + JSON.stringify(v.fixAvailable) + ", advisories=" + JSON.stringify(v.via)); console.log("Counts:", JSON.stringify(a.metadata?.vulnerabilities || {}));'
+
       - name: Build storefront
         run: npm run build --prefix storefront
 
