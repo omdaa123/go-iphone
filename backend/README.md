@@ -44,7 +44,7 @@ Set `NODE_ENV=production`, `COOKIE_SECURE=true`, `ENABLE_ADMIN_WRITES=true`, `EN
 
 ## Persistent media and operations
 
-Before production, configure Cloudinary or an S3-compatible persistent object store. Local disk uploads are for development only and can disappear on redeploy. Enable database backups and point-in-time recovery with the database provider. In-memory rate limits are suitable only for a single API instance; use a shared store such as Redis before horizontal scaling.
+Before production, configure Cloudinary in the backend service environment (Render): CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, and CLOUDINARY_API_SECRET; CLOUDINARY_FOLDER is optional and defaults to go-iphone. Cloudinary is the preferred provider when configured. ImageKit and S3-compatible storage remain supported alternatives. The API stores the resulting permanent CDN URL in the media table, so product images, gallery images, site content images, and uploaded videos continue to use the same media records. Local disk uploads are for development only and can disappear on redeploy. Never put the Cloudinary API secret in Vercel, the storefront, or the admin frontend. After setting the variables, redeploy the backend and test one image and one video upload from Admin → Media. Enable database backups and point-in-time recovery with the database provider. In-memory rate limits are suitable only for a single API instance; use a shared store such as Redis before horizontal scaling.
 
 ## Tests
 
