@@ -1,4 +1,4 @@
-import rateLimit, { ipKeyGenerator } from "express-rate-limit";
+import rateLimit from "express-rate-limit";
 
 // In-memory store is fine for a single server instance. If you scale to
 // multiple backend instances, swap this for a Redis-backed store
@@ -9,7 +9,6 @@ export const loginLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   message: { error: "Too many login attempts. Please wait 15 minutes and try again." },
-  keyGenerator: (req) => `${ipKeyGenerator(req.ip)}:${String(req.body?.email || "").toLowerCase()}`,
 });
 
 export const totpLimiter = rateLimit({
