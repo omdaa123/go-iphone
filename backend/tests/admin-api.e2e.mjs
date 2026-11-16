@@ -78,6 +78,10 @@ check("category edit updates label with parameterized SQL", r.status === 200 && 
 
 r = await call(owner, "PUT", "/admin/site-content/comparisonSection", { title: "Compare iPhone", description: "d", cta: "Compare", image: "https://x/y.png", visible: true });
 check("comparison section saved", r.status === 200);
+r = await call(owner, "PUT", "/admin/site-content/footerSection", { description: "Updated footer", groups: [] });
+check("footer editor settings are accepted by the CMS API", r.status === 200);
+r = await call(owner, "PUT", "/admin/site-content/shopCategoriesSection", { title: "Browse categories" });
+check("homepage category-section settings are accepted by the CMS API", r.status === 200);
 check("…and reaches storefront", (await (await fetch(B + "/api/catalog")).json()).siteContent.comparisonSection.title === "Compare iPhone");
 
 r = await call(owner, "GET", "/admin/audit-logs");
