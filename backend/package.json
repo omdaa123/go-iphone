@@ -9,7 +9,11 @@
     "dev": "node --watch src/index.js",
     "migrate": "node src/db/migrate.js",
     "seed": "node src/db/seed.js",
-    "seed:catalog": "node src/db/seed-catalog.js"
+    "seed:catalog": "node src/db/seed-catalog.js",
+    "test:e2e:admin-api": "node tests/admin-api.e2e.mjs",
+    "test:e2e:security": "node tests/security.e2e.mjs",
+    "test:e2e:catalog": "node tests/catalog-orders.e2e.mjs",
+    "test:e2e:2fa": "node tests/require-2fa.e2e.mjs"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1161.0",
