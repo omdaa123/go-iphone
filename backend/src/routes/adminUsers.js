@@ -84,7 +84,7 @@ adminUsersRouter.patch("/:id/active", async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
-const permissionMapSchema = z.record(z.boolean());
+const permissionMapSchema = z.record(z.string(), z.boolean());
 adminUsersRouter.patch("/roles/:name", async (req, res, next) => {
   try {
     const roleName = String(req.params.name || "").toUpperCase();
