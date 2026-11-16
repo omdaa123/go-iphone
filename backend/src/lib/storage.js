@@ -3,8 +3,9 @@ import { join, basename } from "node:path";
 import crypto from "node:crypto";
 import { S3Client, PutObjectCommand, DeleteObjectCommand } from "@aws-sdk/client-s3";
 
-// Production storage: Cloudinary (preferred) or any S3-compatible provider.
-// Local disk is only for development; serverless hosts do not provide persistent disk.
+// Production storage must use Cloudinary or an S3-compatible object store.
+// Local disk is intentionally restricted to development because hosted disks
+// may be ephemeral and would break existing product/media URLs after restart.
 
 const cloudinaryConfigured = () =>
   !!(process.env.CLOUDINARY_CLOUD_NAME && process.env.CLOUDINARY_API_KEY && process.env.CLOUDINARY_API_SECRET);
@@ -13,7 +14,6 @@ const cloudinaryPartiallyConfigured = () =>
 const s3Enabled = () => !!process.env.S3_BUCKET;
 const publicBase = () => (process.env.S3_PUBLIC_BASE_URL || "").replace(/\/$/, "");
 const keyPrefix = () => (process.env.S3_KEY_PREFIX || "uploads").replace(/^\/|\/$/g, "");
-
 const CLOUDINARY_FOLDER = () => process.env.CLOUDINARY_FOLDER || "go-iphone";
 
 function cloudinarySignature(params) {
@@ -103,9 +103,12 @@ export async function saveFile(buffer, extension) {
     throw new Error("Cloudinary storage is partially configured. Set CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, and CLOUDINARY_API_SECRET.");
   }
 
-  const name = `${crypto.randomUUID()}.${extension}`;
   if (s3Enabled()) {
     if (!publicBase()) throw new Error("S3_PUBLIC_BASE_URL must be set when S3_BUCKET is set.");
+    if (!process.env.S3_ACCESS_KEY_ID || !process.env.S3_SECRET_ACCESS_KEY) {
+      throw new Error("S3_ACCESS_KEY_ID and S3_SECRET_ACCESS_KEY are required when S3_BUCKET is set.");
+    }
+    const name = `${crypto.randomUUID()}.${extension}`;
     const key = `${keyPrefix()}/${name}`;
     await s3().send(new PutObjectCommand({
       Bucket: process.env.S3_BUCKET, Key: key, Body: buffer,
@@ -114,6 +117,12 @@ export async function saveFile(buffer, extension) {
     }));
     return `${publicBase()}/${key}`;
   }
+
+  if (process.env.NODE_ENV === "production") {
+    throw new Error("Persistent image storage is required in production. Configure Cloudinary or S3-compatible storage before uploading media.");
+  }
+
+  const name = `${crypto.randomUUID()}.${extension}`;
   await mkdir(LOCAL_DIR(), { recursive: true });
   await writeFile(join(LOCAL_DIR(), name), buffer);
   return `${LOCAL_URL()}/${name}`;
@@ -126,7 +135,7 @@ export async function deleteFile(url) {
       await deleteFromCloudinary(url);
     } else if (s3Enabled() && url.startsWith(`${publicBase()}/`)) {
       await s3().send(new DeleteObjectCommand({ Bucket: process.env.S3_BUCKET, Key: url.slice(publicBase().length + 1) }));
-    } else if (url.startsWith(`${LOCAL_URL()}/`)) {
+    } else if (process.env.NODE_ENV !== "production" && url.startsWith(`${LOCAL_URL()}/`)) {
       await unlink(join(LOCAL_DIR(), basename(url)));
     }
   } catch (err) {
