@@ -69,7 +69,10 @@ mediaRouter.post("/video", expressRawVideo, async (req, res, next) => {
     const detected = await fileTypeFromBuffer(buffer);
     if (!detected || !ALLOWED_VIDEO_TYPES.has(detected.mime)) return res.status(415).json({ error: "Unsupported video. Use MP4, WebM, or MOV." });
     const url = await saveFile(buffer, detected.ext, detected.mime);
-    const fileName = String(req.headers["x-file-name"] || `video.${detected.ext}`).slice(0, 200);
+    const encodedName = String(req.headers["x-file-name"] || `video.${detected.ext}`);
+    let fileName = encodedName;
+    try { fileName = decodeURIComponent(encodedName); } catch { /* Keep the safe encoded fallback. */ }
+    fileName = fileName.slice(0, 200);
     const { rows } = await pool.query(
       `INSERT INTO media (url, file_name, usage_tag, bytes, uploaded_by) VALUES ($1,$2,$3,$4,$5) RETURNING *`,
       [url, fileName, "video", buffer.length, req.admin.id]
