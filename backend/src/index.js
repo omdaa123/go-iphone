@@ -51,7 +51,7 @@ app.use(cookieParser());
 // Explicitly opt in only after verifying a disposable Dev database.
 function guardLocalAdminWrites(req, res, next) {
   if (["GET", "HEAD", "OPTIONS"].includes(req.method) || req.path.startsWith("/auth/")) return next();
-  if (process.env.NODE_ENV === "production" || process.env.ENABLE_ADMIN_WRITES === "true") return next();
+  if (process.env.ENABLE_ADMIN_WRITES === "true") return next();
   return res.status(503).json({ error: "Admin writes are disabled in local development. Verify a Dev database before enabling them." });
 }
 app.use("/admin", guardLocalAdminWrites);
