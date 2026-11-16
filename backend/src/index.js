@@ -52,7 +52,7 @@ app.use(cookieParser());
 function guardLocalAdminWrites(req, res, next) {
   if (["GET", "HEAD", "OPTIONS"].includes(req.method) || req.path.startsWith("/auth/")) return next();
   if (process.env.ENABLE_ADMIN_WRITES === "true") return next();
-  return res.status(503).json({ error: "Admin writes are disabled in local development. Verify a Dev database before enabling them." });
+  return res.status(503).json({ error: "Admin writes are disabled until ENABLE_ADMIN_WRITES=true is explicitly configured." });
 }
 app.use("/admin", guardLocalAdminWrites);
 
