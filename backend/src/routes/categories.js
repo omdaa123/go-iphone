@@ -70,11 +70,11 @@ categoriesRouter.patch("/:key", requirePermission("cms.write"), validateBody(upd
     const sets = []; const params = [];
     for (const [column, value] of Object.entries(fields)) {
       if (value === undefined) continue;
-      params.push(value); sets.push(`${column} = ${params.length}`);
+      params.push(value); sets.push(`${column} = $${params.length}`);
     }
     params.push(req.params.key);
     const { rows } = await pool.query(
-      `UPDATE categories SET ${sets.join(", ")} WHERE key = ${params.length} RETURNING *`,
+      `UPDATE categories SET ${sets.join(", ")} WHERE key = $${params.length} RETURNING *`,
       params
     );
     await logAudit({ adminUserId: req.admin.id, action: "category.update", resourceType: "category", resourceId: req.params.key, before: existing.rows[0], after: rows[0], ip: req.ip });
