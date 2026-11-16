@@ -27,6 +27,9 @@ const COLLECTIONS = [
 ];
 
 async function seed() {
+  if (process.env.NODE_ENV === "production" && process.env.ALLOW_PRODUCTION_SEED !== "true") {
+    throw new Error("Production seed blocked. Verify the target database and explicitly set ALLOW_PRODUCTION_SEED=true for a one-off manual run.");
+  }
   for (const [i, c] of CATEGORIES.entries()) {
     await pool.query(
       `INSERT INTO categories (key, label, sort_order) VALUES ($1,$2,$3)
