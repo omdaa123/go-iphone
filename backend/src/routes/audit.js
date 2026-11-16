@@ -4,7 +4,7 @@ import { requireAuth } from "../middleware/auth.js";
 import { requirePermission } from "../middleware/rbac.js";
 
 export const auditRouter = Router();
-auditRouter.use(requireAuth, requirePermission("admin.manage")); // OWNER only
+auditRouter.use(requireAuth, requirePermission("admin.manage")); // OWNER and FULL_ACCESS_NO_DASHBOARD after 2FA enrollment
 
 auditRouter.get("/audit-logs", async (req, res, next) => {
   try {
