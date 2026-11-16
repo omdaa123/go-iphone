@@ -155,7 +155,7 @@ function httpError(status, message) {
 }
 
 function guardLocalCommerceWrites(req, res, next) {
-  if (process.env.NODE_ENV === "production" || process.env.ENABLE_COMMERCE_WRITES === "true") return next();
+  if (process.env.ENABLE_COMMERCE_WRITES === "true") return next();
   return res.status(503).json({ error: "Checkout is disabled in local development. Verify a Dev database before enabling commerce writes." });
 }
 
