@@ -59,9 +59,6 @@ check("Admin can update an order payment status", r.status === 200 && r.data.ord
 r = await call(owner, "PATCH", `/admin/orders/${o.id}/status`, { status: "Cancelled" });
 const afterCancel = await call(owner, "GET", `/admin/products/${pid}`);
 check("cancelling an order restores its reserved variant stock", r.status === 200 && afterCancel.data.variants[0].stock_qty === 2, JSON.stringify(afterCancel.data.variants[0]));
-r = await call(owner, "PATCH", `/admin/orders/${o.id}/status`, { status: "Cancelled" });
-const afterCancel = await call(owner, "GET", `/admin/products/${pid}`);
-check("cancelling an order restores its reserved variant stock", r.status === 200 && afterCancel.data.variants[0].stock_qty === 2, JSON.stringify(afterCancel.data.variants[0]));
 
 r = await call(owner, "POST", "/admin/hero-slides", { title: "Image Hero", imageMediaId: mediaId, ctaText: "Go", linkCategoryKey: "iphone" });
 check("hero slide with independent image (no product link)", r.status === 201, JSON.stringify(r.data));
