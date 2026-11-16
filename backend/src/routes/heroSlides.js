@@ -9,7 +9,7 @@ import { logAudit } from "../lib/audit.js";
 export const heroSlidesRouter = Router();
 heroSlidesRouter.use(requireAuth);
 
-heroSlidesRouter.get("/", async (req, res, next) => {
+heroSlidesRouter.get("/", requirePermission("cms.write"), async (req, res, next) => {
   try {
     const { rows } = await pool.query(
       `SELECT s.*, mi.url AS image_url, mm.url AS mobile_image_url FROM hero_slides s
