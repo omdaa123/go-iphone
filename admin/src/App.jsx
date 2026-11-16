@@ -702,6 +702,7 @@ function Orders({ onError }) {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState("all");
   const [busyId, setBusyId] = useState("");
+  const [paymentBusyId, setPaymentBusyId] = useState("");
   const [refresh, setRefresh] = useState(0);
   const load = useCallback(() => {
     setLoading(true);
@@ -717,10 +718,18 @@ function Orders({ onError }) {
     } catch (e) { onError(e.message); }
     finally { setBusyId(""); }
   }
+  async function updatePaymentStatus(order, paymentStatus) {
+    setPaymentBusyId(order.id);
+    try {
+      await request(`/orders/${order.id}/payment-status`, { method: "PATCH", body: JSON.stringify({ paymentStatus }) });
+      setItems(current => current.map(o => o.id === order.id ? { ...o, payment_status: paymentStatus } : o));
+    } catch (e) { onError(e.message); }
+    finally { setPaymentBusyId(""); }
+  }
   return <>
     <div className="page-heading"><div><div className="eyebrow">COMMERCE</div><h1>Orders</h1><p>Track and process customer orders.</p></div><button className="btn secondary" onClick={() => setRefresh(v => v + 1)}><RefreshCw size={15}/> Refresh</button></div>
     <section className="panel"><div className="toolbar"><div className="filter-tabs">{["all","New","Confirmed","Preparing","Ready","Completed","Cancelled"].map(s => <button key={s} className={filter === s ? "selected" : ""} onClick={() => setFilter(s)}>{s === "all" ? "All orders" : s}</button>)}</div><span className="results-count">{visible.length} orders</span></div>
-      {loading ? <div className="loading-panel"><span className="spinner"/> Loading orders…</div> : visible.length ? <div className="table-wrap"><table><thead><tr><th>ORDER</th><th>CUSTOMER</th><th>ITEMS</th><th>DATE</th><th>PAYMENT</th><th>STATUS</th><th className="right">TOTAL</th></tr></thead><tbody>{visible.map(o => <tr key={o.id}><td className="mono">#{String(o.id).slice(-7).toUpperCase()}</td><td><b>{o.customer_name || "Guest"}</b><span className="subline">{o.customer_phone || ""}</span></td><td>{(o.items || []).length || 0}</td><td>{date(o.created_at)}</td><td><span className={`status ${String(o.payment_status || "pending").toLowerCase()}`}>{o.payment_status || "pending"}</span></td><td><select className="status-select" disabled={busyId === o.id} value={o.status} onChange={e => updateStatus(o, e.target.value)}>{["New","Confirmed","Preparing","Ready","Completed","Cancelled"].map(s => <option key={s}>{s}</option>)}</select></td><td className="right">{money(o.total_cents)}</td></tr>)}</tbody></table></div> : <EmptyState icon={ShoppingCart} title="No orders here" detail="Orders will appear here as customers check out."/>}
+      {loading ? <div className="loading-panel"><span className="spinner"/> Loading orders…</div> : visible.length ? <div className="table-wrap"><table><thead><tr><th>ORDER</th><th>CUSTOMER</th><th>ITEMS</th><th>DATE</th><th>PAYMENT</th><th>STATUS</th><th className="right">TOTAL</th></tr></thead><tbody>{visible.map(o => <tr key={o.id}><td className="mono">#{String(o.id).slice(-7).toUpperCase()}</td><td><b>{o.customer_name || "Guest"}</b><span className="subline">{o.phone || ""}</span></td><td>{(o.items || []).length || 0}</td><td>{date(o.created_at)}</td><td><select className="status-select" disabled={paymentBusyId === o.id} value={o.payment_status || "pending"} onChange={e => updatePaymentStatus(o, e.target.value)}>{["pending","paid","failed","refunded","cancelled"].map(s => <option key={s} value={s}>{s}</option>)}</select></td><td><select className="status-select" disabled={busyId === o.id} value={o.status} onChange={e => updateStatus(o, e.target.value)}>{["New","Confirmed","Preparing","Ready","Completed","Cancelled"].map(s => <option key={s}>{s}</option>)}</select></td><td className="right">{money(o.total_cents)}</td></tr>)}</tbody></table></div> : <EmptyState icon={ShoppingCart} title="No orders here" detail="Orders will appear here as customers check out."/>}
     </section>
   </>;
 }
