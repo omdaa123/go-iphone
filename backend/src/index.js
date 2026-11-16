@@ -46,9 +46,9 @@ app.use(cors({
 app.use(express.json({ limit: "10mb" })); // generous enough for a compressed image data URL
 app.use(cookieParser());
 
-// Fail closed for business/admin writes in local development. This prevents
-// a local preview accidentally mutating a production database connection.
-// Explicitly opt in only after verifying a disposable Dev database.
+// Fail closed for business/admin writes unless explicitly enabled. This prevents
+// local previews or misconfigured deployments from mutating the database by accident.
+// Enable the flags only after verifying the intended database and environment.
 function guardLocalAdminWrites(req, res, next) {
   if (["GET", "HEAD", "OPTIONS"].includes(req.method) || req.path.startsWith("/auth/")) return next();
   if (process.env.ENABLE_ADMIN_WRITES === "true") return next();
