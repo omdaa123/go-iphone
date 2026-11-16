@@ -193,6 +193,7 @@ publicRouter.post("/orders", writeLimiter, validateBody(orderSchema), async (req
           const v = await client.query(
             `SELECT id, storage, color, price_cents, stock_qty FROM product_variants
              WHERE product_id = $1 AND storage IS NOT DISTINCT FROM $2
+               AND ($3::text IS NULL OR color IS NOT DISTINCT FROM $3)
              ORDER BY (color IS NOT DISTINCT FROM $3) DESC LIMIT 1`,
             [item.productId, item.storage || null, item.color || null]
           );
@@ -207,7 +208,7 @@ publicRouter.post("/orders", writeLimiter, validateBody(orderSchema), async (req
           }
           lines.push({
             productId: product.id, unitId: null, variantId: variant.id, qty: item.qty, unitPrice: Number(variant.price_cents),
-            label: [variant.storage, item.color].filter(Boolean).join(" · "),
+            label: [variant.storage, variant.color].filter(Boolean).join(" · "),
           });
         }
       }
