@@ -140,6 +140,15 @@ CREATE TABLE IF NOT EXISTS collections (
   sort_order INT NOT NULL DEFAULT 0
 );
 
+-- Built-in collections are seeded by migrations, never by public read endpoints.
+INSERT INTO collections (id, name, description, is_system, visible, sort_order)
+VALUES
+  ('featured', 'Featured', 'Hand-picked highlights from the store.', true, true, 0),
+  ('new-arrivals', 'New Arrivals', 'The latest products added to the store.', true, true, 1),
+  ('best-sellers', 'Best Sellers', 'Popular products customers have purchased.', true, true, 2),
+  ('certified-refurbished', 'Certified Refurbished', 'Individually checked pre-owned devices.', true, true, 3)
+ON CONFLICT (id) DO NOTHING;
+
 CREATE TABLE IF NOT EXISTS products (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   slug TEXT UNIQUE,                          -- stable human-readable id, e.g. 'iphone-15-pro'
