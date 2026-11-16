@@ -17,7 +17,7 @@ INSERT INTO roles (name, permissions) VALUES
   ('FULL_ACCESS_NO_DASHBOARD', '{"admin.manage":true,"dashboard.view":false,"dashboard.sales.view":false,"products.write":true,"inventory.write":true,"orders.write":true,"reservations.write":true,"cms.write":true,"media.write":true,"settings.write":true}'),
   ('DASHBOARD', '{"admin.manage":false,"dashboard.view":true,"dashboard.sales.view":true,"products.write":false,"inventory.write":false,"orders.write":false,"reservations.write":false,"cms.write":false,"media.write":false,"settings.write":false}'),
   ('CATALOG', '{"admin.manage":false,"dashboard.view":false,"dashboard.sales.view":false,"products.write":true,"inventory.write":false,"orders.write":false,"reservations.write":false,"cms.write":true,"media.write":true,"settings.write":false}')
-ON CONFLICT (name) DO UPDATE SET permissions = EXCLUDED.permissions;
+ON CONFLICT (name) DO NOTHING;
 
 CREATE TABLE IF NOT EXISTS admin_users (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -114,7 +114,7 @@ ON CONFLICT (key) DO NOTHING;
 
 INSERT INTO categories (key, label, sort_order, parent_key)
 VALUES ('accessories', 'Accessories', 6, NULL)
-ON CONFLICT (key) DO UPDATE SET label = EXCLUDED.label, parent_key = NULL;
+ON CONFLICT (key) DO NOTHING;
 
 INSERT INTO categories (key, label, sort_order, parent_key)
 VALUES
@@ -126,8 +126,7 @@ VALUES
   ('speakers', 'Speakers', 11, 'other-devices'),
   ('headphones', 'Headphones', 12, 'other-devices'),
   ('other-electronics', 'Other Electronics', 13, 'other-devices')
-ON CONFLICT (key) DO UPDATE
-SET label = EXCLUDED.label, parent_key = EXCLUDED.parent_key;
+ON CONFLICT (key) DO NOTHING;
 
 
 
