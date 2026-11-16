@@ -6,6 +6,9 @@ on:
   pull_request:
     branches: [main]
 
+permissions:
+  contents: write
+
 jobs:
   verify:
     runs-on: ubuntu-latest
@@ -22,6 +25,11 @@ jobs:
             backend/package-lock.json
             storefront/package-lock.json
 
+      - name: Refresh and patch backend dependency lockfile
+        run: |
+          npm install --package-lock-only --prefix backend --ignore-scripts
+          npm audit fix --prefix backend
+
       - name: Install backend dependencies
         run: npm ci --prefix backend
 
@@ -32,6 +40,9 @@ jobs:
         run: |
           npm audit --prefix backend --json > /tmp/backend-audit.json || true
           node -e 'const a=require("/tmp/backend-audit.json"); for (const [name,v] of Object.entries(a.vulnerabilities || {})) console.log(name + ": " + v.severity + ", fix=" + JSON.stringify(v.fixAvailable) + ", advisories=" + JSON.stringify(v.via)); console.log("Counts:", JSON.stringify(a.metadata?.vulnerabilities || {}));'
+
+      - name: Fail on high-severity backend advisories
+        run: npm audit --prefix backend --audit-level=high
 
       - name: Check backend test syntax
         run: find backend/tests -type f -name '*.mjs' -print0 | xargs -0 -n1 node --check
@@ -47,3 +58,14 @@ jobs:
 
       - name: Build admin
         run: npm run build --prefix admin
+
+      - name: Commit refreshed backend lockfile
+        if: github.ref == 'refs/heads/work/design-studio-upgrade'
+        run: |
+          if ! git diff --quiet -- backend/package-lock.json; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add backend/package-lock.json
+            git commit -m "chore: refresh backend dependency lockfile"
+            git push origin "HEAD:${GITHUB_REF_NAME}"
+          fi
