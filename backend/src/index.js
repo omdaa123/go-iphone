@@ -20,6 +20,7 @@ import { statsRouter } from "./routes/stats.js";
 import { auditRouter } from "./routes/audit.js";
 import { publicRouter } from "./routes/publicApi.js";
 import { errorHandler, notFoundHandler } from "./middleware/errorHandler.js";
+import { pool } from "./db.js";
 
 const app = express();
 
@@ -83,7 +84,14 @@ app.use("/uploads", express.static(process.env.LOCAL_UPLOAD_DIR || "./uploads", 
   setHeaders: (res) => res.setHeader("Cross-Origin-Resource-Policy", "cross-origin"),
 }));
 
-app.get("/health", (req, res) => res.json({ ok: true }));
+app.get("/health", async (req, res) => {
+  try {
+    await pool.query("SELECT 1");
+    return res.json({ ok: true, database: "connected" });
+  } catch {
+    return res.status(503).json({ ok: false, database: "unavailable" });
+  }
+});
 
 app.use(notFoundHandler);
 app.use(errorHandler);
