@@ -78,6 +78,13 @@ r = await call(owner,"GET",`/admin/products/${pid}/units`);
 check("cancelled used device returns to available inventory",r.status===200 && r.data.units.some(u=>u.id===uid && u.status==="available"));
 r = await call(jar("anon"),"GET","/api/catalog");
 check("released used device is visible in storefront again",r.status===200 && r.data.deviceUnits.some(u=>u.id===uid));
+const usedOrder = r.data.orders.find(o => o.items.some(item => item.unitId === uid));
+r = await call(owner,"PATCH",`/admin/orders/${usedOrder.id}/status`,{status:"Cancelled"});
+check("cancelling a used-device order succeeds",r.status===200);
+r = await call(owner,"GET",`/admin/products/${pid}/units`);
+check("cancelled used device returns to available inventory",r.status===200 && r.data.units.some(u=>u.id===uid && u.status==="available"));
+r = await call(jar("anon"),"GET","/api/catalog");
+check("released used device is visible in storefront again",r.status===200 && r.data.deviceUnits.some(u=>u.id===uid));
 
 // 2FA
 r = await call(owner,"POST","/admin/auth/totp-setup");
