@@ -134,6 +134,8 @@ function cloudinaryPublicIdFromUrl(url) {
 async function deleteFromCloudinary(url) {
   const publicId = cloudinaryPublicIdFromUrl(url);
   if (!publicId) return;
+  const pathname = new URL(url).pathname;
+  const resourceType = pathname.includes("/video/upload/") ? "video" : pathname.includes("/raw/upload/") ? "raw" : "image";
   const timestamp = Math.floor(Date.now() / 1000);
   const params = { public_id: publicId, timestamp };
   const form = new URLSearchParams({
@@ -142,7 +144,7 @@ async function deleteFromCloudinary(url) {
     public_id: publicId,
     signature: cloudinarySignature(params),
   });
-  const response = await fetch(`https://api.cloudinary.com/v1_1/${encodeURIComponent(process.env.CLOUDINARY_CLOUD_NAME)}/image/destroy`, {
+  const response = await fetch(`https://api.cloudinary.com/v1_1/${encodeURIComponent(process.env.CLOUDINARY_CLOUD_NAME)}/${resourceType}/destroy`, {
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
     body: form,
