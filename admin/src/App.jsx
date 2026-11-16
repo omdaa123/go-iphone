@@ -2049,7 +2049,7 @@ export default function App() {
     setStatsLoading(true);
     request("/stats").then(setStats).catch(e => showError(e.message)).finally(() => setStatsLoading(false));
   }, [showError]);
-  useEffect(() => { if (user && page === "dashboard") loadStats(); }, [user, page, loadStats]);
+  useEffect(() => { if (user && page === "dashboard" && user.permissions?.["dashboard.view"]) loadStats(); }, [user, page, loadStats]);
 
   async function logout() {
     try { await request("/auth/logout", { method: "POST" }); } catch { /* Clear local state regardless. */ }
@@ -2062,14 +2062,14 @@ export default function App() {
   const permissions = user?.permissions || {};
   const visibleNavGroups = navGroups.map(group=>({...group,items:group.items.filter(item=>permissions[item.permission])})).filter(group=>group.items.length);
   const allowedPageIds = new Set(visibleNavGroups.flatMap(group=>group.items.map(item=>item.id)));
-  useEffect(() => { if (user && !allowedPageIds.has(page)) setPage([...allowedPageIds][0] || ""); }, [user, page, permissions]);
+  const activePage = allowedPageIds.has(page) ? page : ([...allowedPageIds][0] || "");
   function navigate(id) { if (!allowedPageIds.has(id)) { setError("You do not have permission to open this section."); setPage([...allowedPageIds][0] || ""); } else { setPage(id); setError(""); } setSidebarOpen(false); }
-  const pageTitle = [...visibleNavGroups.flatMap(g => g.items)].find(i => i.id === page)?.label || "Dashboard";
+  const pageTitle = [...visibleNavGroups.flatMap(g => g.items)].find(i => i.id === activePage)?.label || "Workspace";
   return <div className="app-shell">
     <aside className={`sidebar ${sidebarOpen ? "open" : ""}`}>
       <div className="sidebar-brand"><Brand/><button className="icon-btn mobile-close" onClick={() => setSidebarOpen(false)}><X size={18}/></button></div>
       <div className="store-switch"><div className="store-icon">G</div><div><b>GO iPhone Store</b><span>Production workspace</span></div><ChevronDown size={15}/></div>
-      <nav>{visibleNavGroups.map(group => <div className="nav-group" key={group.label}><div className="nav-label">{group.label}</div>{group.items.map(item => { const Icon = item.icon; return <button key={item.id} className={`nav-item ${page === item.id ? "active" : ""}`} onClick={() => navigate(item.id)}><Icon size={17}/><span>{item.label}</span>{item.id === "orders" && stats?.orders?.New > 0 && <i className="nav-badge">{stats.orders.New}</i>}</button>; })}</div>)}</nav>
+      <nav>{visibleNavGroups.map(group => <div className="nav-group" key={group.label}><div className="nav-label">{group.label}</div>{group.items.map(item => { const Icon = item.icon; return <button key={item.id} className={`nav-item ${activePage === item.id ? "active" : ""}`} onClick={() => navigate(item.id)}><Icon size={17}/><span>{item.label}</span>{item.id === "orders" && stats?.orders?.New > 0 && <i className="nav-badge">{stats.orders.New}</i>}</button>; })}</div>)}</nav>
       <div className="sidebar-bottom"><div className="secure-note"><ShieldCheck size={16}/><div><b>Secure workspace</b><span>Role-based access enabled</span></div></div><div className="user-card"><div className="user-avatar">{(user.email || "A").slice(0,1).toUpperCase()}</div><div className="user-info"><b>{user.email}</b><span>{titleCase(user.role)}</span></div><button className="icon-btn" title="Sign out" onClick={logout}><LogOut size={16}/></button></div></div>
     </aside>
     {sidebarOpen && <button className="mobile-backdrop" onClick={() => setSidebarOpen(false)} aria-label="Close menu"/>}
@@ -2077,19 +2077,19 @@ export default function App() {
       <header className="topbar"><div className="topbar-left"><button className="icon-btn mobile-menu" onClick={() => setSidebarOpen(true)}><Menu size={19}/></button><span className="breadcrumb">GO iPhone <ChevronRight size={13}/> <b>{pageTitle}</b></span></div><div className="topbar-right"><span className={`live-dot ${import.meta.env.DEV ? "preview-dot" : ""}`}/> <span className="environment">{import.meta.env.DEV ? "READ-ONLY PREVIEW" : "LIVE STORE"}</span><span className="topbar-divider"/><button className="icon-btn" title="Help"><CircleHelp size={18}/></button><a className="icon-btn" href="https://go-iphone-storefront1.vercel.app/" target="_blank" rel="noreferrer" title="Open storefront"><ExternalLink size={17}/></a></div></header>
       <div className="content-area">
         {error && <div className="toast error"><AlertTriangle size={16}/>{error}<button onClick={() => setError("")}><X size={14}/></button></div>}
-        {page === "dashboard" && <Dashboard stats={stats} loading={statsLoading} onRefresh={loadStats} onNavigate={navigate} permissions={permissions}/>}
-        {page === "products" && <Products onError={showError}/>}
-        {page === "orders" && <Orders onError={showError}/>}
-        {page === "inventory" && <Inventory onError={showError}/>}
-        {page === "reservations" && <Reservations onError={showError}/>}
-        {page === "customers" && <CustomersPage onError={showError}/>}
-        {page === "team" && <TeamAccessPage user={user} onError={showError}/>}
-        {page === "settings" && <SettingsPage onError={showError}/>}
-        {page === "media" && <MediaLibrary onError={showError}/>}
-        {page === "homepage" && <HomepageBuilder onError={showError}/>}
-        {page === "collections" && <CollectionsManager onError={showError}/>}
+        {activePage === "dashboard" && <Dashboard stats={stats} loading={statsLoading} onRefresh={loadStats} onNavigate={navigate} permissions={permissions}/>}
+        {activePage === "products" && <Products onError={showError}/>}
+        {activePage === "orders" && <Orders onError={showError}/>}
+        {activePage === "inventory" && <Inventory onError={showError}/>}
+        {activePage === "reservations" && <Reservations onError={showError}/>}
+        {activePage === "customers" && <CustomersPage onError={showError}/>}
+        {activePage === "team" && <TeamAccessPage user={user} onError={showError}/>}
+        {activePage === "settings" && <SettingsPage onError={showError}/>}
+        {activePage === "media" && <MediaLibrary onError={showError}/>}
+        {activePage === "homepage" && <HomepageBuilder onError={showError}/>}
+        {activePage === "collections" && <CollectionsManager onError={showError}/>}
         
-        {!["dashboard","products","orders","inventory","reservations","customers","team","settings","media","homepage","collections"].includes(page) && <Placeholder id={page} onNavigate={navigate}/>}
+        {!["dashboard","products","orders","inventory","reservations","customers","team","settings","media","homepage","collections"].includes(activePage) && <Placeholder id={page} onNavigate={navigate}/>}
         <footer className="app-footer"><span>© {new Date().getFullYear()} GO iPhone</span><span>Admin workspace <i/> Built for your store</span></footer>
       </div>
     </main>
