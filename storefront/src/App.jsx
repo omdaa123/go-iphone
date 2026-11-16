@@ -1308,7 +1308,6 @@ function HomePage({ go, compareIds, onToggleCompare }) {
       fontFamily: section.headingFont && section.headingFont !== "inherit" ? section.headingFont : "inherit",
       "--collection-heading-size": (section.headingSize || 32) + "px",
       "--collection-heading-weight": section.headingWeight || "700",
-      "--collection-heading-weight": section.headingWeight || "700",
       "--collection-accent": section.accentColor || "#ad8642",
       "--collection-card-radius": (section.cardRadius ?? 16) + "px",
       paddingTop: section.id === "certified-refurbished" ? undefined : (section.sectionPadding != null ? Number(section.sectionPadding) : undefined),
