@@ -54,6 +54,9 @@ check("low-stock list present", Array.isArray(r.data.lowStock));
 r = await call(owner, "GET", "/admin/orders");
 const o = r.data.orders.find((x) => x.items.some((i) => i.productName === "Stock Test Phone"));
 check("admin orders list includes items with product names", !!o && o.items[0].qty === 2 && o.items[0].unitPriceCents == 1500000, JSON.stringify(r.data.orders[0]).slice(0, 200));
+r = await call(owner, "PATCH", `/admin/orders/${o.id}/status`, { status: "Cancelled" });
+const afterCancel = await call(owner, "GET", `/admin/products/${pid}`);
+check("cancelling an order restores its reserved variant stock", r.status === 200 && afterCancel.data.variants[0].stock_qty === 2, JSON.stringify(afterCancel.data.variants[0]));
 
 r = await call(owner, "POST", "/admin/hero-slides", { title: "Image Hero", imageMediaId: mediaId, ctaText: "Go", linkCategoryKey: "iphone" });
 check("hero slide with independent image (no product link)", r.status === 201, JSON.stringify(r.data));
@@ -65,6 +68,8 @@ await call(owner, "PATCH", "/admin/categories/mac/image", { imageMediaId: mediaI
 r = await call(owner, "GET", "/admin/categories");
 check("category image set and listed with url", r.data.categories.find((c) => c.key === "mac").image_url);
 check("category image reaches storefront siteContent", (await (await fetch(B + "/api/catalog")).json()).siteContent.categoryImages.mac);
+r = await call(owner, "PATCH", "/admin/categories/mac", { label: "Mac Computers" });
+check("category edit updates label with parameterized SQL", r.status === 200 && r.data.category.label === "Mac Computers", JSON.stringify(r.data));
 
 r = await call(owner, "PUT", "/admin/site-content/comparisonSection", { title: "Compare iPhone", description: "d", cta: "Compare", image: "https://x/y.png", visible: true });
 check("comparison section saved", r.status === 200);
@@ -96,7 +101,7 @@ check("CATALOG role cannot READ customer orders (403)", r.status === 403);
 r = await call(writer, "GET", "/admin/reservations");
 check("CATALOG role cannot READ customer reservations (403)", r.status === 403);
 r = await call(writer, "GET", "/admin/stats");
-check("CONTENT role's dashboard stats contain no revenue or customer data", r.status === 403, JSON.stringify(Object.keys(r.data)));
+check("CATALOG role cannot access dashboard stats (403)", r.status === 403, JSON.stringify(Object.keys(r.data)));
 r = await call(writer, "GET", "/admin/products");
 check("CONTENT role can still list products (needed to link hero slides)", r.status === 200);
 
