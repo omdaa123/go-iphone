@@ -135,6 +135,9 @@ const orderItemSchema = z.object({
   storage: z.string().optional().nullable(),
   color: z.string().optional().nullable(),
   qty: z.number().int().min(1).max(20),
+}).refine(item => !item.inventoryUnitId || item.qty === 1, {
+  message: "A specific inventory unit can only be ordered one at a time.",
+  path: ["qty"],
 });
 const orderSchema = z.object({
   name: z.string().min(1).max(200),
@@ -174,7 +177,7 @@ publicRouter.post("/orders", writeLimiter, validateBody(orderSchema), async (req
           // matches nothing and the whole order is rejected — two concurrent
           // buyers can never both win.
           const claim = await client.query(
-            `UPDATE inventory_units SET status = 'sold', updated_at = now()
+            `UPDATE inventory_units SET status = 'reserved', updated_at = now()
              WHERE id = $1 AND product_id = $2 AND status = 'available'
              RETURNING id, storage, color, condition, price_cents`,
             [item.inventoryUnitId, item.productId]
@@ -182,7 +185,7 @@ publicRouter.post("/orders", writeLimiter, validateBody(orderSchema), async (req
           if (claim.rows.length === 0) throw httpError(409, "One of the items in your order was just purchased by someone else. Please refresh and try again.");
           const u = claim.rows[0];
           lines.push({
-            productId: product.id, unitId: u.id, qty: 1, unitPrice: Number(u.price_cents),
+            productId: product.id, unitId: u.id, variantId: null, qty: 1, unitPrice: Number(u.price_cents),
             label: [u.storage, u.color, u.condition].filter(Boolean).join(" · "),
           });
         } else {
@@ -203,7 +206,7 @@ publicRouter.post("/orders", writeLimiter, validateBody(orderSchema), async (req
             if (dec.rows.length === 0) throw httpError(409, `${product.name} is out of stock in that configuration.`);
           }
           lines.push({
-            productId: product.id, unitId: null, qty: item.qty, unitPrice: Number(variant.price_cents),
+            productId: product.id, unitId: null, variantId: variant.id, qty: item.qty, unitPrice: Number(variant.price_cents),
             label: [variant.storage, item.color].filter(Boolean).join(" · "),
           });
         }
@@ -219,9 +222,9 @@ publicRouter.post("/orders", writeLimiter, validateBody(orderSchema), async (req
 
       for (const l of lines) {
         await client.query(
-          `INSERT INTO order_items (order_id, product_id, inventory_unit_id, variant_label, unit_price_cents, qty)
-           VALUES ($1,$2,$3,$4,$5,$6)`,
-          [order.id, l.productId, l.unitId, l.label, l.unitPrice, l.qty]
+          `INSERT INTO order_items (order_id, product_id, inventory_unit_id, variant_id, variant_label, unit_price_cents, qty)
+           VALUES ($1,$2,$3,$4,$5,$6,$7)`,
+          [order.id, l.productId, l.unitId, l.variantId, l.label, l.unitPrice, l.qty]
         );
         if (l.unitId) await client.query(`UPDATE inventory_units SET locked_by_order_id = $1 WHERE id = $2`, [order.id, l.unitId]);
       }
