@@ -245,14 +245,17 @@ CREATE TABLE IF NOT EXISTS order_items (
   order_id UUID NOT NULL REFERENCES orders(id) ON DELETE CASCADE,
   product_id UUID REFERENCES products(id),
   inventory_unit_id UUID REFERENCES inventory_units(id),
-  variant_id UUID REFERENCES product_variants(id),
+  variant_id UUID REFERENCES product_variants(id) ON DELETE SET NULL,
   variant_label TEXT,
   unit_price_cents BIGINT NOT NULL,
   qty INT NOT NULL
 );
 CREATE INDEX IF NOT EXISTS idx_order_items_order ON order_items(order_id);
 -- Upgrade existing databases as well as fresh installs.
-ALTER TABLE order_items ADD COLUMN IF NOT EXISTS variant_id UUID REFERENCES product_variants(id);
+ALTER TABLE order_items ADD COLUMN IF NOT EXISTS variant_id UUID;
+ALTER TABLE order_items DROP CONSTRAINT IF EXISTS order_items_variant_id_fkey;
+ALTER TABLE order_items ADD CONSTRAINT order_items_variant_id_fkey
+  FOREIGN KEY (variant_id) REFERENCES product_variants(id) ON DELETE SET NULL;
 
 CREATE TABLE IF NOT EXISTS reservations (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
