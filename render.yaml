@@ -21,6 +21,10 @@ services:
         value: "false"
       - key: ENABLE_COMMERCE_WRITES
         value: "false"
+      - key: ALLOW_PRODUCTION_MIGRATIONS
+        value: "false"
+      - key: ALLOW_PRODUCTION_SEED
+        value: "false"
       # Required for persistent production image uploads (Cloudinary).
       - key: CLOUDINARY_CLOUD_NAME
         sync: false
