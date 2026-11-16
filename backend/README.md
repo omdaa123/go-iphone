@@ -50,6 +50,7 @@ The end-to-end suites create users, products, orders, and reservations. Run them
 - `npm run test:e2e:security`
 - `npm run test:e2e:catalog`
 - `npm run test:e2e:2fa`
+- `npm run test:local-write-guard` (run against a local server with write overrides unset)
 
 The storefront integration suite is `npm run test:e2e --prefix ../storefront`; it also requires a running test API and database. These are not safe to run against Production.
 
