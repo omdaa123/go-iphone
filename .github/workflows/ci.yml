@@ -7,7 +7,7 @@ on:
     branches: [main]
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   verify:
@@ -24,6 +24,7 @@ jobs:
           cache-dependency-path: |
             backend/package-lock.json
             storefront/package-lock.json
+            admin/package-lock.json
 
       - name: Install backend dependencies
         run: npm ci --prefix backend
@@ -55,11 +56,6 @@ jobs:
           if [ "$ready" != "true" ]; then cat /tmp/go-iphone-api.log; exit 1; fi
           API_URL=http://127.0.0.1:4060 node backend/tests/local-write-guard.e2e.mjs
 
-      - name: Refresh and patch storefront dependency lockfile
-        run: |
-          npm install --package-lock-only --prefix storefront --ignore-scripts
-          npm audit fix --prefix storefront
-
       - name: Install storefront dependencies
         run: npm ci --prefix storefront
 
@@ -73,11 +69,6 @@ jobs:
 
       - name: Build storefront
         run: npm run build --prefix storefront
-
-      - name: Refresh and patch admin dependency lockfile
-        run: |
-          npm install --package-lock-only --prefix admin --ignore-scripts
-          npm audit fix --prefix admin
 
       - name: Install admin dependencies
         run: npm ci --prefix admin
@@ -93,14 +84,4 @@ jobs:
       - name: Build admin
         run: npm run build --prefix admin
 
-      - name: Commit refreshed frontend lockfiles
-        if: github.ref == 'refs/heads/work/design-studio-upgrade'
-        run: |
-          if [ -n "$(git status --porcelain -- storefront/package-lock.json admin/package-lock.json)" ]; then
-            git config user.name "github-actions[bot]"
-            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-            git add storefront/package-lock.json admin/package-lock.json
-            git commit -m "chore: refresh frontend dependency lockfiles"
-            git push origin "HEAD:${GITHUB_REF_NAME}"
-          fi
 
