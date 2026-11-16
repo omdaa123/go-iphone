@@ -47,10 +47,12 @@ jobs:
           NODE_ENV=development PORT=4060 node backend/src/index.js > /tmp/go-iphone-api.log 2>&1 &
           api_pid=$!
           trap 'kill "$api_pid" 2>/dev/null || true' EXIT
+          ready=false
           for attempt in $(seq 1 20); do
-            if curl -fsS http://127.0.0.1:4060/health >/dev/null; then break; fi
+            if curl -fsS http://127.0.0.1:4060/health >/dev/null; then ready=true; break; fi
             sleep 1
           done
+          if [ "$ready" != "true" ]; then cat /tmp/go-iphone-api.log; exit 1; fi
           API_URL=http://127.0.0.1:4060 node backend/tests/local-write-guard.e2e.mjs
 
       - name: Install storefront dependencies
