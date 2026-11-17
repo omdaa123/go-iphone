@@ -2,7 +2,7 @@
   "rewrites": [
     {
       "source": "/api/:path*",
-      "destination": "https://go-iphone-api.vercel.app/api/:path*"
+      "destination": "https://go-iphone-api-git-work-design-studio-upgrade-momo-844b.vercel.app/api/:path*"
     }
   ]
 }
