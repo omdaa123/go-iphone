@@ -73,17 +73,13 @@ app.use(cookieParser());
 // Enable the flags only after verifying the intended database and environment.
 function guardLocalAdminWrites(req, res, next) {
   if (["GET", "HEAD", "OPTIONS"].includes(req.method) || req.path.startsWith("/auth/")) return next();
-  // Allow only authenticated media uploads while general admin writes remain disabled.
-  // This route also records the media row and audit event in the configured database.
-  if (req.method === "POST" && (req.path === "/media" || req.path === "/media/video")) return next();
-  if (req.method === "DELETE" && /^\/media\/[0-9a-f-]+$/i.test(req.path)) return next();
   // Narrow catalog/CMS write gate. This deliberately excludes orders,
   // reservations, customers, admin users, settings, and other sensitive routes.
   const catalogWritePath =
     req.path === "/products" ||
     /^\/products\/[^/]+$/.test(req.path) ||
     /^\/products\/[^/]+\/units(?:\/[^/]+)?$/.test(req.path) ||
-    ["/categories", "/collections", "/hero-slides", "/site-content"].some(
+    ["/categories", "/collections", "/hero-slides", "/site-content", "/media"].some(
       (base) => req.path === base || req.path.startsWith(base + "/")
     );
   if (catalogWritePath && process.env.ENABLE_CATALOG_WRITES === "true") return next();
