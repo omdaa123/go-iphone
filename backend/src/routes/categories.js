@@ -7,9 +7,21 @@ import { validateBody } from "../middleware/validate.js";
 import { logAudit } from "../lib/audit.js";
 
 export const categoriesRouter = Router();
-categoriesRouter.use(requireAuth, requirePermission("products.write"));
+categoriesRouter.use(requireAuth);
 
-categoriesRouter.get("/", async (req, res, next) => {
+// Category data is needed by both product managers and the Live/CMS editor.
+// Permit either capability to read it; mutations below keep their stricter
+// products.write / cms.write checks.
+async function requireCategoryReadAccess(req, res, next) {
+  try {
+    const { rows } = await pool.query("SELECT permissions FROM roles WHERE name = $1", [req.admin.role]);
+    const permissions = rows[0]?.permissions || {};
+    if (permissions["products.write"] || permissions["cms.write"]) return next();
+    return res.status(403).json({ error: "You don't have permission to view categories." });
+  } catch (err) { next(err); }
+}
+
+categoriesRouter.get("/", requireCategoryReadAccess, async (req, res, next) => {
   try {
     // Reads must remain side-effect free. Category hierarchy and legacy-key
     // normalization are handled by the explicit schema migration instead.
