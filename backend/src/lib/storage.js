@@ -173,15 +173,15 @@ const LOCAL_DIR = () => process.env.LOCAL_UPLOAD_DIR || "./uploads";
 const LOCAL_URL = () => (process.env.LOCAL_UPLOAD_PUBLIC_URL || "http://localhost:4000/uploads").replace(/\/$/, "");
 
 export async function saveFile(buffer, extension, mimeType = CONTENT_TYPES[extension] || "application/octet-stream") {
-  // Cloudinary is the primary production provider. ImageKit and S3 remain
-  // supported fallbacks for deployments that have not configured Cloudinary.
-  if (cloudinaryConfigured()) return uploadToCloudinary(buffer, extension, mimeType);
-  if (cloudinaryPartiallyConfigured()) {
-    throw new Error("Cloudinary storage is partially configured. Set CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, and CLOUDINARY_API_SECRET.");
-  }
+  // ImageKit is the primary persistent media provider for this deployment.
+  // Cloudinary and S3 remain optional alternatives only when ImageKit is absent.
   if (imageKitConfigured()) return uploadToImageKit(buffer, extension, mimeType);
   if (imageKitPartiallyConfigured()) {
     throw new Error("ImageKit storage is partially configured. Set IMAGEKIT_PRIVATE_KEY and IMAGEKIT_URL_ENDPOINT.");
+  }
+  if (cloudinaryConfigured()) return uploadToCloudinary(buffer, extension, mimeType);
+  if (cloudinaryPartiallyConfigured()) {
+    throw new Error("Cloudinary storage is partially configured. Set CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, and CLOUDINARY_API_SECRET.");
   }
 
   if (s3Enabled()) {
