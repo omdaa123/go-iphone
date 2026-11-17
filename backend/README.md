@@ -1,6 +1,6 @@
 # GO iPhone — Backend
 
-Express API shared by the Admin app and the customer storefront. The browser never connects directly to PostgreSQL.
+Express API shared by the Admin app and the customer storefront. The browser never connects directly to PostgreSQL. The Express API is deployed as the `go-iphone-api` Vercel project (Root Directory: `backend`).
 
 ## Local setup
 
@@ -44,7 +44,7 @@ Set `NODE_ENV=production`, `COOKIE_SECURE=true`, `ENABLE_ADMIN_WRITES=true`, `EN
 
 ## Persistent media and operations
 
-Before production, configure ImageKit in the backend service environment (Render): IMAGEKIT_PRIVATE_KEY and IMAGEKIT_URL_ENDPOINT are required; IMAGEKIT_PUBLIC_KEY is optional for server uploads, and IMAGEKIT_FOLDER defaults to go-iphone. ImageKit is the selected primary provider and takes precedence when configured. Cloudinary and S3-compatible storage remain optional alternatives. The API stores the permanent CDN URL in the media table, so product images, gallery images, site content images, and uploaded videos use the same media records. Local disk uploads are for development only and can disappear on redeploy. Never put the ImageKit private key in Vercel, the storefront, or the admin frontend. After setting the variables, redeploy the backend and test one image and one video upload from Admin → Media. Enable database backups and point-in-time recovery with the database provider. In-memory rate limits are suitable only for a single API instance; use a shared store such as Redis before horizontal scaling.
+Before production, configure ImageKit in the `go-iphone-api` Vercel project's Environment Variables (Root Directory: `backend`): IMAGEKIT_PRIVATE_KEY and IMAGEKIT_URL_ENDPOINT are required; IMAGEKIT_PUBLIC_KEY is optional for server uploads, and IMAGEKIT_FOLDER defaults to go-iphone. ImageKit is the selected primary provider and takes precedence when configured. Cloudinary and S3-compatible storage remain optional alternatives. The API stores the permanent CDN URL in the media table, so product images, gallery images, site content images, and uploaded videos use the same media records. Local disk uploads are for development only and can disappear on redeploy. Never put the ImageKit private key in Vercel, the storefront, or the admin frontend. After setting the variables, redeploy the Backend Vercel project and test one image and one video upload from Admin → Media. Enable database backups and point-in-time recovery with the database provider. In-memory rate limits are suitable only for a single API instance; use a shared store such as Redis before horizontal scaling.
 
 ## Tests
 
