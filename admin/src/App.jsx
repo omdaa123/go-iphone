@@ -162,7 +162,7 @@ const navGroups = [
     { id: "customers", label: "Customers", icon: Users, permission: "orders.write" },
   ]},
   { label: "STORE EXPERIENCE", items: [
-    { id: "homepage", label: "Visual Store Editor", icon: Layers3, permission: "cms.write" },
+    { id: "homepage", label: "Live", icon: Layers3, permission: "cms.write" },
     { id: "media", label: "Media Library", icon: Image, permission: "media.write" },
     { id: "collections", label: "Collections", icon: ShoppingBag, permission: "cms.write" },
   ]},
