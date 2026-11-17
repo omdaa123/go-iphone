@@ -77,8 +77,18 @@ function guardLocalAdminWrites(req, res, next) {
   // This route also records the media row and audit event in the configured database.
   if (req.method === "POST" && (req.path === "/media" || req.path === "/media/video")) return next();
   if (req.method === "DELETE" && /^\/media\/[0-9a-f-]+$/i.test(req.path)) return next();
+  // Narrow catalog/CMS write gate. This deliberately excludes orders,
+  // reservations, customers, admin users, settings, and other sensitive routes.
+  const catalogWritePath =
+    req.path === "/products" ||
+    /^\/products\/[^/]+$/.test(req.path) ||
+    /^\/products\/[^/]+\/units(?:\/[^/]+)?$/.test(req.path) ||
+    ["/categories", "/collections", "/hero-slides", "/site-content"].some(
+      (base) => req.path === base || req.path.startsWith(base + "/")
+    );
+  if (catalogWritePath && process.env.ENABLE_CATALOG_WRITES === "true") return next();
   if (process.env.ENABLE_ADMIN_WRITES === "true") return next();
-  return res.status(503).json({ error: "Admin writes are disabled until ENABLE_ADMIN_WRITES=true is explicitly configured." });
+  return res.status(503).json({ error: "Writes are disabled for this admin area." });
 }
 app.use("/admin", guardLocalAdminWrites);
 
