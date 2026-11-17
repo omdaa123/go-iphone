@@ -19,8 +19,8 @@ function CustomModelField({label,value,onChange,options,placeholder}) {
   return <label className="field-wide">{label}<select required value={custom?"__custom__":value} onChange={e=>{if(e.target.value==="__custom__"){setCustom(true);onChange("");}else{setCustom(false);onChange(e.target.value);}}}><option value="">Select model…</option>{options.map(v=><option key={v} value={v}>{v}</option>)}<option value="__custom__">Custom — not listed</option></select>{custom&&<input required value={value==="Custom"?"":value} onChange={e=>onChange(e.target.value)} placeholder={placeholder||"Enter custom model / edition"} style={{marginTop:8}}/>}</label>;
 }
 
-const API = "/admin";
-const PREVIEW_STOREFRONT_URL = import.meta.env.DEV ? "http://127.0.0.1:5174/?adminPreview=1" : "https://go-iphone-storefront1.vercel.app/?adminPreview=1";
+const API = (import.meta.env.VITE_API_URL || "/admin").replace(/\/$/, "");
+const PREVIEW_STOREFRONT_URL = import.meta.env.DEV ? "http://127.0.0.1:5174/?adminPreview=1" : `${import.meta.env.VITE_STOREFRONT_URL || "https://go-iphone-storefront1.vercel.app"}/?adminPreview=1`;
 const money = (cents = 0) => new Intl.NumberFormat("en-EG", {
   style: "currency", currency: "EGP", maximumFractionDigits: 0
 }).format(Number(cents || 0) / 100);
