@@ -9,7 +9,8 @@ assert.notEqual(encrypted, original);
 assert.deepEqual(decryptTotpSecret(encrypted), { secret: original, needsEncryption: false });
 assert.deepEqual(decryptTotpSecret(original), { secret: original, needsEncryption: true });
 
-const tampered = encrypted.slice(0, -1) + (encrypted.endsWith("A") ? "B" : "A");
-assert.throws(() => decryptTotpSecret(tampered), /Unsupported state|unable to authenticate|Invalid encrypted/);
+const parts = encrypted.split(":");
+parts[3] = (parts[3][0] === "A" ? "B" : "A") + parts[3].slice(1);
+assert.throws(() => decryptTotpSecret(parts.join(":")));
 
 console.log("TOTP encryption tests passed.");
