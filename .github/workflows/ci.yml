@@ -2,9 +2,9 @@ name: Build and syntax checks
 
 on:
   push:
-    branches: [main, work/design-studio-upgrade]
+    branches: [main, work/design-studio-upgrade, security/hardening-audit]
   pull_request:
-    branches: [main]
+    branches: [main, work/design-studio-upgrade]
 
 permissions:
   contents: read
