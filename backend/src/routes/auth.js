@@ -3,7 +3,7 @@ import argon2 from "argon2";
 import { z } from "zod";
 import { pool, withTransaction } from "../db.js";
 import { newOpaqueToken, hashToken, minutesFromNow, daysFromNow } from "../lib/tokens.js";
-import { generateTotpSecret, totpQrDataUrl, verifyTotpCode } from "../lib/totp.js";
+import { generateTotpSecret, totpQrDataUrl, verifyTotpCode, encryptTotpSecret, decryptTotpSecret } from "../lib/totp.js";
 import { logLoginEvent, logAudit } from "../lib/audit.js";
 import { validateBody } from "../middleware/validate.js";
 import { loginLimiter, totpLimiter } from "../middleware/rateLimit.js";
@@ -119,10 +119,18 @@ authRouter.post("/totp-verify", totpLimiter, validateBody(totpSchema), async (re
     const user = rows[0];
     if (!user) return res.status(401).json({ error: "No pending login." });
 
-    const valid = verifyTotpCode(user.totp_secret, req.body.code);
+    const decodedSecret = decryptTotpSecret(user.totp_secret);
+    const valid = verifyTotpCode(decodedSecret.secret, req.body.code);
     if (!valid) {
       await logLoginEvent({ email: user.email, success: false, reason: "totp_invalid", ip: req.ip });
       return res.status(401).json({ error: "Invalid code." });
+    }
+
+    // Upgrade legacy plaintext secrets only after a successful code check.
+    if (decodedSecret.needsEncryption) {
+      await pool.query(`UPDATE admin_users SET totp_secret = $1 WHERE id = $2 AND totp_secret = $3`, [
+        encryptTotpSecret(decodedSecret.secret), user.id, user.totp_secret,
+      ]);
     }
 
     // Consume the one-time challenge atomically so it cannot be replayed or
@@ -202,7 +210,7 @@ authRouter.post("/totp-setup", requireAuth, async (req, res, next) => {
   try {
     const secret = generateTotpSecret();
     await pool.query(`UPDATE admin_users SET totp_secret = $1, totp_enabled = false WHERE id = $2`, [
-      secret,
+      encryptTotpSecret(secret),
       req.admin.id,
     ]);
     const qr = await totpQrDataUrl(req.admin.email, secret);
@@ -216,7 +224,8 @@ authRouter.post("/totp-setup", requireAuth, async (req, res, next) => {
 authRouter.post("/totp-confirm", requireAuth, totpLimiter, validateBody(totpSchema), async (req, res, next) => {
   try {
     const { rows } = await pool.query(`SELECT totp_secret FROM admin_users WHERE id = $1`, [req.admin.id]);
-    const secret = rows[0]?.totp_secret;
+    const storedSecret = rows[0]?.totp_secret;
+    const secret = storedSecret ? decryptTotpSecret(storedSecret).secret : null;
     if (!secret || !verifyTotpCode(secret, req.body.code)) {
       return res.status(400).json({ error: "Invalid code. Scan the QR code again and try the newest code shown." });
     }
