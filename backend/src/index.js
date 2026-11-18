@@ -83,6 +83,13 @@ function guardLocalAdminWrites(req, res, next) {
       (base) => req.path === base || req.path.startsWith(base + "/")
     );
   if (catalogWritePath && process.env.ENABLE_CATALOG_WRITES === "true") return next();
+
+  // Commerce administration is enabled independently from catalog/CMS writes.
+  // This avoids opening user management, settings, or other sensitive admin
+  // mutations just to let staff process orders and reservations.
+  if (/^\\/orders(?:\\/|$)/.test(req.path) && process.env.ENABLE_ORDER_WRITES === "true") return next();
+  if (/^\\/reservations(?:\\/|$)/.test(req.path) && process.env.ENABLE_RESERVATION_WRITES === "true") return next();
+
   if (process.env.ENABLE_ADMIN_WRITES === "true") return next();
   return res.status(503).json({ error: "Writes are disabled for this admin area." });
 }
