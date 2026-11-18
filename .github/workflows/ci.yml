@@ -42,6 +42,8 @@ jobs:
 
       - name: Check backend test syntax
         run: find backend/tests -type f -name '*.mjs' -print0 | xargs -0 -n1 node --check
+      - name: Test TOTP encryption and legacy-secret handling
+        run: node backend/tests/totp-crypto.unit.mjs
 
       - name: Verify local write protection
         run: |
