@@ -105,6 +105,20 @@ check("correct 2FA code grants session", r.status===200 && owner2.cookies.gi_ses
 const old = owner2.cookies.gi_session;
 r = await call(owner2,"POST","/admin/auth/refresh");
 check("refresh rotates session id", r.status===200 && owner2.cookies.gi_session!==old);
+
+// Two concurrent requests carrying the same refresh token must not both win.
+const raceA = jar("refresh-a"), raceB = jar("refresh-b");
+raceA.cookies = { ...owner2.cookies };
+raceB.cookies = { ...owner2.cookies };
+const [raceResultA, raceResultB] = await Promise.all([
+  call(raceA,"POST","/admin/auth/refresh"),
+  call(raceB,"POST","/admin/auth/refresh"),
+]);
+const raceWins = [raceResultA.status, raceResultB.status].filter(s => s===200).length;
+const raceLoses = [raceResultA.status, raceResultB.status].filter(s => s===401).length;
+check("concurrent refresh replay: exactly one request succeeds", raceWins===1 && raceLoses===1,
+  `statuses=${raceResultA.status},${raceResultB.status}`);
+owner2.cookies = { ...(raceResultA.status===200 ? raceA.cookies : raceB.cookies) };
 const stale = jar("stale"); stale.cookies.gi_session = old;
 r = await call(stale,"GET","/admin/products");
 check("old (rotated-out) session id is revoked/unusable", r.status===401);
