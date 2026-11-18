@@ -1,0 +1,36 @@
+# Security hardening status — GO iPhone
+
+Branch: `security/hardening-audit`
+
+This branch is isolated from Production. No deployment, production database migration, production data mutation, or credential change was performed.
+
+## Changes in this pass
+
+- Normalize admin login email by trimming whitespace and lowercasing before lookup.
+- Make failed-password counters increment atomically in PostgreSQL so concurrent attempts cannot overwrite each other's increments or evade the six-attempt lockout.
+- Make refresh-token rotation an atomic claim. Concurrent refresh requests presenting the same refresh token now have only one opportunity to rotate it; replayed/expired tokens are rejected and auth cookies are cleared with their original cookie attributes.
+- Restrict manual order payment transitions to `paid` or `refunded`: disabled by default, and only an OWNER can use them when `ALLOW_MANUAL_PAYMENT_STATUS=true` is explicitly set. This avoids routine staff accounts falsely marking an order as paid before a verified gateway integration exists.
+- Add an end-to-end regression assertion for simultaneous refresh-token replay to `backend/tests/security.e2e.mjs`.
+
+## Existing protections confirmed by source review
+
+- Argon2id password hashing.
+- Opaque random session and refresh tokens; only SHA-256 hashes are stored.
+- Server-side session lookup and revocation on every authenticated admin request.
+- HTTP-only, Secure-in-production, SameSite=Strict cookies.
+- Mandatory 2FA for OWNER and FULL_ACCESS_NO_DASHBOARD roles unless explicitly disabled for local testing.
+- Parameterized SQL queries, request-body validation, Helmet, explicit CORS origin allowlist, and API-side role/permission checks.
+- Production migrations require an explicit opt-in; admin/catalog/commerce writes have separate environment gates.
+
+## Remaining work before calling the system security-ready
+
+1. Encrypt TOTP secrets at rest with a dedicated key stored outside the database, including a tested migration path for existing enrolled admins. Current TOTP secrets are stored in plaintext.
+2. Replace in-memory IP rate-limit stores with a shared persistent store suitable for serverless/multi-instance deployments. The database-backed per-account failed-login lockout remains an additional control.
+3. Add automated tests for authorization boundaries, session expiry/revocation, 2FA challenge replay, lockout concurrency, upload validation, and payment/order state transitions. Existing destructive E2E suites must run only on a disposable database.
+4. Verify backup retention and perform a real restore drill; confirm production database point-in-time recovery and object-storage backup/recovery.
+5. Review production environment variables, CORS origins, deployment access, secret rotation, and monitoring/alerting with the operator. Do not paste secrets into chat or Git.
+6. Reconcile stock reservation/expiry and payment callbacks before enabling online checkout. A browser redirect must never mark an order paid.
+
+## Verification status
+
+The source changes and regression assertion were committed to this branch. The E2E suite has **not** been run in this environment because no disposable test database/server was provisioned. Do not describe these changes as fully tested or production-deployed.
