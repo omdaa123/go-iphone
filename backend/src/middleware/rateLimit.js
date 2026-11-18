@@ -6,11 +6,15 @@ import { pool } from "../db.js";
 class PostgresRateLimitStore {
   windowMs = 60_000;
 
+  constructor(namespace) { this.namespace = namespace; }
+  scopedKey(key) { return `${this.namespace}:${key}`; }
+
   init(options) {
     this.windowMs = options.windowMs;
   }
 
   async increment(key) {
+    key = this.scopedKey(key);
     const now = Date.now();
     const resetAt = new Date(now + this.windowMs);
     const { rows } = await pool.query(
@@ -41,6 +45,7 @@ class PostgresRateLimitStore {
   }
 
   async decrement(key) {
+    key = this.scopedKey(key);
     await pool.query(
       "UPDATE rate_limit_hits SET total_hits = GREATEST(0, total_hits - 1) WHERE key = $1",
       [key]
@@ -48,10 +53,12 @@ class PostgresRateLimitStore {
   }
 
   async resetKey(key) {
+    key = this.scopedKey(key);
     await pool.query("DELETE FROM rate_limit_hits WHERE key = $1", [key]);
   }
 
   async get(key) {
+    key = this.scopedKey(key);
     const { rows } = await pool.query(
       "SELECT total_hits, reset_at FROM rate_limit_hits WHERE key = $1",
       [key]
@@ -68,14 +75,14 @@ class PostgresRateLimitStore {
   }
 }
 
-const sharedStore = () => new PostgresRateLimitStore();
+const sharedStore = (namespace) => new PostgresRateLimitStore(namespace);
 
 export const loginLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   limit: 8,
   standardHeaders: true,
   legacyHeaders: false,
-  store: sharedStore(),
+  store: sharedStore("login"),
   message: { error: "Too many login attempts. Please wait 15 minutes and try again." },
 });
 
@@ -84,7 +91,7 @@ export const totpLimiter = rateLimit({
   limit: 10,
   standardHeaders: true,
   legacyHeaders: false,
-  store: sharedStore(),
+  store: sharedStore("totp"),
   message: { error: "Too many 2FA attempts. Please wait 10 minutes and try again." },
 });
 
@@ -93,6 +100,6 @@ export const writeLimiter = rateLimit({
   limit: 60,
   standardHeaders: true,
   legacyHeaders: false,
-  store: sharedStore(),
+  store: sharedStore("write"),
   message: { error: "Too many requests. Please slow down." },
 });
