@@ -24,7 +24,7 @@ const LOCKOUT_MINUTES = 15;
 
 // ---------- POST /admin/auth/login ----------
 const loginSchema = z.object({
-  email: z.string().email(),
+  email: z.string().trim().toLowerCase().email(),
   password: z.string().min(1),
 });
 
@@ -57,11 +57,17 @@ authRouter.post("/login", loginLimiter, validateBody(loginSchema), async (req, r
 
     const passwordOk = await argon2.verify(user.password_hash, password).catch(() => false);
     if (!passwordOk) {
-      const failedCount = user.failed_login_count + 1;
-      const lockUntil = failedCount >= MAX_FAILED_LOGINS ? minutesFromNow(LOCKOUT_MINUTES) : null;
+      // Increment in SQL so concurrent bad attempts cannot overwrite one another.
       await pool.query(
-        `UPDATE admin_users SET failed_login_count = $1, locked_until = $2 WHERE id = $3`,
-        [failedCount, lockUntil, user.id]
+        `UPDATE admin_users
+         SET failed_login_count = LEAST(failed_login_count + 1, $1),
+             locked_until = CASE
+               WHEN failed_login_count + 1 >= $1 AND (locked_until IS NULL OR locked_until <= now())
+                 THEN now() + ($2::text || ' minutes')::interval
+               ELSE locked_until
+             END
+         WHERE id = $3`,
+        [MAX_FAILED_LOGINS, LOCKOUT_MINUTES, user.id]
       );
       return genericFail("bad_password");
     }
@@ -151,8 +157,8 @@ authRouter.post("/refresh", async (req, res, next) => {
     );
     const session = rows[0];
     if (!session || session.revoked_at || !session.is_active || new Date(session.expires_at) < new Date()) {
-      res.clearCookie("gi_session");
-      res.clearCookie("gi_refresh");
+      res.clearCookie("gi_session", SESSION_COOKIE_OPTS);
+      res.clearCookie("gi_refresh", SESSION_COOKIE_OPTS);
       return res.status(401).json({ error: "Session expired. Please log in again." });
     }
 
@@ -160,7 +166,18 @@ authRouter.post("/refresh", async (req, res, next) => {
     // If a refresh token is ever replayed after rotation, this makes that
     // detectable (the old session is already revoked) rather than silently
     // accepted.
-    await pool.query(`UPDATE sessions SET revoked_at = now() WHERE id = $1`, [session.id]);
+    // Atomically claim rotation; concurrent refreshes cannot both mint sessions.
+    const rotated = await pool.query(
+      `UPDATE sessions SET revoked_at = now()
+       WHERE id = $1 AND revoked_at IS NULL AND expires_at > now()
+       RETURNING id`,
+      [session.id]
+    );
+    if (!rotated.rows[0]) {
+      res.clearCookie("gi_session", SESSION_COOKIE_OPTS);
+      res.clearCookie("gi_refresh", SESSION_COOKIE_OPTS);
+      return res.status(401).json({ error: "Session expired. Please log in again." });
+    }
     await issueSession(res, { id: session.admin_user_id, email: session.email, role: session.role }, req);
     res.json({ ok: true });
   } catch (err) {
@@ -172,8 +189,8 @@ authRouter.post("/refresh", async (req, res, next) => {
 authRouter.post("/logout", requireAuth, async (req, res, next) => {
   try {
     await pool.query(`UPDATE sessions SET revoked_at = now() WHERE id = $1`, [req.admin.sessionId]);
-    res.clearCookie("gi_session");
-    res.clearCookie("gi_refresh");
+    res.clearCookie("gi_session", SESSION_COOKIE_OPTS);
+    res.clearCookie("gi_refresh", SESSION_COOKIE_OPTS);
     res.json({ ok: true });
   } catch (err) {
     next(err);
