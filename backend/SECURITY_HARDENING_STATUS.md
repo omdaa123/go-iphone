@@ -24,16 +24,16 @@ This branch is isolated from Production. No deployment, production database migr
 
 ## Remaining work before calling the system security-ready
 
-1. Encrypt TOTP secrets at rest with a dedicated key stored outside the database, including a tested migration path for existing enrolled admins. Current TOTP secrets are stored in plaintext.
+1. TOTP encryption is implemented with AES-256-GCM; a unit test verifies round-trip encryption, legacy plaintext detection, and tamper rejection. Production rollout still requires a securely generated and backed-up `TOTP_ENCRYPTION_KEY`.
 2. Replace in-memory IP rate-limit stores with a shared persistent store suitable for serverless/multi-instance deployments. The database-backed per-account failed-login lockout remains an additional control.
-3. Add automated tests for authorization boundaries, session expiry/revocation, 2FA challenge replay, lockout concurrency, upload validation, and payment/order state transitions. Existing destructive E2E suites must run only on a disposable database.
+3. Run automated E2E tests for authorization boundaries, session expiry/revocation, 2FA challenge replay, lockout concurrency, upload validation, and payment/order state transitions on a disposable database only.
 4. Verify backup retention and perform a real restore drill; confirm production database point-in-time recovery and object-storage backup/recovery.
-5. Review production environment variables, CORS origins, deployment access, secret rotation, and monitoring/alerting with the operator. Do not paste secrets into chat or Git.
+5. Review production environment variables, CORS origins, deployment access, secret rotation, and monitoring/alerting. Do not paste secrets into chat or Git.
 6. Reconcile stock reservation/expiry and payment callbacks before enabling online checkout. A browser redirect must never mark an order paid.
 
 ## Verification status
 
-The source changes and regression assertion were committed to this branch. The E2E suite has **not** been run in this environment because no disposable test database/server was provisioned. Do not describe these changes as fully tested or production-deployed.
+The source changes are committed to this branch. GitHub Actions passed the backend syntax checks, TOTP crypto unit test, local write-protection check, dependency audit gates, and storefront/admin production builds. The destructive E2E suite has **not** been run because no disposable test database/server was provisioned. These changes are not production-deployed.
 
 
 ## TOTP secret encryption
