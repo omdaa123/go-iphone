@@ -34,3 +34,10 @@ This branch is isolated from Production. No deployment, production database migr
 ## Verification status
 
 The source changes and regression assertion were committed to this branch. The E2E suite has **not** been run in this environment because no disposable test database/server was provisioned. Do not describe these changes as fully tested or production-deployed.
+
+
+## TOTP secret encryption
+- New 2FA secrets are encrypted at rest with AES-256-GCM (`enc:v1:` format); authentication decrypts only in memory.
+- Existing plaintext secrets are migrated lazily after a successful 2FA verification, avoiding a forced reset for enrolled admins.
+- Before deploying this code, configure `TOTP_ENCRYPTION_KEY` as a base64-encoded 32-byte random key in the backend environment. Keep it outside the database and source control; losing it makes encrypted 2FA secrets unreadable. Generate with `openssl rand -base64 32` in a trusted local environment. Do not paste the key into chat.
+- The code intentionally does not change production environment variables or deploy. Verify the key is backed up securely before rollout.
