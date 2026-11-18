@@ -111,6 +111,13 @@ ordersRouter.patch("/:id/status", requirePermission("orders.write"), validateBod
 const paymentStatusSchema = z.object({ paymentStatus: z.enum(["pending", "paid", "failed", "refunded", "cancelled"]) });
 ordersRouter.patch("/:id/payment-status", requirePermission("orders.write"), validateBody(paymentStatusSchema), async (req, res, next) => {
   try {
+    // Until a verified gateway webhook exists, staff must not be able to
+    // mark an order paid/refunded through a routine order-management role.
+    // Any exceptional manual reconciliation is an explicit, owner-only opt-in.
+    if (["paid", "refunded"].includes(req.body.paymentStatus) &&
+        (req.admin.role !== "OWNER" || process.env.ALLOW_MANUAL_PAYMENT_STATUS !== "true")) {
+      return res.status(403).json({ error: "Manual paid/refunded status changes are disabled. Use a verified payment reconciliation flow." });
+    }
     const { rows } = await pool.query(
       `UPDATE orders SET payment_status = $1 WHERE id = $2 RETURNING *`,
       [req.body.paymentStatus, req.params.id]
