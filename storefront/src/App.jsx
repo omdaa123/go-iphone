@@ -986,9 +986,9 @@ function EditorialFeature({ product, go, config = {} }) {
   );
   return (
     <section className="max-w-7xl mx-auto px-6 md:px-10" style={{paddingTop:(config.sectionPadding??64)+"px",paddingBottom:(config.sectionPadding??64)+"px",background:config.sectionBackground||"transparent",color:config.headingColor||"inherit",fontFamily:config.headingFont&&config.headingFont!=="inherit"?config.headingFont:"inherit"}}>
-      <div className="grid md:grid-cols-[1.45fr_0.85fr] gap-0 md:gap-14 items-stretch">
-        <div style={{ backgroundColor: T.stone }} className="relative order-2 md:order-1 aspect-square md:min-h-[620px] overflow-hidden">
-          <ProductImage product={product} size={440} objectPosition={`${config.featuredImageX??50}% ${config.featuredImageY??50}%`} zoom={config.featuredImageZoom??100} />
+      <div className="grid md:grid-cols-[1.2fr_1fr] gap-0 md:gap-12 items-stretch">
+        <div style={{ backgroundColor: T.stone }} className="relative order-2 md:order-1 aspect-[4/3] md:min-h-[440px] overflow-hidden">
+          <ProductImage product={product} size={340} objectPosition={`${config.featuredImageX??50}% ${config.featuredImageY??50}%`} zoom={config.featuredImageZoom??100} />
         </div>
         <div className="order-1 md:order-2 flex flex-col justify-center py-10 md:py-0">
           <p style={{ color: T.graphite, fontSize: "12.5px", letterSpacing: "0.08em" }} className="mb-5 uppercase">{config.eyebrow||"Featured"}</p>
