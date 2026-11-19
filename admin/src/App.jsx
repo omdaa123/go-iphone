@@ -818,6 +818,7 @@ function HomepageBuilder({ onError }) {
   const [slides, setSlides] = useState([]);
   const [categories, setCategories] = useState([]);
   const [collections, setCollections] = useState([]);
+  const [products, setProducts] = useState([]);
   const [siteContent, setSiteContent] = useState({
     homepageLayout: [
       { id: "hero", type: "hero", label: "Hero banner", visible: true, order: 0 },
@@ -901,11 +902,12 @@ function HomepageBuilder({ onError }) {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const results = await Promise.all([request("/hero-slides"), request("/media"), request("/categories"), request("/site-content"), request("/collections")]);
+      const results = await Promise.all([request("/hero-slides"), request("/media"), request("/categories"), request("/site-content"), request("/collections"), request("/products")]);
       setSlides(results[0].heroSlides || []);
       setMedia(results[1].media || []);
       setCategories(results[2].categories || []);
       setCollections(results[4].collections || []);
+      setProducts(results[5].products || []);
       const saved = results[3].siteContent || {};
       setSiteContent(current => ({
         ...current,
@@ -1320,6 +1322,8 @@ function HomepageBuilder({ onError }) {
                     <label>Intro column width<select value={config.introWidth||"narrow"} onChange={e=>updateConfig({introWidth:e.target.value})}><option value="narrow">Narrow</option><option value="balanced">Balanced</option><option value="wide">Wide</option></select></label>
                   </div></details>}
                   {activeId==="featured" && <details className="inspector-group" open><summary><span><b>Featured section design</b><small>Every control here updates the Featured storefront block</small></span><ChevronDown size={16}/></summary><div className="inspector-group-body">
+                    <label>Featured product<select value={config.featuredProductId||""} onChange={e=>updateConfig({featuredProductId:e.target.value||null})}><option value="">Automatic (first Featured iPhone)</option>{products.map(product=><option key={product.id} value={product.id}>{product.name}</option>)}</select></label>
+                    <small className="field-help">Choose exactly which product appears in the Featured section.</small>
                     <label>Eyebrow<input value={config.eyebrow??"Featured"} onChange={e=>updateConfig({eyebrow:e.target.value})}/></label>
                     <label>Featured headline<input value={config.featuredTitle||""} placeholder="Use product name" onChange={e=>updateConfig({featuredTitle:e.target.value})}/></label>
                     <label>Description<textarea rows="3" value={config.storeDescription||""} placeholder="Use product specifications" onChange={e=>updateConfig({storeDescription:e.target.value})}/></label>
@@ -1327,6 +1331,9 @@ function HomepageBuilder({ onError }) {
                     <label>Heading font<select value={config.headingFont||"inherit"} onChange={e=>updateConfig({headingFont:e.target.value})}><option value="inherit">Store default</option><option value="Inter, sans-serif">Inter</option><option value="Arial, sans-serif">Arial</option><option value="Georgia, serif">Georgia</option></select></label>
                     <label>Heading size <b>{config.headingSize??42}px</b><input type="range" min="24" max="64" value={config.headingSize??42} onChange={e=>updateConfig({headingSize:Number(e.target.value)})}/></label>
                     <label>Heading weight<select value={config.headingWeight||"700"} onChange={e=>updateConfig({headingWeight:e.target.value})}><option value="500">Medium</option><option value="600">Semi-bold</option><option value="700">Bold</option><option value="800">Extra bold</option></select></label>
+                    <label>Image zoom <b>{config.featuredImageZoom??100}%</b><input type="range" min="70" max="180" value={config.featuredImageZoom??100} onChange={e=>updateConfig({featuredImageZoom:Number(e.target.value)})}/></label>
+                    <label>Image horizontal position <b>{config.featuredImageX??50}%</b><input type="range" min="0" max="100" value={config.featuredImageX??50} onChange={e=>updateConfig({featuredImageX:Number(e.target.value)})}/></label>
+                    <label>Image vertical position <b>{config.featuredImageY??50}%</b><input type="range" min="0" max="100" value={config.featuredImageY??50} onChange={e=>updateConfig({featuredImageY:Number(e.target.value)})}/></label>
                     <label>Section background<input type="color" value={config.sectionBackground||"#ffffff"} onChange={e=>updateConfig({sectionBackground:e.target.value})}/></label>
                     <label>Text color<input type="color" value={config.headingColor||"#20242b"} onChange={e=>updateConfig({headingColor:e.target.value})}/></label>
                     <label>Button accent<input type="color" value={config.accentColor||"#20242b"} onChange={e=>updateConfig({accentColor:e.target.value})}/></label>
