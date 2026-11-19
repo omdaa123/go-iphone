@@ -58,6 +58,10 @@ publicRouter.get("/catalog", async (req, res, next) => {
     const collectionsByProduct = {};
     for (const r of pcs.rows) (collectionsByProduct[r.product_id] ||= []).push(r.collection_id);
 
+    // Any product with at least one available individual inventory unit is
+    // automatically part of the Certified Pre-Owned collection.
+    const availableUnitProducts = new Set(units.rows.map((u) => u.product_id));
+
     const variantsByProduct = {};
     for (const v of variants.rows) (variantsByProduct[v.product_id] ||= []).push(v);
 
@@ -80,8 +84,11 @@ publicRouter.get("/catalog", async (req, res, next) => {
         availability: p.availability,
         reservation: p.reservation_cfg,
         badges: p.badges,
-        hasUnits: p.has_units,
-        collections: collectionsByProduct[p.id] || [],
+        hasUnits: availableUnitProducts.has(p.id),
+        collections: Array.from(new Set([
+          ...(collectionsByProduct[p.id] || []),
+          ...(availableUnitProducts.has(p.id) ? ["certified-refurbished"] : []),
+        ])),
         createdAt: p.created_at || null,
         soldQty: soldByProduct[p.id] || 0,
         image: p.image_url || null,
