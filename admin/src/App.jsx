@@ -133,7 +133,9 @@ const WATCH_SCREEN_INCHES = {
   "Apple Watch Series 1": {"38mm":"1.32″","42mm":"1.50″"},
   "Apple Watch (1st generation)": {"38mm":"1.32″","42mm":"1.50″"}
 };
-async function request(path, options = {}) {
+let authRefreshPromise = null;
+
+async function request(path, options = {}, retryAfterRefresh = true) {
   const method = String(options.method || "GET").toUpperCase();
   if (import.meta.env.DEV && method !== "GET" && !path.startsWith("/auth/") && !((method === "POST" && (path === "/media" || path === "/media/video")) || (method === "DELETE" && /^\/media\/[0-9a-f-]+$/i.test(path)))) {
     throw new Error("Local preview is read-only. Changes are blocked to protect your live store.");
@@ -143,6 +145,27 @@ async function request(path, options = {}) {
     ...options,
     headers: { ...(options.body ? { "Content-Type": "application/json" } : {}), ...options.headers },
   });
+
+  // The server session cookie expires after 15 minutes. Refresh it once and
+  // retry the original request so edits do not randomly fail in long admin sessions.
+  if (response.status === 401 && retryAfterRefresh && !path.startsWith("/auth/")) {
+    try {
+      if (!authRefreshPromise) {
+        authRefreshPromise = fetch(`${API}/auth/refresh`, {
+          method: "POST",
+          credentials: "include",
+        }).then(async refreshResponse => {
+          if (!refreshResponse.ok) throw new Error("Admin session expired. Please sign in again.");
+          return true;
+        }).finally(() => { authRefreshPromise = null; });
+      }
+      await authRefreshPromise;
+      return request(path, options, false);
+    } catch {
+      // Preserve the original 401 below; the app's normal auth handling can sign out.
+    }
+  }
+
   const data = await response.json().catch(() => ({}));
   if (!response.ok) {
     const error = new Error(data.error || `Request failed (${response.status})`);
