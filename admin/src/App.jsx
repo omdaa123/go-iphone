@@ -459,7 +459,7 @@ function Products({ onError }) {
   async function uploadMedia(fileList) {
     const files = Array.from(fileList || []).filter(Boolean);
     if (!files.length) return;
-    const invalid = files.find(file => !/^image\\/(jpeg|png|webp|gif)$/i.test(file.type));
+    const invalid = files.find(file => !["image/jpeg", "image/png", "image/webp", "image/gif"].includes((file.type || "").toLowerCase()));
     if (invalid) { setImageUploadError(`"${invalid.name}" is not a supported image. Choose JPG, PNG, WebP or GIF.`); return; }
     const previews = files.map(file => ({ id: `local-${Date.now()}-${Math.random().toString(36).slice(2)}`, name: file.name, url: URL.createObjectURL(file) }));
     setLocalImagePreviews(current => [...current, ...previews]);
