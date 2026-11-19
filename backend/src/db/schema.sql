@@ -299,3 +299,12 @@ CREATE TABLE IF NOT EXISTS site_settings (
   key TEXT PRIMARY KEY,
   value JSONB NOT NULL
 );
+
+
+-- Shared, windowed counters used by express-rate-limit across backend instances.
+CREATE TABLE IF NOT EXISTS rate_limit_hits (
+  key TEXT PRIMARY KEY,
+  total_hits INTEGER NOT NULL CHECK (total_hits >= 0),
+  reset_at TIMESTAMPTZ NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_rate_limit_hits_reset_at ON rate_limit_hits(reset_at);
