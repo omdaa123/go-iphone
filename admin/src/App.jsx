@@ -1029,8 +1029,9 @@ function HomepageBuilder({ onError }) {
     } catch (e) { onError(e.message); }
     finally { setUploading(false); }
   }
-  function startNew() { setForm({ ...blank }); setEditing("new"); }
+  function startNew() { setHeroUploadError(""); setForm({ ...blank }); setEditing("new"); }
   function startEdit(slide) {
+    setHeroUploadError("");
     setForm({
       eyebrow: slide.eyebrow || "", title: slide.title || "", subtitle: slide.subtitle || "",
       badge: slide.badge || "", ctaText: slide.cta_text || "", linkCategoryKey: slide.link_category_key || "iphone",
@@ -1084,7 +1085,10 @@ function HomepageBuilder({ onError }) {
     finally { setUploading(false); }
   }
   async function save(event) {
-    event.preventDefault(); setSaving(true);
+    event.preventDefault();
+    if (!form.title.trim()) { setHeroUploadError("Please enter a main headline before creating the slide."); return; }
+    setHeroUploadError("");
+    setSaving(true);
     const payload = {
       eyebrow: form.eyebrow || null, title: form.title.trim(), subtitle: form.subtitle || null,
       badge: form.badge || null, ctaText: form.ctaText || null,
@@ -1503,7 +1507,7 @@ function HomepageBuilder({ onError }) {
         {["imageMediaId","mobileImageMediaId"].map((key, i) => <div className="homepage-image-field" key={key}><div><b>{i ? "Mobile banner" : "Desktop banner"}</b><span>{i ? "Optional image optimized for phones." : "Recommended wide landscape image."}</span></div>{selectedImage(form[key]) ? <img src={selectedImage(form[key])} alt={i ? "Mobile banner" : "Desktop banner"}/> : <div className="homepage-image-empty"><Image size={20}/><span>No image selected</span></div>}<div className="homepage-image-buttons"><label className="btn secondary small upload-label">{uploading ? "Uploading…" : "Upload image"}<input type="file" accept="image/jpeg,image/png,image/webp,image/gif" disabled={uploading} onChange={e => { upload(e.target.files?.[0], key); e.target.value = ""; }}/></label><button type="button" className="btn secondary small" onClick={() => { setMediaTarget(key); setHeroMediaOpen(true); }}>Choose from library</button>{form[key] && <button type="button" className="text-btn danger-text" onClick={() => setForm(f => ({ ...f, [key]: "" }))}>Remove</button>}</div></div>)}
       </div>
       {heroUploadError && <div className="alert error" role="alert"><AlertTriangle size={16}/>{heroUploadError}</div>}
-      <div className="modal-foot"><button type="button" className="btn secondary" onClick={() => setEditing(null)}>Cancel</button><button className="btn primary" disabled={saving || uploading || !form.title.trim()}>{saving ? "Saving…" : uploading ? "Uploading image…" : editing === "new" ? "Create slide" : "Save changes"}</button></div>
+      <div className="modal-foot"><button type="button" className="btn secondary" onClick={() => setEditing(null)}>Cancel</button><button className="btn primary" disabled={saving || uploading}>{saving ? "Saving…" : uploading ? "Uploading image…" : editing === "new" ? "Create slide" : "Save changes"}</button></div>
     </form></div>}
     {heroMediaOpen && <div className="media-picker-backdrop"><div className="media-picker"><div className="modal-head"><div><div className="eyebrow">MEDIA LIBRARY</div><h2>Choose hero image</h2></div><button type="button" className="icon-btn" onClick={() => setHeroMediaOpen(false)}><X size={18}/></button></div>{media.length ? <div className="media-picker-grid">{media.filter(m => m.usage_tag !== "video").map(m => <button type="button" key={m.id} className={form[mediaTarget] === m.id ? "media-choice selected" : "media-choice"} onClick={() => { setForm(f => ({ ...f, [mediaTarget]: m.id })); setHeroMediaOpen(false); setMediaTarget(""); setHeroUploadError(""); }}><img src={m.url} alt={m.file_name || "Store media"}/><span>{m.file_name || "Image"}</span><small>{m.usage_tag || "Image"}</small></button>)}</div> : <p className="muted">No images uploaded yet. Upload an image to get started.</p>}<div className="modal-foot"><button type="button" className="btn secondary" onClick={() => setHeroMediaOpen(false)}>Done</button></div></div></div>}
   </>;
