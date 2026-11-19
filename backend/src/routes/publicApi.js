@@ -58,9 +58,14 @@ publicRouter.get("/catalog", async (req, res, next) => {
     const collectionsByProduct = {};
     for (const r of pcs.rows) (collectionsByProduct[r.product_id] ||= []).push(r.collection_id);
 
-    // Any product with at least one available individual inventory unit is
-    // automatically part of the Certified Pre-Owned collection.
+    // Only available, explicitly graded pre-owned units belong in Certified Pre-Owned.
+    // New devices (and units without a recorded condition) must never appear there.
     const availableUnitProducts = new Set(units.rows.map((u) => u.product_id));
+    const certifiedPreOwnedProducts = new Set(
+      units.rows
+        .filter((u) => u.condition && String(u.condition).trim().toLowerCase() !== "new")
+        .map((u) => u.product_id)
+    );
 
     const variantsByProduct = {};
     for (const v of variants.rows) (variantsByProduct[v.product_id] ||= []).push(v);
@@ -86,8 +91,8 @@ publicRouter.get("/catalog", async (req, res, next) => {
         badges: p.badges,
         hasUnits: availableUnitProducts.has(p.id),
         collections: Array.from(new Set([
-          ...(collectionsByProduct[p.id] || []),
-          ...(availableUnitProducts.has(p.id) ? ["certified-refurbished"] : []),
+          ...(collectionsByProduct[p.id] || []).filter((id) => id !== "certified-refurbished"),
+          ...(certifiedPreOwnedProducts.has(p.id) ? ["certified-refurbished"] : []),
         ])),
         createdAt: p.created_at || null,
         soldQty: soldByProduct[p.id] || 0,
