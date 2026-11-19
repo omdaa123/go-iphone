@@ -226,7 +226,7 @@ function productGallery(product) {
    photo yet, it falls back to the centered/padded vector glyph so
    that illustrative fallback still reads as a deliberate icon rather
    than a stretched, cropped line drawing. */
-function ProductImage({ product, hex, size = 200, className = "", imgClassName = "" }) {
+function ProductImage({ product, hex, size = 200, className = "", imgClassName = "", fit = "cover" }) {
   const src = productImageSrc(product);
   if (src) {
     return (
@@ -234,7 +234,7 @@ function ProductImage({ product, hex, size = 200, className = "", imgClassName =
         src={src}
         alt={product?.name || ""}
         draggable={false}
-        className={`absolute inset-0 w-full h-full object-contain object-center bg-white p-[11%] ${imgClassName}`}
+        className={`absolute inset-0 w-full h-full ${fit === "contain" ? "object-contain object-center bg-white p-[11%]" : "object-cover object-center"} ${imgClassName}`}
       />
     );
   }
@@ -486,7 +486,7 @@ function ProductCard({ product, onOpen, onToggleCompare, isComparing, compareDis
         className="text-left w-full cursor-pointer"
       >
         <div style={{ backgroundColor: "#fff", aspectRatio: "1 / 1.05" }} className="relative w-full overflow-hidden">
-          <ProductImage product={product} size={132} />
+          <ProductImage product={product} size={132} fit="contain" />
         </div>
         <div className="pt-3.5">
           {status && <p className="mb-1.5"><Badge tone={statusTone}>{status}</Badge></p>}
