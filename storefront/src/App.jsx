@@ -234,7 +234,7 @@ function ProductImage({ product, hex, size = 200, className = "", imgClassName =
         src={src}
         alt={product?.name || ""}
         draggable={false}
-        className={`absolute inset-0 w-full h-full object-cover object-center ${imgClassName}`}
+        className={`absolute inset-0 w-full h-full object-contain object-center bg-white p-[11%] ${imgClassName}`}
       />
     );
   }
@@ -485,8 +485,8 @@ function ProductCard({ product, onOpen, onToggleCompare, isComparing, compareDis
         onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onOpen(product.id); } }}
         className="text-left w-full cursor-pointer"
       >
-        <div style={{ backgroundColor: T.stone, aspectRatio: "1 / 1.05" }} className="relative w-full overflow-hidden">
-          <ProductImage product={product} size={132} className="transition-transform duration-500 ease-out group-hover:scale-[1.04]" imgClassName="transition-transform duration-500 ease-out group-hover:scale-[1.04]" />
+        <div style={{ backgroundColor: "#fff", aspectRatio: "1 / 1.05" }} className="relative w-full overflow-hidden">
+          <ProductImage product={product} size={132} />
         </div>
         <div className="pt-3.5">
           {status && <p className="mb-1.5"><Badge tone={statusTone}>{status}</Badge></p>}
