@@ -845,6 +845,8 @@ function HomepageBuilder({ onError }) {
   const [editing, setEditing] = useState(null);
   const [form, setForm] = useState(blank);
   const [mediaTarget, setMediaTarget] = useState("");
+  const [heroMediaOpen, setHeroMediaOpen] = useState(false);
+  const [heroUploadError, setHeroUploadError] = useState("");
   const [refresh, setRefresh] = useState(0);
   const [activeTab, setActiveTab] = useState("canvas");
   const [previewMode, setPreviewMode] = useState("");
@@ -1041,14 +1043,23 @@ function HomepageBuilder({ onError }) {
   }
   async function upload(file, target) {
     if (!file) return;
+    const allowedTypes = ["image/jpeg", "image/png", "image/webp", "image/gif"];
+    if (!allowedTypes.includes((file.type || "").toLowerCase())) {
+      const message = "Choose a JPG, PNG, WebP or GIF image.";
+      setHeroUploadError(message); onError(message); return;
+    }
+    setHeroUploadError("");
     setUploading(true);
     try {
       const dataUrl = await compressImage(file);
       const d = await request("/media", { method: "POST", body: JSON.stringify({ dataUrl, fileName: file.name, usageTag: "hero" }) });
-      setMedia(list => [d.media, ...list]);
+      if (!d?.media?.id || !d.media.url) throw new Error("The server did not return a valid uploaded image. Please try again.");
+      setMedia(list => [d.media, ...list.filter(item => item.id !== d.media.id)]);
       setForm(f => ({ ...f, [target]: d.media.id }));
-    } catch (e) { onError(e.message); }
-    finally { setUploading(false); }
+    } catch (e) {
+      const message = e?.message || "Hero image upload failed. Please try again.";
+      setHeroUploadError(message); onError(message);
+    } finally { setUploading(false); }
   }
   async function assignCategoryImage(key, imageMediaId) {
     try {
@@ -1489,10 +1500,12 @@ function HomepageBuilder({ onError }) {
       <div className="homepage-image-fields">
         <div className="homepage-image-field field-wide"><div><b>Desktop video (optional)</b><span>Paste a direct MP4 or WebM URL. Video takes priority over the desktop image.</span></div><input type="url" value={form.videoUrl} onChange={e => setForm(f => ({ ...f, videoUrl: e.target.value }))} placeholder="https://cdn.example.com/hero.mp4"/></div>
         <div className="homepage-image-field field-wide"><div><b>Mobile video (optional)</b><span>Optional smaller video for phones. Leave blank to reuse the desktop video.</span></div><input type="url" value={form.mobileVideoUrl} onChange={e => setForm(f => ({ ...f, mobileVideoUrl: e.target.value }))} placeholder="https://cdn.example.com/hero-mobile.mp4"/></div>
-        {["imageMediaId","mobileImageMediaId"].map((key, i) => <div className="homepage-image-field" key={key}><div><b>{i ? "Mobile banner" : "Desktop banner"}</b><span>{i ? "Optional image optimized for phones." : "Recommended wide landscape image."}</span></div>{selectedImage(form[key]) ? <img src={selectedImage(form[key])} alt={i ? "Mobile banner" : "Desktop banner"}/> : <div className="homepage-image-empty"><Image size={20}/><span>No image selected</span></div>}<div className="homepage-image-buttons"><label className="btn secondary small upload-label">{uploading ? "Uploading…" : "Upload image"}<input type="file" accept="image/jpeg,image/png,image/webp,image/gif" disabled={uploading} onChange={e => upload(e.target.files?.[0], key)}/></label><button type="button" className="btn secondary small" onClick={() => setMediaTarget(mediaTarget === key ? "" : key)}>Choose from library</button>{form[key] && <button type="button" className="text-btn danger-text" onClick={() => setForm(f => ({ ...f, [key]: "" }))}>Remove</button>}</div>{mediaTarget === key && <div className="homepage-media-grid">{media.map(m => <button type="button" key={m.id} className={form[key] === m.id ? "selected" : ""} onClick={() => { setForm(f => ({ ...f, [key]: m.id })); setMediaTarget(""); }}><img src={m.url} alt={m.file_name || "Media"}/><span>{m.file_name || "Image"}</span></button>)}</div>}</div>)}
+        {["imageMediaId","mobileImageMediaId"].map((key, i) => <div className="homepage-image-field" key={key}><div><b>{i ? "Mobile banner" : "Desktop banner"}</b><span>{i ? "Optional image optimized for phones." : "Recommended wide landscape image."}</span></div>{selectedImage(form[key]) ? <img src={selectedImage(form[key])} alt={i ? "Mobile banner" : "Desktop banner"}/> : <div className="homepage-image-empty"><Image size={20}/><span>No image selected</span></div>}<div className="homepage-image-buttons"><label className="btn secondary small upload-label">{uploading ? "Uploading…" : "Upload image"}<input type="file" accept="image/jpeg,image/png,image/webp,image/gif" disabled={uploading} onChange={e => { upload(e.target.files?.[0], key); e.target.value = ""; }}/></label><button type="button" className="btn secondary small" onClick={() => { setMediaTarget(key); setHeroMediaOpen(true); }}>Choose from library</button>{form[key] && <button type="button" className="text-btn danger-text" onClick={() => setForm(f => ({ ...f, [key]: "" }))}>Remove</button>}</div></div>)}
       </div>
-      <div className="modal-foot"><button type="button" className="btn secondary" onClick={() => setEditing(null)}>Cancel</button><button className="btn primary" disabled={saving || uploading || !form.title.trim()}>{saving ? "Saving…" : editing === "new" ? "Create slide" : "Save changes"}</button></div>
+      {heroUploadError && <div className="alert error" role="alert"><AlertTriangle size={16}/>{heroUploadError}</div>}
+      <div className="modal-foot"><button type="button" className="btn secondary" onClick={() => setEditing(null)}>Cancel</button><button className="btn primary" disabled={saving || uploading || !form.title.trim()}>{saving ? "Saving…" : uploading ? "Uploading image…" : editing === "new" ? "Create slide" : "Save changes"}</button></div>
     </form></div>}
+    {heroMediaOpen && <div className="media-picker-backdrop"><div className="media-picker"><div className="modal-head"><div><div className="eyebrow">MEDIA LIBRARY</div><h2>Choose hero image</h2></div><button type="button" className="icon-btn" onClick={() => setHeroMediaOpen(false)}><X size={18}/></button></div>{media.length ? <div className="media-picker-grid">{media.filter(m => m.usage_tag !== "video").map(m => <button type="button" key={m.id} className={form[mediaTarget] === m.id ? "media-choice selected" : "media-choice"} onClick={() => { setForm(f => ({ ...f, [mediaTarget]: m.id })); setHeroMediaOpen(false); setMediaTarget(""); setHeroUploadError(""); }}><img src={m.url} alt={m.file_name || "Store media"}/><span>{m.file_name || "Image"}</span><small>{m.usage_tag || "Image"}</small></button>)}</div> : <p className="muted">No images uploaded yet. Upload an image to get started.</p>}<div className="modal-foot"><button type="button" className="btn secondary" onClick={() => setHeroMediaOpen(false)}>Done</button></div></div></div>}
   </>;
 }
 
