@@ -226,7 +226,7 @@ function productGallery(product) {
    photo yet, it falls back to the centered/padded vector glyph so
    that illustrative fallback still reads as a deliberate icon rather
    than a stretched, cropped line drawing. */
-function ProductImage({ product, hex, size = 200, className = "", imgClassName = "", fit = "cover" }) {
+function ProductImage({ product, hex, size = 200, className = "", imgClassName = "", fit = "cover", objectPosition = "center", zoom = 100 }) {
   const src = productImageSrc(product);
   if (src) {
     return (
@@ -234,7 +234,8 @@ function ProductImage({ product, hex, size = 200, className = "", imgClassName =
         src={src}
         alt={product?.name || ""}
         draggable={false}
-        className={`absolute inset-0 w-full h-full ${fit === "contain" ? "object-contain object-center bg-white p-[11%]" : "object-cover object-center"} ${imgClassName}`}
+        style={{ objectPosition, transform: `scale(${Math.max(70, Math.min(180, Number(zoom) || 100)) / 100})` }}
+        className={`absolute inset-0 w-full h-full ${fit === "contain" ? "object-contain object-center bg-white p-[11%]" : "object-cover"} ${imgClassName}`}
       />
     );
   }
@@ -987,7 +988,7 @@ function EditorialFeature({ product, go, config = {} }) {
     <section className="max-w-7xl mx-auto px-6 md:px-10" style={{paddingTop:(config.sectionPadding??64)+"px",paddingBottom:(config.sectionPadding??64)+"px",background:config.sectionBackground||"transparent",color:config.headingColor||"inherit",fontFamily:config.headingFont&&config.headingFont!=="inherit"?config.headingFont:"inherit"}}>
       <div className="grid md:grid-cols-[1.3fr_1fr] gap-0 md:gap-16 items-stretch">
         <div style={{ backgroundColor: T.stone }} className="relative order-2 md:order-1 aspect-[4/3] md:aspect-auto overflow-hidden">
-          <ProductImage product={product} size={300} />
+          <ProductImage product={product} size={300} objectPosition={`${config.featuredImageX??50}% ${config.featuredImageY??50}%`} zoom={config.featuredImageZoom??100} />
         </div>
         <div className="order-1 md:order-2 flex flex-col justify-center py-10 md:py-0">
           <p style={{ color: T.graphite, fontSize: "12.5px", letterSpacing: "0.08em" }} className="mb-5 uppercase">{config.eyebrow||"Featured"}</p>
@@ -1236,7 +1237,8 @@ function HomePage({ go, compareIds, onToggleCompare }) {
     ? siteContent.collections.map(collection => ({ ...collection, ...(collectionDetails[collection.id] || {}) }))
     : [];
   const preowned = PRODUCTS.filter((p) => p.hasUnits);
-  const featured = PRODUCTS.find((p) => hasCollection(p, "featured") && p.category === "iphone")
+  const featured = PRODUCTS.find((p) => String(p.id) === String(collectionDetails.featured?.featuredProductId || ""))
+    || PRODUCTS.find((p) => hasCollection(p, "featured") && p.category === "iphone")
     || PRODUCTS.find((p) => p.category === "iphone")
     || PRODUCTS[0];
   // Always provide the four core storefront sections, even if an older
