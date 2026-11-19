@@ -372,6 +372,8 @@ function Products({ onError }) {
   const [collectionIds, setCollectionIds] = useState([]);
   const [mediaOpen, setMediaOpen] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [imageUploadError, setImageUploadError] = useState("");
+  const [localImagePreviews, setLocalImagePreviews] = useState([]);
   const [primaryImageMediaId, setPrimaryImageMediaId] = useState("");
   const [galleryMediaIds, setGalleryMediaIds] = useState([]);
   const empty = { name: "", categoryKey: "iphone", productType: "smartphone", tagline: "", visibility: "draft", salesMode: "for_sale", availability: "in_stock", variants: [{ storage: "", color: "", price: "", stockQty: "" }] };
@@ -457,6 +459,11 @@ function Products({ onError }) {
   async function uploadMedia(fileList) {
     const files = Array.from(fileList || []).filter(Boolean);
     if (!files.length) return;
+    const invalid = files.find(file => !["image/jpeg", "image/png", "image/webp", "image/gif"].includes((file.type || "").toLowerCase()));
+    if (invalid) { setImageUploadError(`"${invalid.name}" is not a supported image. Choose JPG, PNG, WebP or GIF.`); return; }
+    const previews = files.map(file => ({ id: `local-${Date.now()}-${Math.random().toString(36).slice(2)}`, name: file.name, url: URL.createObjectURL(file) }));
+    setLocalImagePreviews(current => [...current, ...previews]);
+    setImageUploadError("");
     setUploading(true);
     try {
       const hadPrimaryImage = Boolean(primaryImageMediaId);
@@ -464,13 +471,19 @@ function Products({ onError }) {
       for (const file of files) {
         const dataUrl = await compressImage(file);
         const d = await request("/media", { method: "POST", body: JSON.stringify({ dataUrl, fileName: file.name, usageTag: "product" }) });
+        if (!d?.media?.id || !d.media.url) throw new Error("The server did not return a valid uploaded image. Please try again.");
         uploaded.push(d.media);
       }
       setMedia(current => [...uploaded, ...current]);
       if (!hadPrimaryImage && uploaded[0]) setPrimaryImageMediaId(uploaded[0].id);
       setGalleryMediaIds(current => [...new Set([...current, ...uploaded.slice(hadPrimaryImage ? 0 : 1).map(item => item.id)])]);
-    } catch (e) { onError(e.message); }
-    finally { setUploading(false); }
+      setLocalImagePreviews(current => current.filter(item => !previews.some(preview => preview.id === item.id)));
+      previews.forEach(item => URL.revokeObjectURL(item.url));
+    } catch (e) {
+      const message = e?.message || "Image upload failed. Please try again.";
+      setImageUploadError(message);
+      onError(message);
+    } finally { setUploading(false); }
   }
   function addVariant() { setForm(f => ({ ...f, variants: [...f.variants, { storage: "", color: "", price: "", stockQty: "" }] })); }
   function changeVariant(index, key, value) { setForm(f => ({ ...f, variants: f.variants.map((v, i) => i === index ? { ...v, [key]: value } : v) })); }
@@ -674,7 +687,7 @@ function Products({ onError }) {
         <label>Visibility<CustomSelect value={form.visibility} onChange={e => setForm(f => ({ ...f, visibility: e.target.value }))}><option value="draft">Draft</option><option value="published">Published</option><option value="hidden">Hidden</option></CustomSelect></label>
       </div>}
       {editing==="new" && (isOtherDevicesCategory ? <section className="field-wide other-device-specs" style={{margin:"14px 0"}}><div className="eyebrow">DEVICE SPECIFICATIONS</div><h3>{titleCase(form.productType)} details</h3><p className="muted">Fill in the specifications for this device. Only the relevant questions for the selected branch are shown.</p><div className="editor-grid">{(OTHER_DEVICE_FIELD_SETS[form.productType] || OTHER_DEVICE_FIELD_SETS["other-electronics"]).map(field=><label key={field.key}>{field.label}<input value={otherDeviceAnswers[field.key] || ""} onChange={e=>setOtherDeviceAnswers(current=>({...current,[field.key]:e.target.value}))} placeholder={"Enter "+field.label.toLowerCase()}/></label>)}</div>{otherDeviceCondition==="Used" && <><div className="eyebrow" style={{marginTop:18}}>USED DEVICE CONDITION</div><h3>Usage & condition details</h3><p className="muted">These extra questions appear only for used devices.</p><div className="editor-grid"><label>Battery health / runtime<input value={otherDeviceBattery} onChange={e=>setOtherDeviceBattery(e.target.value)} placeholder="e.g. 90% or up to 8 hours"/></label><label>Condition grade<CustomSelect value={otherDeviceGrade} onChange={e=>setOtherDeviceGrade(e.target.value)}>{["Like New","Excellent","Good","Fair"].map(v=><option key={v}>{v}</option>)}</CustomSelect></label><label className="field-wide">Defects / repairs / usage notes<textarea rows={2} value={otherDeviceUsageNotes} onChange={e=>setOtherDeviceUsageNotes(e.target.value)} placeholder="Describe scratches, faults, replaced parts, battery issues or previous repairs…"/></label></div></>}</section> : <label className="field-wide" style={{display:"block",margin:"14px 0"}}>Custom specifications · any field<textarea rows={4} value={customSpecs} onChange={e=>setCustomSpecs(e.target.value)} placeholder={"Write one custom field per line, in this format:\nScreen size: 10.9-inch\nProcessor: A17 Pro\nColor: Starlight\nCharging port: USB-C"} style={{width:"100%",marginTop:8}}/><small className="muted">Any value you enter here is saved with the product and overrides the matching standard specification. Use “Field: Value” on each line.</small></label>)}
-      <div className="image-manager"><div><h3>Product images</h3><p>Choose the main product photo and optional gallery images.</p></div><div className="image-manager-actions"><button type="button" className="btn secondary small" onClick={() => { loadMedia(); setMediaOpen(true); }}><Image size={14}/> Choose from library</button><label className="btn secondary small upload-label">{uploading ? "Uploading…" : "Upload images"}<input type="file" multiple accept="image/jpeg,image/png,image/webp,image/gif" disabled={uploading} onChange={e => { uploadMedia(e.target.files); e.target.value = ""; }}/></label></div>{(primaryImageMediaId || galleryMediaIds.length > 0) && <div className="selected-image-list">
+      <div className="image-manager"><div><h3>Product images</h3><p>Choose the main product photo and optional gallery images.</p></div><div className="image-manager-actions"><button type="button" className="btn secondary small" onClick={() => { loadMedia(); setMediaOpen(true); }}><Image size={14}/> Choose from library</button><label className="btn secondary small upload-label">{uploading ? "Uploading…" : "Upload images"}<input type="file" multiple accept="image/jpeg,image/png,image/webp,image/gif" disabled={uploading} onChange={e => { uploadMedia(e.target.files); e.target.value = ""; }}/></label></div>{imageUploadError && <div className="alert error" role="alert"><AlertTriangle size={16}/>{imageUploadError}</div>}{localImagePreviews.length > 0 && <div className="selected-image-list">{localImagePreviews.map(image => <div className="selected-image" key={image.id}><img src={image.url} alt={image.name}/><span>{uploading ? "Uploading…" : "Upload failed — choose again"}</span></div>)}</div>}{(primaryImageMediaId || galleryMediaIds.length > 0) && <div className="selected-image-list">
         {[...(primaryImageMediaId ? [{ id: primaryImageMediaId, main: true }] : []), ...galleryMediaIds.filter(id => id !== primaryImageMediaId).map(id => ({ id, main: false }))].map(image => {
           const asset = media.find(m => m.id === image.id);
           return <div className="selected-image" key={image.id}><img src={asset?.url || ""} alt={asset?.file_name || "Product image"}/><span>{image.main ? "Main image" : "Gallery image"}</span>{!image.main && <button type="button" className="text-btn" onClick={() => setGalleryMediaIds(ids => ids.filter(id => id !== image.id))}>Remove</button>}{image.main && <button type="button" className="text-btn" onClick={() => { setPrimaryImageMediaId(""); }}>Remove</button>}</div>;
