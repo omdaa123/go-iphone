@@ -91,12 +91,12 @@ const MAC_MEMORY = ["8GB","12GB","16GB","18GB","24GB","32GB","36GB","48GB","64GB
 const AIRPODS_MODELS = ["AirPods 4","AirPods 4 with Active Noise Cancellation","AirPods Pro 3","AirPods Pro 2","AirPods Pro (1st generation)","AirPods (3rd generation)","AirPods (2nd generation)","AirPods Max (USB-C)","AirPods Max (Lightning)"];
 
 const OTHER_DEVICE_FIELD_SETS = {
-  smartphone: [{key:"brand",label:"Brand"},{key:"model",label:"Model"},{key:"ram",label:"RAM"},{key:"network",label:"Network / SIM support"}],
-  smartwatch: [{key:"brand",label:"Brand"},{key:"model",label:"Model"},{key:"caseSize",label:"Case size"},{key:"connectivity",label:"Connectivity"},{key:"material",label:"Case material"}],
-  tablet: [{key:"brand",label:"Brand"},{key:"model",label:"Model"},{key:"screenSize",label:"Screen size"},{key:"processor",label:"Chip / Processor"},{key:"connectivity",label:"Connectivity"}],
-  speakers: [{key:"brand",label:"Brand"},{key:"model",label:"Model"},{key:"speakerType",label:"Speaker type"},{key:"outputPower",label:"Output power (W)"},{key:"connectivity",label:"Connectivity"},{key:"waterproof",label:"Waterproof rating"}],
-  headphones: [{key:"brand",label:"Brand"},{key:"model",label:"Model"},{key:"headphoneType",label:"Headphone type"},{key:"connectivity",label:"Connectivity"},{key:"noiseCancellation",label:"Noise cancellation"},{key:"microphone",label:"Microphone"}],
-  "other-electronics": [{key:"brand",label:"Brand"},{key:"model",label:"Model"},{key:"deviceType",label:"Device type"},{key:"connectivity",label:"Connectivity"},{key:"keyFeature",label:"Main features"}]
+  smartphone: [{key:"brand",label:"Brand"},{key:"model",label:"Model"},{key:"ram",label:"RAM"},{key:"network",label:"Network / SIM support"},{key:"color",label:"Color (optional)"}],
+  smartwatch: [{key:"brand",label:"Brand"},{key:"model",label:"Model"},{key:"caseSize",label:"Case size"},{key:"connectivity",label:"Connectivity"},{key:"material",label:"Case material"},{key:"color",label:"Color (optional)"}],
+  tablet: [{key:"brand",label:"Brand"},{key:"model",label:"Model"},{key:"screenSize",label:"Screen size"},{key:"processor",label:"Chip / Processor"},{key:"connectivity",label:"Connectivity"},{key:"color",label:"Color (optional)"}],
+  speakers: [{key:"brand",label:"Brand"},{key:"model",label:"Model"},{key:"speakerType",label:"Speaker type"},{key:"outputPower",label:"Output power (W)"},{key:"connectivity",label:"Connectivity"},{key:"waterproof",label:"Waterproof rating"},{key:"color",label:"Color (optional)"}],
+  headphones: [{key:"brand",label:"Brand"},{key:"model",label:"Model"},{key:"headphoneType",label:"Headphone type"},{key:"connectivity",label:"Connectivity"},{key:"noiseCancellation",label:"Noise cancellation"},{key:"microphone",label:"Microphone"},{key:"color",label:"Color (optional)"}],
+  "other-electronics": [{key:"brand",label:"Brand"},{key:"model",label:"Model"},{key:"deviceType",label:"Device type"},{key:"connectivity",label:"Connectivity"},{key:"keyFeature",label:"Main features"},{key:"color",label:"Color (optional)"}]
 };
 
 const WATCH_MODELS = [
