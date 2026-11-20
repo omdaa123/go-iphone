@@ -1863,108 +1863,74 @@ function ProductDetailPage({ productId, go, onAddToCart, compareIds, onToggleCom
    COMPARE PAGE
    ============================================================ */
 const COMPARE_GROUPS = [
-  { title: "Overview", rows: [
-    { key: "price", label: "Price" },
-    { key: "condition", label: "Condition" },
+  { title: "Price & overview", rows: [
+    { key: "price", label: "Price" }, { key: "condition", label: "Condition" },
+    { key: "storage", label: "Storage" }, { key: "color", label: "Color" },
+    { key: "warranty", label: "Warranty" },
   ] },
-  { title: "Design", rows: [
-    { key: "size", label: "Size" },
-    { key: "weight", label: "Weight" },
-    { key: "materials", label: "Materials" },
-    { key: "colors", label: "Colors" },
-  ] },
-  { title: "Display", rows: [
-    { key: "display", label: "Display" },
-  ] },
-  { title: "Performance", rows: [
-    { key: "chip", label: "Chip" },
-  ] },
-  { title: "Camera", rows: [
-    { key: "mainCamera", label: "Main camera" },
-    { key: "frontCamera", label: "Front camera" },
-  ] },
-  { title: "Battery", rows: [
-    { key: "battery", label: "Battery" },
-  ] },
-  { title: "Connectivity", rows: [
-    { key: "connectivity", label: "Connectivity" },
+  { title: "Technical specifications", rows: [
+    { key: "chip", label: "Processor / chip" }, { key: "display", label: "Display" },
+    { key: "mainCamera", label: "Main camera" }, { key: "frontCamera", label: "Front camera" },
+    { key: "battery", label: "Battery / runtime" }, { key: "connectivity", label: "Connectivity" },
+    { key: "weight", label: "Weight" }, { key: "materials", label: "Materials" },
   ] },
 ];
 
 function ComparePage({ compareIds, onToggleCompare, onClear, go }) {
   const { products: PRODUCTS } = useStoreData();
   const items = compareIds.map((id) => PRODUCTS.find((p) => p.id === id)).filter(Boolean);
-
-  if (items.length === 0) {
-    return (
-      <div className="max-w-3xl mx-auto px-6 py-28 text-center">
-        <Scale size={28} style={{ color: T.mist }} className="mx-auto mb-4" />
-        <h1 style={{ color: T.ink }} className="text-2xl font-semibold mb-2">Nothing to compare yet</h1>
-        <p style={{ color: T.graphite }} className="text-sm mb-7">Add up to three devices from any product page or catalog card.</p>
-        <button onClick={() => go("catalog", { category: "iphone" })} style={{ backgroundColor: T.ink }} className="text-white text-sm font-medium px-7 py-3.5">Browse iPhone</button>
-      </div>
-    );
-  }
-
-  function cell(product, key) {
-    if (key === "price") return CURRENCY(priceFrom(product));
-    if (key === "colors") return (product.colors || []).join(", ") || "—";
-    if (key === "condition") return product.hasUnits ? "Certified pre-owned" : "New";
-    return product.specs[key] || "—";
-  }
-
-  return (
-    <div className="max-w-6xl mx-auto px-6 md:px-10 py-12">
-      <div className="flex items-end justify-between mb-8">
-        <h1 style={{ color: T.ink, fontFamily: FONT_DISPLAY, fontWeight: 700, letterSpacing: "-0.02em", fontSize: "clamp(1.9rem, 3.2vw, 2.75rem)", lineHeight: 1.12 }}>Compare devices</h1>
-        <button onClick={onClear} style={{ color: T.ink }} className="text-sm font-medium underline underline-offset-4">Clear all</button>
-      </div>
-
-      <div className="overflow-x-auto">
-        <table style={{ minWidth: "640px" }} className="w-full border-collapse">
-          <thead>
-            <tr>
-              <th style={{ backgroundColor: T.paper }} className="w-32 sm:w-40 sticky left-0 z-20" />
-              {items.map((p) => (
-                <th key={p.id} style={{ borderColor: T.line, backgroundColor: T.paper }} className="border-b px-4 pb-6 text-left align-top sticky top-16">
-                  <div className="flex flex-col items-start gap-4">
-                    <div style={{ backgroundColor: T.stone }} className="relative w-28 h-28 overflow-hidden">
-                      <ProductImage product={p} size={92} />
-                    </div>
-                    <div>
-                      <p style={{ color: T.ink, fontFamily: FONT_DISPLAY, fontWeight: 700, letterSpacing: "-0.01em" }} className="text-lg leading-snug">{p.name}</p>
-                      <button onClick={() => onToggleCompare(p.id)} style={{ color: T.mist }} className="text-xs mt-1.5 inline-flex items-center gap-1"><X size={11} /> Remove</button>
-                    </div>
-                    <button onClick={() => go("product", { id: p.id })} style={{ borderColor: T.line, color: T.ink }} className="border px-3.5 py-2 text-xs font-medium">View product</button>
-                  </div>
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {COMPARE_GROUPS.map((group) => (
-              <React.Fragment key={group.title}>
-                <tr>
-                  <td style={{ color: T.graphite, backgroundColor: T.paper, fontSize: "11.5px", letterSpacing: "0.08em" }} className="pt-9 pb-2 font-semibold uppercase sticky left-0 z-10">{group.title}</td>
-                  {items.map((p) => <td key={p.id} className="pt-9 pb-2" />)}
-                </tr>
-                {group.rows.map((row) => (
-                  <tr key={row.key}>
-                    <td style={{ color: T.graphite, borderColor: T.line, backgroundColor: T.paper }} className="border-b py-4 text-sm pr-4 sticky left-0 z-10">{row.label}</td>
-                    {items.map((p) => (
-                      <td key={p.id} style={{ color: T.ink, borderColor: T.line }} className="border-b py-4 px-4 text-sm">{cell(p, row.key)}</td>
-                    ))}
-                  </tr>
-                ))}
-              </React.Fragment>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  );
+  const [mode, setMode] = useState("all");
+  const [unitChoices, setUnitChoices] = useState({});
+  const [detailsOpen, setDetailsOpen] = useState({});
+  const getUnits = (p) => unitsFor(p.id);
+  const chosenUnit = (p) => {
+    const list = getUnits(p);
+    return list.find((u) => u.id === unitChoices[p.id]) || list.slice().sort((a,b) => a.price-b.price)[0] || null;
+  };
+  const readSpec = (p, key) => {
+    const specs = p.specs || {};
+    const aliases = {
+      chip:["chip","processor","cpu"], display:["display","display size","screen size","screen"],
+      mainCamera:["main camera","rear camera","camera"], frontCamera:["front camera","selfie camera"],
+      battery:["battery","battery life","battery capacity"], connectivity:["connectivity","wireless"],
+      weight:["weight"], materials:["materials","material"], storage:["storage","capacity"],
+    };
+    const candidates = aliases[key] || [key];
+    const found = Object.entries(specs).find(([k,v]) => candidates.includes(k.toLowerCase()) && v != null && String(v).trim() && String(v)!=="—");
+    if (found) return String(found[1]);
+    const metaAliases = {chip:p.chip,display:p.display||p.screenSize,weight:p.weight,connectivity:p.connectivity,battery:p.batteryLife};
+    return metaAliases[key] || "—";
+  };
+  const cell = (p,key) => {
+    const unit = chosenUnit(p);
+    if (key==="price") return unit ? CURRENCY(unit.price) : CURRENCY(priceFrom(p));
+    if (key==="condition") return unit?.condition || (p.hasUnits ? "Pre-owned" : "New");
+    if (key==="storage") return unit?.storage || (p.storageOptions||[]).join(", ") || readSpec(p,key);
+    if (key==="color") return unit?.color || (p.colors||[]).join(", ") || "—";
+    if (key==="warranty") return unit?.warranty || "—";
+    if (key==="battery" && unit?.battery != null) return unit.battery + "% health";
+    return readSpec(p,key);
+  };
+  const specRows = useMemo(() => {
+    const keys = new Map();
+    items.forEach(p => Object.keys(p.specs||{}).forEach(k => {
+      const normalized = k.toLowerCase();
+      if (!["model","color","storage","condition"].includes(normalized)) keys.set(normalized,{key:"spec:"+normalized,label:k,source:k});
+    }));
+    return [...keys.values()];
+  }, [items]);
+  const rows = [...COMPARE_GROUPS.map(g=>({...g,rows:g.rows})),{title:"More specifications",rows:specRows}];
+  const rowValue = (p,row) => row.source ? ((Object.entries(p.specs||{}).find(([k])=>k.toLowerCase()===row.source.toLowerCase())||[])[1]||"—") : cell(p,row.key);
+  const visibleRows = (group) => group.rows.filter(row => mode!=="differences" || new Set(items.map(p=>String(rowValue(p,row)))).size>1);
+  if (items.length === 0) return <div className="max-w-3xl mx-auto px-6 py-28 text-center"><Scale size={28} style={{color:T.mist}} className="mx-auto mb-4"/><h1 style={{color:T.ink}} className="text-2xl font-semibold mb-2">Nothing to compare yet</h1><p style={{color:T.graphite}} className="text-sm mb-7">Add up to three devices from any product page or catalog card.</p><button onClick={()=>go("catalog",{category:"iphone"})} style={{backgroundColor:T.ink}} className="text-white text-sm font-medium px-7 py-3.5">Browse iPhone</button></div>;
+  return <div className="max-w-6xl mx-auto px-6 md:px-10 py-12">
+    <div className="flex flex-wrap items-end justify-between gap-4 mb-7"><div><h1 style={{color:T.ink,fontFamily:FONT_DISPLAY,fontWeight:700,letterSpacing:"-0.02em",fontSize:"clamp(1.9rem,3.2vw,2.75rem)"}}>Compare devices</h1><p style={{color:T.graphite}} className="text-sm mt-2">Compare price, original specifications and the condition of each available device.</p></div><button onClick={onClear} style={{color:T.ink}} className="text-sm underline">Clear all</button></div>
+    <div className="flex flex-wrap gap-2 mb-6"><button onClick={()=>setMode("all")} className="border px-4 py-2 text-xs" style={{borderColor:T.line,background:mode==="all"?T.ink:"transparent",color:mode==="all"?"#fff":T.ink}}>All specifications</button><button onClick={()=>setMode("differences")} className="border px-4 py-2 text-xs" style={{borderColor:T.line,background:mode==="differences"?T.ink:"transparent",color:mode==="differences"?"#fff":T.ink}}>Differences only</button></div>
+    <div className="overflow-x-auto"><table style={{minWidth:"680px"}} className="w-full border-collapse"><thead><tr><th style={{backgroundColor:T.paper}} className="w-32 sm:w-40 sticky left-0 z-20"/>{items.map(p=>{const list=getUnits(p),unit=chosenUnit(p);return <th key={p.id} style={{borderColor:T.line,backgroundColor:T.paper}} className="border-b px-4 pb-5 text-left align-top"><div className="flex flex-col items-start gap-3"><div style={{backgroundColor:T.stone}} className="relative w-28 h-28 overflow-hidden"><ProductImage product={p} size={92}/></div><div><p style={{color:T.ink,fontFamily:FONT_DISPLAY,fontWeight:700}} className="text-lg">{p.name}</p><p style={{color:T.graphite}} className="text-xs mt-1">{unit?.condition || (p.hasUnits?"Pre-owned":"New")}</p><button onClick={()=>onToggleCompare(p.id)} style={{color:T.mist}} className="text-xs mt-1 inline-flex items-center gap-1"><X size={11}/>Remove</button></div>{list.length>1&&<label className="text-xs" style={{color:T.graphite}}>Specific unit<select className="block border mt-1 p-2 max-w-full" style={{borderColor:T.line,background:T.paper,color:T.ink}} value={unit?.id||""} onChange={e=>setUnitChoices(v=>({...v,[p.id]:e.target.value}))}>{list.map(u=><option key={u.id} value={u.id}>{[u.storage,u.color,u.condition,u.battery!=null?u.battery+"% battery":null,CURRENCY(u.price)].filter(Boolean).join(" · ")}</option>)}</select></label>}<p style={{color:T.ink,fontWeight:700,fontVariantNumeric:"tabular-nums"}} className="text-base">{unit?CURRENCY(unit.price):CURRENCY(priceFrom(p))}</p><button onClick={()=>go("product",{id:p.id})} style={{borderColor:T.line,color:T.ink}} className="border px-3.5 py-2 text-xs">View product</button></div></th>})}</tr></thead>
+    <tbody>{rows.map(group=>{const shown=visibleRows(group);if(!shown.length)return null;return <React.Fragment key={group.title}><tr><td colSpan={items.length+1} style={{color:T.graphite,background:T.paper,fontSize:"11px",letterSpacing:"0.08em"}} className="pt-7 pb-2 font-semibold uppercase">{group.title}</td></tr>{shown.map(row=><tr key={row.key}><td style={{color:T.graphite,borderColor:T.line,background:T.paper}} className="border-b py-3 text-sm pr-4 sticky left-0 z-10">{row.label}</td>{items.map(p=><td key={p.id} style={{color:T.ink,borderColor:T.line}} className="border-b py-3 px-4 text-sm">{rowValue(p,row)}</td>)}</tr>)}</React.Fragment>})}</tbody></table></div>
+    {items.some(p=>getUnits(p).length>0)&&<div className="mt-7"><button onClick={()=>setDetailsOpen(v=>({...v,condition:!v.condition}))} style={{color:T.ink,borderColor:T.line}} className="border px-4 py-3 text-sm font-medium">{detailsOpen.condition?"Hide":"Show"} condition details</button>{detailsOpen.condition&&<div className="grid md:grid-cols-2 gap-4 mt-4">{items.filter(p=>getUnits(p).length).map(p=>{const u=chosenUnit(p),r=u?.conditionReport||{};return <section key={p.id} className="border p-4" style={{borderColor:T.line}}><h3 style={{color:T.ink}} className="font-semibold mb-3">{p.name} · {u?.color||u?.storage}</h3><div className="grid grid-cols-2 gap-2 text-xs" style={{color:T.graphite}}>{["battery","display","camera","housing","other"].map(k=><div key={k}><b className="capitalize">{k}</b><p>{r[k]?.status||"Not recorded"} · {r[k]?.type||"Unknown"}</p></div>)}<div className="col-span-2"><b>Functional tests</b><p>{Object.entries(r.tests||{}).map(([k,v])=>k+": "+v).join(" · ")||"Not recorded"}</p></div><div className="col-span-2"><b>Cosmetic condition</b><p>{r.cosmetic||"Not graded"}{r.cosmeticNotes?" · "+r.cosmeticNotes:""}</p></div></div></section>})}</div>}</div>}
+  </div>;
 }
-
 /* ============================================================
    RECOMMENDATION WIZARD
    ============================================================ */
