@@ -170,7 +170,9 @@ CREATE TABLE IF NOT EXISTS products (
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+ALTER TABLE products ADD COLUMN IF NOT EXISTS model_group_key TEXT;
 CREATE INDEX IF NOT EXISTS idx_products_category ON products(category_key);
+CREATE INDEX IF NOT EXISTS idx_products_model_group ON products(model_group_key) WHERE model_group_key IS NOT NULL;
 CREATE INDEX IF NOT EXISTS idx_products_visibility ON products(visibility) WHERE visibility = 'published';
 
 -- Consolidate duplicate branch keys from the earlier plural-key version.
