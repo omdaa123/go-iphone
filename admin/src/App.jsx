@@ -20,7 +20,7 @@ function CustomModelField({label,value,onChange,options,placeholder}) {
 }
 
 const DEVICE_COLOR_HEX = {
-  "Black":"#252525","White":"#f4f2ed","Blue":"#4d78a8","Pink":"#e6a9b5","Green":"#6f8871","Yellow":"#e8cf65","Purple":"#a99ac8","Red":"#c93d43","Midnight":"#252936","Starlight":"#e8dfcf","Silver":"#c8c9c9","Space Gray":"#777a7d","Space Black":"#333333","Natural Titanium":"#a99f91","Desert Titanium":"#c7a58b","Black Titanium":"#393a3c","White Titanium":"#e3e0d9","Blue Titanium":"#596b80","Gold":"#c9ad7b","Rose Gold":"#d7b2a5","Jet Black":"#202020","Space Gray Aluminum":"#777a7d","Sky Blue":"#a8c8d8","Cosmic Orange":"#df713d","Deep Blue":"#334b70","Cloud White":"#f1eee8","Graphite":"#55585b","Stainless Steel":"#bfc2c4","Natural":"#b4a99a","Silver Aluminum":"#c9cacc"
+  "Black":"#252525","White":"#f4f2ed","Blue":"#4d78a8","Pink":"#e6a9b5","Green":"#6f8871","Yellow":"#e8cf65","Purple":"#a99ac8","Red":"#c93d43","Midnight":"#252936","Starlight":"#e8dfcf","Silver":"#c8c9c9","Space Gray":"#777a7d","Space Black":"#333333","Natural Titanium":"#a99f91","Desert Titanium":"#c7a58b","Black Titanium":"#393a3c","White Titanium":"#e3e0d9","Blue Titanium":"#596b80","Gold":"#c9ad7b","Rose Gold":"#d7b2a5","Jet Black":"#202020","Space Gray Aluminum":"#777a7d","Sky Blue":"#a8c8d8","Cosmic Orange":"#df713d","Deep Blue":"#334b70","Cloud White":"#f1eee8","Lavender":"#b9a6d5","Sage":"#a8b7a0","Mist Blue":"#a9c2d2","Light Gold":"#d6c6a3","Graphite":"#55585b","Stainless Steel":"#bfc2c4","Natural":"#b4a99a","Silver Aluminum":"#c9cacc"
 };
 const DEVICE_MODEL_COLORS = {
   iphone: {
