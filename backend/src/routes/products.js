@@ -1,4 +1,5 @@
 import { Router } from "express";
+import { createHash } from "node:crypto";
 import { z } from "zod";
 import { pool, withTransaction } from "../db.js";
 import { requireAuth } from "../middleware/auth.js";
@@ -11,6 +12,18 @@ productsRouter.use(requireAuth, requirePermission("products.write"));
 
 function slugify(name) {
   return String(name).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "").slice(0, 60);
+}
+
+function deriveModelGroupKey(product) {
+  const specs = Object.fromEntries(Object.entries(product.specs || {})
+    .filter(([key]) => !/^(color|colour|finish|case color|body color)$/i.test(key.trim()))
+    .sort(([a], [b]) => a.localeCompare(b)));
+  const identity = JSON.stringify({
+    category: product.categoryKey, type: product.productType,
+    name: String(product.name || "").trim().toLowerCase(),
+    specs, storageOptions: [...(product.storageOptions || [])].sort(),
+  });
+  return `auto-${createHash("sha256").update(identity).digest("hex").slice(0, 24)}`;
 }
 
 const productSchema = z.object({
@@ -107,7 +120,7 @@ productsRouter.post("/", requirePermission("products.write"), validateBody(produ
             primary_image_media_id, gallery_media_ids)
          VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18)
          RETURNING *`,
-        [b.slug || `${slugify(b.name)}-${Math.random().toString(36).slice(2, 6)}`, b.meta, b.modelGroupKey ?? null, b.categoryKey, b.productType, b.name, b.tagline ?? null, b.specs, b.storageOptions, b.colors,
+        [b.slug || `${slugify(b.name)}-${Math.random().toString(36).slice(2, 6)}`, b.meta, b.modelGroupKey?.trim() || deriveModelGroupKey(b), b.categoryKey, b.productType, b.name, b.tagline ?? null, b.specs, b.storageOptions, b.colors,
          b.salesMode, b.availability, b.reservationCfg ?? null, b.badges, b.hasUnits, b.visibility,
          b.primaryImageMediaId ?? null, b.galleryMediaIds]
       );
