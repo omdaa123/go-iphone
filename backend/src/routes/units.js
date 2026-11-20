@@ -55,6 +55,7 @@ unitsRouter.patch("/:unitId", requirePermission("inventory.write"), validateBody
     const fields = {
       storage: b.storage, color: b.color, battery_pct: b.batteryPct, condition: b.condition,
       price_cents: b.priceCents, sku: b.sku, warranty: b.warranty, notes: b.notes, photo_media_id: b.photoMediaId,
+      condition_report: b.conditionReport,
     };
     const sets = []; const params = [];
     for (const [col, val] of Object.entries(fields)) {
