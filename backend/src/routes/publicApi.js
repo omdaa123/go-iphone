@@ -77,6 +77,7 @@ publicRouter.get("/catalog", async (req, res, next) => {
       return {
         id: p.id,
         slug: p.slug,
+        modelGroupKey: p.model_group_key || null,
         category: p.category_key,
         productType: p.product_type,
         name: p.name,
