@@ -212,6 +212,7 @@ CREATE TABLE IF NOT EXISTS inventory_units (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 CREATE INDEX IF NOT EXISTS idx_units_product_status ON inventory_units(product_id, status);
+ALTER TABLE inventory_units ADD COLUMN IF NOT EXISTS condition_report JSONB NOT NULL DEFAULT '{}'::jsonb;
 
 -- ===================== Customer relationship management =====================
 
