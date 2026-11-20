@@ -1881,7 +1881,7 @@ function ProductDetailPage({ productId, go, onAddToCart, compareIds, onToggleCom
           {Object.entries(combinedSpecs).map(([k, v]) => (
             <div key={k} style={{ borderColor: T.line }} className="grid grid-cols-1 sm:grid-cols-3 gap-1 sm:gap-0 px-5 py-3.5 text-sm">
               <span style={{ color: T.graphite }} className="capitalize sm:col-span-1">{k.replace(/([A-Z])/g, " $1")}</span>
-              <span style={{ color: T.ink }} className="sm:col-span-2">{v}</span>
+              <span style={{ color: T.ink }} className="sm:col-span-2">{k === "Apple specification source" ? <a href={v} target="_blank" rel="noreferrer" className="underline underline-offset-4">View official Apple specifications</a> : v}</span>
             </div>
           ))}
         </div>
@@ -1946,7 +1946,7 @@ function ComparePage({ compareIds, onToggleCompare, onClear, go }) {
     const keys = new Map();
     items.forEach(p => Object.keys({ ...getAppleOfficialSpecs(p), ...(p.specs||{}) }).forEach(k => {
       const normalized = k.toLowerCase();
-      if (!["model","color","storage","condition"].includes(normalized)) keys.set(normalized,{key:"spec:"+normalized,label:k,source:k});
+      if (!["model","color","storage","condition","apple specification source"].includes(normalized)) keys.set(normalized,{key:"spec:"+normalized,label:k,source:k});
     }));
     return [...keys.values()];
   }, [items]);
