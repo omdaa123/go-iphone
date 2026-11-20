@@ -56,7 +56,7 @@ const SPECS = {
   "Apple Watch Ultra 4": { "Chip": "S11", "Case size": "49mm titanium", "Display": "Always-On Retina", "Connectivity": "GPS + Cellular", "Capacity": "64GB", "Apple specification source": APPLE_SOURCES.watch },
   "Apple Watch SE 3": { "Chip": "S10", "Case sizes": "40mm / 44mm aluminum", "Display": "Always-On Retina OLED", "Battery": "Up to 18 hours", "Capacity": "64GB", "Apple specification source": APPLE_SOURCES.watch },
 
-  "MacBook Neo": { "Chip": "Apple A18 Pro", "Display size": "13-inch class", "Apple specification source": APPLE_SOURCES.mac },
+  "MacBook Neo": { "Chip": "Apple A18 Pro", "Apple specification source": APPLE_SOURCES.mac },
   "MacBook Air 13-inch (M5)": { "Chip": "Apple M5", "Display size": "13-inch", "Apple specification source": APPLE_SOURCES.mac },
   "MacBook Air 15-inch (M5)": { "Chip": "Apple M5", "Display size": "15-inch", "Apple specification source": APPLE_SOURCES.mac },
   "MacBook Pro 14-inch (M5)": { "Chip": "Apple M5", "Display size": "14-inch", "Apple specification source": APPLE_SOURCES.mac },
