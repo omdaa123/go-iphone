@@ -329,6 +329,15 @@ function getBadges(p) {
 function unitsFor(productId) {
   return store.units.filter((u) => u.productId === productId && u.availability === "available");
 }
+function uniqueColorGroupedProducts(products = []) {
+  const seen = new Set();
+  return products.filter(product => {
+    if (!product.modelGroupKey) return true;
+    if (seen.has(product.modelGroupKey)) return false;
+    seen.add(product.modelGroupKey);
+    return true;
+  });
+}
 function priceFrom(product) {
   if (product.hasUnits) {
     const units = unitsFor(product.id);
@@ -473,6 +482,7 @@ function ProductCard({ product, onOpen, onToggleCompare, isComparing, compareDis
   const bestUnit = product.hasUnits
     ? unitsFor(product.id).slice().sort((a, b) => b.battery - a.battery)[0]
     : null;
+  const colorSiblings = product.modelGroupKey ? store.products.filter(p => p.modelGroupKey === product.modelGroupKey && isPublished(p)) : [];
 
   return (
     // NOTE: this outer element is a div, not a button element, precisely so
@@ -492,6 +502,7 @@ function ProductCard({ product, onOpen, onToggleCompare, isComparing, compareDis
         <div className="pt-3.5">
           {status && <p className="mb-1.5"><Badge tone={statusTone}>{status}</Badge></p>}
           <h3 style={{ color: T.ink, fontSize: "14.5px", letterSpacing: "-0.005em" }} className="font-medium leading-snug">{product.name}</h3>
+          {colorSiblings.length > 1 && <div className="flex items-center gap-1.5 mt-2" aria-label="Available colors">{colorSiblings.map(sibling => { const colorName=sibling.specs?.Color||sibling.specs?.Colour||sibling.colors?.[0]||"Color"; return <button key={sibling.id} type="button" title={colorName} aria-label={colorName} onClick={e=>{e.stopPropagation();onOpen(sibling.id);}} style={{backgroundColor:SWATCH[colorName]||DEFAULT_DEVICE_HEX,borderColor:sibling.id===product.id?T.ink:T.line,boxShadow:sibling.id===product.id?"0 0 0 1px #111":"none"}} className="w-4 h-4 rounded-full border" />; })}<span style={{color:T.mist}} className="text-[10px] ml-1">{colorSiblings.length} colors</span></div>}
           {bestUnit && (
             <p style={{ color: T.graphite }} className="text-xs mt-1.5 leading-relaxed">
               {bestUnit.storage} · {bestUnit.color}<br />{bestUnit.battery}% battery · {bestUnit.condition}
@@ -1189,7 +1200,7 @@ function ProductGrid({ title, action, products, onOpen, onToggleCompare, compare
       <SectionHeading title={title} action={action} onAction={onNavAction} />
       {products.length ? (
         <div className="grid grid-cols-2 md:grid-cols-3 gap-x-6 gap-y-12 md:gap-x-8 md:gap-y-16">
-          {products.map((p) => (
+          {uniqueColorGroupedProducts(products).map((p) => (
             <ProductCard key={p.id} product={p} onOpen={onOpen} onToggleCompare={onToggleCompare}
               isComparing={compareIds.includes(p.id)} compareDisabled={compareIds.length >= 3} />
           ))}
@@ -1210,7 +1221,7 @@ function ProductGrid({ title, action, products, onOpen, onToggleCompare, compare
    ============================================================ */
 function CertifiedPreownedSection({ products, go, onOpen, onToggleCompare, compareIds, config = {} }) {
   const ink=config.headingColor||T.ink, muted=config.bodyColor||config.headingColor||T.graphite;
-  const list=products.slice(0,Math.max(1,Number(config.productLimit)||8));
+  const list=uniqueColorGroupedProducts(products).slice(0,Math.max(1,Number(config.productLimit)||8));
   const columns=Math.max(2,Math.min(5,Number(config.productColumns)||2));
   const introWidth=config.introWidth==="wide"?"1.1fr 1.2fr":config.introWidth==="balanced"?"1fr 1.3fr":"0.85fr 1.4fr";
   const gridStyle=config.productsLayout==="rail"?{display:"flex",overflowX:"auto",gap:20,scrollSnapType:"x mandatory"}:{display:"grid",gridTemplateColumns:"repeat(var(--certified-columns),minmax(0,1fr))","--certified-columns":columns,gap:24};
@@ -1426,12 +1437,12 @@ function CatalogPage({ category, subcategory: initialSubcategory = "all", go, co
     });
   });
 
-  const sorted = [...items].sort((a, b) => {
+  const sorted = uniqueColorGroupedProducts([...items].sort((a, b) => {
     const pa = priceFrom(a) || 0, pb = priceFrom(b) || 0;
     if (sort === "price-asc") return pa - pb;
     if (sort === "price-desc") return pb - pa;
     return 0;
-  });
+  }));
 
   function toggle(key, val) {
     setActive((prev) => {
@@ -1610,6 +1621,7 @@ function ProductDetailPage({ productId, go, onAddToCart, compareIds, onToggleCom
   const [reserveSubmitted, setReserveSubmitted] = useState(false);
   const [reserving, setReserving] = useState(false);
   const [reserveError, setReserveError] = useState("");
+  const colorSiblings = product?.modelGroupKey ? allProducts.filter(p => p.modelGroupKey === product.modelGroupKey && isPublished(p)) : [];
 
   useEffect(() => {
     setAdded(false);
@@ -1701,6 +1713,7 @@ function ProductDetailPage({ productId, go, onAddToCart, compareIds, onToggleCom
           )}
           <h1 style={{ color: T.ink, fontFamily: FONT_DISPLAY, fontWeight: 700, letterSpacing: "-0.025em", fontSize: "clamp(1.9rem, 3.2vw, 2.75rem)", lineHeight: 1.1 }} className="mb-2.5">{product.name}</h1>
           <p style={{ color: T.graphite, fontSize: "15px" }} className="mb-7 leading-relaxed">{product.tagline}</p>
+          {colorSiblings.length > 1 && <div className="mb-7"><p style={{color:T.ink}} className="text-sm font-medium mb-3">Available colors</p><div className="flex flex-wrap gap-3">{colorSiblings.map(sibling=>{const name=sibling.specs?.Color||sibling.specs?.Colour||sibling.colors?.[0]||"Color";return <button key={sibling.id} type="button" onClick={()=>go("product",{id:sibling.id})} title={name} className="flex items-center gap-2 text-xs" style={{color:T.graphite}}><span className="w-6 h-6 rounded-full border" style={{backgroundColor:SWATCH[name]||DEFAULT_DEVICE_HEX,borderColor:sibling.id===product.id?T.ink:T.line,boxShadow:sibling.id===product.id?"0 0 0 1px #111":"none"}} />{name}{sibling.id===product.id?" · Selected":""}</button>;})}</div></div>}
 
           {price != null && (
             <p style={{ color: T.ink, fontVariantNumeric: "tabular-nums", fontWeight: 700, letterSpacing: "-0.01em", fontSize: "28px" }} className="mb-8">{CURRENCY(price)}</p>
