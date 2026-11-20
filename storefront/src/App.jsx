@@ -540,7 +540,7 @@ function ProductRail({ title, action, products, onOpen, onToggleCompare, compare
       {products.length ? (
         <div className="relative">
           <div ref={ref} className="flex gap-6 md:gap-8 overflow-x-auto pb-2 scroll-smooth" style={{ scrollbarWidth: "none" }}>
-            {products.map((p) => (
+            {uniqueColorGroupedProducts(products).map((p) => (
               <div key={p.id} className="w-56 md:w-64 shrink-0">
                 <ProductCard
                   product={p} onOpen={onOpen}
