@@ -452,7 +452,7 @@ function Products({ onError }) {
   const [localImagePreviews, setLocalImagePreviews] = useState([]);
   const [primaryImageMediaId, setPrimaryImageMediaId] = useState("");
   const [galleryMediaIds, setGalleryMediaIds] = useState([]);
-  const empty = { name: "", categoryKey: "iphone", productType: "smartphone", tagline: "", visibility: "draft", salesMode: "for_sale", availability: "in_stock", variants: [{ storage: "", color: "", price: "", stockQty: "" }] };
+  const empty = { name: "", modelGroupKey: "", categoryKey: "iphone", productType: "smartphone", tagline: "", visibility: "draft", salesMode: "for_sale", availability: "in_stock", variants: [{ storage: "", color: "", price: "", stockQty: "" }] };
   const [form, setForm] = useState(empty);
   const [iphoneModel, setIphoneModel] = useState("");
   const [iphoneCondition, setIphoneCondition] = useState("New");
@@ -527,7 +527,7 @@ function Products({ onError }) {
       await loadMedia();
       setPrimaryImageMediaId(d.primaryImage?.id || ""); setGalleryMediaIds(d.gallery.map(x => x.id));
       setCollectionIds(d.collectionIds || []);
-      setForm({ name: p.name || "", slug: p.slug || "", categoryKey: p.category_key, productType: p.product_type, tagline: p.tagline || "", visibility: p.visibility, salesMode: p.sales_mode, availability: p.availability, variants: d.variants.length ? d.variants.map(v => ({ storage: v.storage || "", color: v.color || "", price: String(Number(v.price_cents) / 100), stockQty: v.stock_qty == null ? "" : String(v.stock_qty) })) : [{ storage: "", color: "", price: "", stockQty: "" }] });
+      setForm({ name: p.name || "", slug: p.slug || "", modelGroupKey: p.model_group_key || "", categoryKey: p.category_key, productType: p.product_type, tagline: p.tagline || "", visibility: p.visibility, salesMode: p.sales_mode, availability: p.availability, variants: d.variants.length ? d.variants.map(v => ({ storage: v.storage || "", color: v.color || "", price: String(Number(v.price_cents) / 100), stockQty: v.stock_qty == null ? "" : String(v.stock_qty) })) : [{ storage: "", color: "", price: "", stockQty: "" }] });
       setEditing(id);
     } catch (e) { onError(e.message); }
   }
@@ -657,7 +657,7 @@ function Products({ onError }) {
       otherDeviceSpecs["Condition grade"] = otherDeviceGrade;
       otherDeviceSpecs["Defects / repairs / usage notes"] = otherDeviceUsageNotes || "None reported";
     }
-    const payload = { primaryImageMediaId: primaryImageMediaId || null, galleryMediaIds, collectionIds, specs: { ...parseCustomSpecs(), ...(isOtherDevicesCategory ? { Condition: otherDeviceCondition, ...otherDeviceSpecs, ...(otherDeviceSubcategory ? { "Product subcategory": otherDeviceSubcategory } : {}) } : {}) }, name: form.name.trim(), categoryKey: form.categoryKey, productType: form.productType.trim(), tagline: form.tagline || null, visibility: form.visibility, salesMode: form.salesMode, availability: form.availability, variants };
+    const payload = { modelGroupKey: form.modelGroupKey?.trim() || null, primaryImageMediaId: primaryImageMediaId || null, galleryMediaIds, collectionIds, specs: { ...parseCustomSpecs(), ...(isOtherDevicesCategory ? { Condition: otherDeviceCondition, ...otherDeviceSpecs, ...(otherDeviceSubcategory ? { "Product subcategory": otherDeviceSubcategory } : {}) } : {}) }, name: form.name.trim(), categoryKey: form.categoryKey, productType: form.productType.trim(), tagline: form.tagline || null, visibility: form.visibility, salesMode: form.salesMode, availability: form.availability, variants };
     if (form.slug) payload.slug = form.slug;
     try {
       await request(editing === "new" ? "/products" : `/products/${editing}`, { method: editing === "new" ? "POST" : "PATCH", body: JSON.stringify(payload) });
@@ -757,6 +757,7 @@ function Products({ onError }) {
       </section>}
       {!(editing === "new" && ["iphone","watch","ipad","mac","airpods"].includes(form.categoryKey)) && <div className="editor-grid">
         <label className="field-wide">Product name<input required value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))}/></label>
+        <label className="field-wide">Color group key (optional)<input value={form.modelGroupKey || ""} onChange={e => setForm(f => ({ ...f, modelGroupKey: e.target.value }))} placeholder="Example: iphone-17-pro-256gb-new"/><small className="muted">Use the exact same key for separate product records that are identical except for color. Each record keeps its own price, stock, and image gallery.</small></label>
         {editing !== "new" && <label>Category<select value={form.categoryKey} onChange={e => setForm(f => ({ ...f, categoryKey: e.target.value }))}>{["iphone","watch","ipad","mac","airpods","apple-accessory","other-accessory","other-devices"].map(k => <option key={k} value={k}>{titleCase(k)}</option>)}</select></label>}
         {isOtherDevicesCategory ? <section className="field-wide other-device-builder"><div className="eyebrow">OTHER DEVICES</div><h3>Choose device category</h3><p className="muted">Choose the product branch, then select whether the item is new or used. You can add any technical details below.</p><label>Device branch<CustomSelect value={form.productType} onChange={e => { setForm(f => ({ ...f, productType: e.target.value, variants: [{storage:"",color:"",price:"",stockQty:""}] })); setOtherDeviceSubcategory(""); setOtherDeviceAnswers({}); }}><option value="smartphone">Smartphones</option><option value="smartwatch">Smart Watches</option><option value="tablet">Tablets</option><option value="speakers">Speakers</option><option value="headphones">Headphones</option><option value="other-electronics">Other Electronics</option></CustomSelect></label>{form.productType === "other-electronics" && <label>Electronics type<CustomSelect value={otherDeviceSubcategory} onChange={e => setOtherDeviceSubcategory(e.target.value)}><option value="">Choose a subcategory</option><option value="other-electronics">Other Electronics</option></CustomSelect></label>}<label>Condition<CustomSelect value={otherDeviceCondition} onChange={e=>{setOtherDeviceCondition(e.target.value);setOtherDeviceBattery("");setOtherDeviceGrade("Like New");setOtherDeviceUsageNotes("");}}><option value="New">New</option><option value="Used">Used</option></CustomSelect></label><p className="muted">The questions below adapt automatically to the selected device branch.</p></section> : <label>Product type<input required value={form.productType} onChange={e => setForm(f => ({ ...f, productType: e.target.value }))}/></label>}
         <label className="field-wide">Description{isOtherDevicesCategory ? <textarea rows={2} value={form.tagline} onChange={e => setForm(f => ({ ...f, tagline: e.target.value }))} placeholder="Write a short description of this product…"/> : <input value={form.tagline} onChange={e => setForm(f => ({ ...f, tagline: e.target.value }))}/>}</label>
