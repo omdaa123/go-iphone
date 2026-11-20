@@ -1839,8 +1839,22 @@ function ProductDetailPage({ productId, go, onAddToCart, compareIds, onToggleCom
 
           <div style={{ borderColor: T.line }} className="border-t mt-8 pt-6 flex flex-col gap-2">
             <p style={{ color: T.graphite }} className="text-sm flex items-center gap-2"><ShieldCheck size={15} /> {product.hasUnits ? selectedUnit?.warranty : "12-month Go iPhone warranty"}</p>
-            <p style={{ color: T.graphite }} className="text-sm flex items-center gap-2"><BatteryMedium size={15} /> {product.hasUnits ? `Battery health ${selectedUnit?.battery}%` : "100% battery health, sealed unit"}</p>
+            <p style={{ color: T.graphite }} className="text-sm flex items-center gap-2"><BatteryMedium size={15} /> {product.hasUnits ? `Battery health ${selectedUnit?.battery ?? "Not recorded"}${selectedUnit?.battery != null ? "%" : ""}` : "100% battery health, sealed unit"}</p>
           </div>
+          {product.hasUnits && selectedUnit?.conditionReport && Object.keys(selectedUnit.conditionReport).length > 0 && (
+            <div style={{ borderColor: T.line }} className="border-t mt-5 pt-5">
+              <h3 style={{ color: T.ink }} className="text-sm font-semibold mb-3">Device condition</h3>
+              <div className="grid grid-cols-2 gap-3 text-xs">
+                {["battery","display","camera","housing","other"].filter(k=>selectedUnit.conditionReport[k]?.status && selectedUnit.conditionReport[k].status!=="not-checked").map(k=>{
+                  const part=selectedUnit.conditionReport[k];
+                  const statusLabel={original:"Original · not replaced",replaced:"Replaced",issue:"Issue reported"}[part.status]||part.status;
+                  const typeLabel={"genuine-new":"Genuine Apple · new","genuine-used":"Genuine Apple · used",aftermarket:"Third-party replacement",unknown:"Part type unverified","not-applicable":"N/A"}[part.type]||"";
+                  return <div key={k}><b style={{color:T.ink}} className="capitalize">{k==="display"?"Screen":k==="housing"?"Body":k}</b><p style={{color:T.graphite}}>{statusLabel}{typeLabel?" · "+typeLabel:""}</p></div>;
+                })}
+              </div>
+              {selectedUnit.conditionReport.cosmeticNotes && <p style={{color:T.graphite}} className="text-xs mt-3">{selectedUnit.conditionReport.cosmeticNotes}</p>}
+            </div>
+          )}
         </div>
       </div>
 
@@ -1864,7 +1878,7 @@ function ProductDetailPage({ productId, go, onAddToCart, compareIds, onToggleCom
    ============================================================ */
 const COMPARE_GROUPS = [
   { title: "Price & overview", rows: [
-    { key: "price", label: "Price" }, { key: "condition", label: "Condition" },
+    { key: "price", label: "Price" }, { key: "condition", label: "Condition" }, { key: "batteryHealth", label: "Battery health" },
     { key: "storage", label: "Storage" }, { key: "color", label: "Color" },
     { key: "warranty", label: "Warranty" },
   ] },
@@ -1908,7 +1922,7 @@ function ComparePage({ compareIds, onToggleCompare, onClear, go }) {
     if (key==="storage") return unit?.storage || (p.storageOptions||[]).join(", ") || readSpec(p,key);
     if (key==="color") return unit?.color || (p.colors||[]).join(", ") || "—";
     if (key==="warranty") return unit?.warranty || "—";
-    if (key==="battery" && unit?.battery != null) return unit.battery + "% health";
+    if (key==="batteryHealth") return unit?.battery != null ? unit.battery + "%" : "—";
     return readSpec(p,key);
   };
   const specRows = useMemo(() => {
