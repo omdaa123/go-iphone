@@ -1,42 +1,33 @@
 # GO iPhone Admin
 
-A standalone React + Vite administration app for the GO iPhone store.
+React + Vite administration app for the GO iPhone store.
 
 ## Local development
 
+1. Copy `.env.example` to `.env` (default API origin is `http://127.0.0.1:4000`).
+2. Start the backend from `backend/`.
+3. Install and run the Admin app:
+
 ```bash
-cd admin
 npm install
 npm run dev
 ```
 
-The Vite development server proxies `/admin/*` requests to `https://go-iphone-api.vercel.app`. Override the target with `API_ORIGIN` when needed.
+The Admin app runs on Vite's default local port. The Vite proxy forwards `/admin/*` to the backend.
 
-## Deploy on Vercel
+Local development is intentionally read-only for API mutations. Do not remove that safeguard to test against a database until the backend is confirmed to use a disposable Dev database.
 
-Create a **new Vercel project** from this same GitHub repository:
+## Deployment
 
-- Root Directory: `admin`
-- Framework Preset: Vite
-- Install Command: `npm install`
-- Build Command: `npm run build`
-- Output Directory: `dist`
+Deploy this directory as its own Vite project with:
 
-The included `vercel.json` rewrites browser requests under `/admin/*` to the existing API. This keeps the browser talking to the admin site's origin so the API's host-only, HttpOnly session cookies can be stored for that admin host.
+- Root directory: `admin`
+- Install command: `npm install`
+- Build command: `npm run build`
+- Output directory: `dist`
 
-### Required API environment configuration
+The included `vercel.json` proxies `/admin/*` to the configured API host. Confirm that destination is the intended production API before deployment, and add the deployed Admin origin to the API's `ALLOWED_ORIGINS`. Keep cookies HttpOnly and Secure in production.
 
-After the admin project is deployed, copy its exact production origin (for example, `https://your-admin-project.vercel.app`) and add it to the API deployment's `ALLOWED_ORIGINS` environment variable. Keep all existing allowed origins and append the admin origin as a comma-separated value, then redeploy the API.
+## Implemented workspaces
 
-Do **not** weaken `SameSite=Strict`, disable HttpOnly, or expose database credentials to the browser to work around cookie/CORS issues.
-
-## Current implementation status
-
-- Sign-in and TOTP verification use the existing `/admin/auth` endpoints.
-- Session restore uses `/admin/auth/me` and refreshes an expired short session through `/admin/auth/refresh`.
-- Dashboard reads live data from `/admin/stats`.
-- Products list/search/visibility filter reads from `/admin/products`.
-- Orders list/filter and status updates use `/admin/orders`.
-- Inventory, reservations, customers, homepage, design, media, collections, team, and settings are currently clearly marked as work in progress. Their screens are not represented as completed CRUD functionality.
-
-The API remains the authorization boundary: permissions must continue to be enforced by backend middleware and database roles, not by hiding UI controls alone.
+The navigation exposes Dashboard, Products, Inventory, Orders, Reservations, Customers, Visual Store Editor, Media Library, Collections, Team & Access, and Settings. Actual CRUD behavior still needs to be verified end-to-end against a staging database for each role. A successful Vite build only confirms compilation; it does not prove that API writes, uploads, cookies, or business workflows work.

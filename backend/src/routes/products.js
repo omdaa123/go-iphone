@@ -7,7 +7,7 @@ import { validateBody } from "../middleware/validate.js";
 import { logAudit } from "../lib/audit.js";
 
 export const productsRouter = Router();
-productsRouter.use(requireAuth);
+productsRouter.use(requireAuth, requirePermission("products.write"));
 
 function slugify(name) {
   return String(name).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "").slice(0, 60);

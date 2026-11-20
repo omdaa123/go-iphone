@@ -1,102 +1,61 @@
-# Go iPhone — Backend API
+# GO iPhone — Backend
 
-One backend, one database, shared by the **storefront** (goiphone.com) and the
-**admin app** (admin.goiphone.com). Neither frontend ever touches the database
-directly — they only call this API.
+Express API shared by the Admin app and the customer storefront. The browser never connects directly to PostgreSQL. The Express API is deployed as the `go-iphone-api` Vercel project (Root Directory: `backend`).
 
-```
-goiphone.com        ──┐
-                      ├──►  api.goiphone.com  ──►  Postgres (+ object storage for images)
-admin.goiphone.com  ──┘
-```
+## Local setup
 
-## What's included and tested
-52 automated end-to-end checks (see `tests/`) were run against a real Postgres
-database, plus 5 browser-level tests that drive the actual storefront UI:
-login, wrong-password rejection, account lockout after repeated failures,
-TOTP 2FA, session rotation + revocation, role permissions (OWNER / MANAGER /
-STAFF / CONTENT), anonymous access rejected on every admin route, drafts hidden
-from the public API, SQL-injection attempts, audit logging, **server-side price
-enforcement (a tampered price from the browser is ignored)**, reservation-only
-products can't be ordered, stock limits, and **6 simultaneous buyers of the same
-used phone → exactly 1 succeeds.**
+1. Copy `.env.example` to `.env` and set a **development database** connection.
+2. Install and prepare a disposable development database:
 
-Money columns named `*_cents` store **piastres** (1 EGP = 100). The public API
-converts to whole EGP for the storefront.
-
-## Setup (≈15 minutes)
-
-### 1. Database (Supabase or Neon — free tier is fine)
-Create a project, then copy the **connection string** (Project Settings → Database).
-
-### 2. Configure
-```bash
-cp .env.example .env      # then edit .env
-```
-Fill in `DATABASE_URL`, set `ALLOWED_ORIGINS` to your real sites, set
-`SEED_OWNER_EMAIL` / `SEED_OWNER_PASSWORD` (12+ characters), and make sure
-`COOKIE_SECURE` is **true** (or removed) in production.
-
-### 3. Create tables + first admin
 ```bash
 npm install
-npm run migrate     # creates all tables (safe to re-run)
-npm run seed          # categories, collections, your OWNER login
-npm run seed:catalog  # imports the existing Go iPhone catalog (22 products, used units, hero slides)
-```
-After the first login, **delete `SEED_OWNER_PASSWORD` from `.env`** and enable 2FA.
-
-### 4. Run
-```bash
-npm start           # http://localhost:4000/health  →  {"ok":true}
+npm run migrate
+npm run seed
+npm run seed:catalog
+npm run dev
 ```
 
-### 5. Deploy (Render / Railway / Fly)
-Build command `npm install` · Start command `npm start` · add every variable
-from `.env` in the host's dashboard (never commit `.env`). Point
-`api.goiphone.com` at it.
+The API health endpoint is `http://127.0.0.1:4000/health`.
 
-## Domains & cookies
-Admin and API must share the registrable domain (`admin.goiphone.com` ↔
-`api.goiphone.com`) — the session cookie is `HttpOnly; Secure; SameSite=Strict`,
-which works across subdomains of the same site. Frontends must call the API with
-`fetch(url, { credentials: "include" })`. Keep the CORS list (`ALLOWED_ORIGINS`)
-to exactly your own sites.
+Never run migrations, seed scripts, destructive tests, or test orders against Production. Confirm the database hostname is the Dev branch before applying schema changes. Do not paste database URLs or passwords into chat or commit them.
 
-## Roles (editable in the `roles` table)
-| Role | Can do |
+## Roles and server-side permissions
+
+| Role | Access |
 |---|---|
-| OWNER | everything, incl. managing admins and settings |
-| MANAGER | products, inventory, orders, reservations, CMS, media |
-| STAFF | orders, reservations, inventory |
-| CONTENT | CMS (hero, collections, announcement…) and media |
+| OWNER | All areas, team administration, settings, and Dashboard |
+| FULL_ACCESS_NO_DASHBOARD | Full store and team management, but no Dashboard |
+| DASHBOARD | Dashboard and its sales overview only |
+| CATALOG | Products, storefront content/design, Collections, and Media; no Dashboard, orders, customers, or sales |
 
-## API overview
-Public (no login): `GET /api/catalog` (everything the storefront renders: products,
-available used units, categories, hero slides, homepage content) ·
-`POST /api/orders`, `POST /api/reservations`. Orders carry only *what* was chosen —
-the server looks up prices, checks stock, and claims used units atomically.
-Admin (login + permission, checked server-side every request): `/admin/auth/*`,
-`/admin/products`, `/admin/products/:id/units`, `/admin/orders`,
-`/admin/reservations`, `/admin/categories`, `/admin/collections`,
-`/admin/hero-slides`, `/admin/site-content`, `/admin/settings`, `/admin/media`,
-`/admin/users`.
+Permissions are checked by backend middleware on each protected request. OWNER and FULL_ACCESS_NO_DASHBOARD accounts must enroll in 2FA before accessing non-auth admin routes. Keep 2FA enabled in production.
 
-## Honest list of what is NOT done yet
-1. **Media storage is local-disk (dev only).** Before production, replace
-   `src/lib/storage.js` with S3 / Cloudflare R2 / Supabase Storage (the rest of
-   the code doesn't change). Hosts with ephemeral disks lose local files on redeploy.
-2. **Backups** are a database-provider feature (enable daily backups + point-in-time
-   recovery in Supabase/Neon) — not something application code can do.
-3. **Rate limiting is in-memory** (fine for one server). Use a Redis store if you
-   run multiple instances.
-4. **Mandatory 2FA** is supported and enforced once enabled per user, but the
-   system doesn't *force* an OWNER to enroll before first use — enroll immediately.
-5. No online payments yet — orders have a `payment_status` field
-   (pending/paid/failed/refunded/cancelled) ready for it; COD works today.
-6. The **storefront** now runs on this API (see `go-iphone-storefront`). The separate
-   **Admin app** is the remaining piece — until it exists, manage data through the API
-   / SQL directly.
-7. No system is "unhackable." This follows standard defense-in-depth practice
-   (hashed passwords, server-side authorization, parameterized SQL, rate limits,
-   audit logs, security headers). Keep dependencies updated and review logs.
+## Commerce behavior
+
+- Public catalog reads are read-only.
+- Prices and stock are calculated/checked by the server, not trusted from browser values.
+- New orders reserve tracked stock. Completing an order marks an individually tracked unit sold; cancelling an order releases reserved units and restores tracked variant quantities.
+- Orders currently use the database default payment method (cash on delivery). There is no online payment-gateway integration yet; do not present online payments as active until a provider and verified webhook flow are implemented.
+- Reservations are separate from orders.
+
+## Production environment
+
+Set `NODE_ENV=production`, `COOKIE_SECURE=true`, `ENABLE_ADMIN_WRITES=true`, `ENABLE_COMMERCE_WRITES=true`, an exact comma-separated `ALLOWED_ORIGINS` list for the deployed storefront/Admin origins, a production-only `DATABASE_URL`, and persistent media credentials. The two write flags are mandatory explicit opt-ins in every environment. Keep the default 2FA requirement enabled. Never copy a Production connection string into a local `.env`. In local development, the backend blocks admin mutations and customer checkout/reservations unless the matching explicit write override is enabled.
+
+## Persistent media and operations
+
+Before production, configure ImageKit in the `go-iphone-api` Vercel project's Environment Variables (Root Directory: `backend`): IMAGEKIT_PRIVATE_KEY and IMAGEKIT_URL_ENDPOINT are required; IMAGEKIT_PUBLIC_KEY is optional for server uploads, and IMAGEKIT_FOLDER defaults to go-iphone. ImageKit is the selected primary provider and takes precedence when configured. Cloudinary and S3-compatible storage remain optional alternatives. The API stores the permanent CDN URL in the media table, so product images, gallery images, site content images, and uploaded videos use the same media records. Local disk uploads are for development only and can disappear on redeploy. Store the ImageKit private key only in the `go-iphone-api` Backend Vercel project's server-side Environment Variables. Never put it in the Storefront or Admin Vercel project environment variables or frontend code. After setting the variables, redeploy the Backend Vercel project and test one image and one video upload from Admin → Media. Enable database backups and point-in-time recovery with the database provider. In-memory rate limits are suitable only for a single API instance; use a shared store such as Redis before horizontal scaling.
+
+## Tests
+
+The end-to-end suites create users, products, orders, and reservations. Run them **only against a disposable test database** with a separate test server. For the test server only, set `NODE_ENV=development`, `ENABLE_ADMIN_WRITES=true`, and `ENABLE_COMMERCE_WRITES=true`; the normal local defaults keep these writes disabled. The admin/security suites also use `REQUIRE_2FA=false` for the initial setup phase. Do not set these write overrides when connected to Production:
+
+- `npm run test:e2e:admin-api`
+- `npm run test:e2e:security`
+- `npm run test:e2e:catalog`
+- `npm run test:e2e:2fa`
+- `npm run test:local-write-guard` (run against a local server with write overrides unset)
+
+The storefront integration suite is `npm run test:e2e --prefix ../storefront`; it also requires a running test API and database. These are not safe to run against Production.
+
+GitHub Actions builds the Admin and storefront and performs backend JavaScript syntax checks. Passing CI does not replace database-backed end-to-end tests, deployment configuration checks, or a real checkout rehearsal.

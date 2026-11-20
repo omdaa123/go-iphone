@@ -26,6 +26,9 @@ function typeFor(p) {
 }
 
 async function run() {
+  if (process.env.NODE_ENV === "production" && process.env.ALLOW_PRODUCTION_SEED !== "true") {
+    throw new Error("Production catalog import blocked. Verify the target database and explicitly set ALLOW_PRODUCTION_SEED=true for a one-off manual run.");
+  }
   const idBySlug = {};
   let created = 0, skipped = 0;
 

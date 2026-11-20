@@ -21,8 +21,8 @@ const egp = (piastres) => Math.round(Number(piastres) / 100); // DB stores piast
 // hundred products fit comfortably in a single cached response.
 publicRouter.get("/catalog", async (req, res, next) => {
   try {
-    const [cats, cols, prods, variants, units, hero, content, settings, pcs] = await Promise.all([
-      pool.query(`SELECT c.key, c.label, c.sort_order, m.url AS image_url FROM categories c LEFT JOIN media m ON m.id = c.image_media_id ORDER BY c.sort_order`),
+    const [cats, cols, prods, variants, units, hero, content, pcs, sales, settings] = await Promise.all([
+      pool.query(`SELECT c.key, c.label, c.sort_order, c.parent_key, m.url AS image_url FROM categories c LEFT JOIN media m ON m.id = c.image_media_id ORDER BY c.sort_order`),
       pool.query(`SELECT id, name, description, is_system, visible, sort_order FROM collections ORDER BY sort_order`),
       pool.query(
         `SELECT p.*, m.url AS image_url,
@@ -44,12 +44,28 @@ publicRouter.get("/catalog", async (req, res, next) => {
          WHERE s.active = true ORDER BY s.sort_order`
       ),
       pool.query(`SELECT section_key, data FROM homepage_content`),
-      pool.query(`SELECT key, value FROM site_settings`),
       pool.query(`SELECT product_id, collection_id FROM product_collections`),
+      pool.query(
+        `SELECT oi.product_id, SUM(oi.qty)::int AS sold_qty
+         FROM order_items oi JOIN orders o ON o.id = oi.order_id
+         WHERE o.status <> 'Cancelled'
+         GROUP BY oi.product_id`
+      ),
+      pool.query(`SELECT key, value FROM site_settings`),
     ]);
 
+    const soldByProduct = Object.fromEntries(sales.rows.map((r) => [r.product_id, Number(r.sold_qty) || 0]));
     const collectionsByProduct = {};
     for (const r of pcs.rows) (collectionsByProduct[r.product_id] ||= []).push(r.collection_id);
+
+    // Only available, explicitly graded pre-owned units belong in Certified Pre-Owned.
+    // New devices (and units without a recorded condition) must never appear there.
+    const availableUnitProducts = new Set(units.rows.map((u) => u.product_id));
+    const certifiedPreOwnedProducts = new Set(
+      units.rows
+        .filter((u) => u.condition && String(u.condition).trim().toLowerCase() !== "new")
+        .map((u) => u.product_id)
+    );
 
     const variantsByProduct = {};
     for (const v of variants.rows) (variantsByProduct[v.product_id] ||= []).push(v);
@@ -73,8 +89,13 @@ publicRouter.get("/catalog", async (req, res, next) => {
         availability: p.availability,
         reservation: p.reservation_cfg,
         badges: p.badges,
-        hasUnits: p.has_units,
-        collections: collectionsByProduct[p.id] || [],
+        hasUnits: availableUnitProducts.has(p.id),
+        collections: Array.from(new Set([
+          ...(collectionsByProduct[p.id] || []).filter((id) => id !== "certified-refurbished"),
+          ...(certifiedPreOwnedProducts.has(p.id) ? ["certified-refurbished"] : []),
+        ])),
+        createdAt: p.created_at || null,
+        soldQty: soldByProduct[p.id] || 0,
         image: p.image_url || null,
         gallery: p.gallery_urls || [],
         // storefront-only extras (recommendation scores, screen size, launch date)
@@ -86,13 +107,14 @@ publicRouter.get("/catalog", async (req, res, next) => {
     const deviceUnits = units.rows.map((u) => ({
       id: u.id, productId: u.product_id, storage: u.storage, color: u.color, battery: u.battery_pct,
       condition: u.condition, price: egp(u.price_cents), sku: u.sku, warranty: u.warranty,
-      availability: "available", photo: u.photo_url || null,
+      conditionReport: u.condition_report || {}, availability: "available", photo: u.photo_url || null,
     }));
 
     const heroSlides = hero.rows.map((s) => ({
       id: s.id, eyebrow: s.eyebrow || "", title: s.title, sub: s.subtitle || "", cta: s.cta_text || "Shop now",
       badge: s.badge || "", active: true, duration: s.duration_ms,
       image: s.image_url || "", mobileImage: s.mobile_image_url || "",
+      video: s.video_url || "", mobileVideo: s.mobile_video_url || "",
       target: s.link_product_id
         ? { view: "product", params: { id: s.link_product_id } }
         : { view: "catalog", params: { category: s.link_category_key || "iphone" } },
@@ -100,14 +122,16 @@ publicRouter.get("/catalog", async (req, res, next) => {
 
     const siteContent = Object.fromEntries(content.rows.map((r) => [r.section_key, r.data]));
     siteContent.categoryImages = Object.fromEntries(cats.rows.filter((c) => c.image_url).map((c) => [c.key, c.image_url]));
+    const collectionDetails = siteContent.collectionDetails || {};
     siteContent.collections = cols.rows.map((c) => ({
       id: c.id, name: c.name, description: c.description || "", visible: c.visible, order: c.sort_order, system: c.is_system,
+      ...(collectionDetails[c.id] || {}),
     }));
     siteContent.settings = Object.fromEntries(settings.rows.map((r) => [r.key, r.value]));
 
     res.set("Cache-Control", "public, max-age=15"); // admin edits show up within seconds
     res.json({
-      categories: cats.rows.map((c) => ({ key: c.key, label: c.label })),
+      categories: cats.rows.map((c) => ({ key: c.key, label: c.label, parentKey: c.parent_key || null })),
       products, deviceUnits, heroSlides, siteContent,
     });
   } catch (err) { next(err); }
@@ -123,6 +147,9 @@ const orderItemSchema = z.object({
   storage: z.string().optional().nullable(),
   color: z.string().optional().nullable(),
   qty: z.number().int().min(1).max(20),
+}).refine(item => !item.inventoryUnitId || item.qty === 1, {
+  message: "A specific inventory unit can only be ordered one at a time.",
+  path: ["qty"],
 });
 const orderSchema = z.object({
   name: z.string().min(1).max(200),
@@ -140,7 +167,12 @@ function httpError(status, message) {
   return err;
 }
 
-publicRouter.post("/orders", writeLimiter, validateBody(orderSchema), async (req, res, next) => {
+function guardLocalCommerceWrites(req, res, next) {
+  if (process.env.ENABLE_COMMERCE_WRITES === "true") return next();
+  return res.status(503).json({ error: "Checkout is disabled until ENABLE_COMMERCE_WRITES=true is explicitly configured." });
+}
+
+publicRouter.post("/orders", guardLocalCommerceWrites, writeLimiter, validateBody(orderSchema), async (req, res, next) => {
   try {
     const b = req.body;
 
@@ -162,7 +194,7 @@ publicRouter.post("/orders", writeLimiter, validateBody(orderSchema), async (req
           // matches nothing and the whole order is rejected — two concurrent
           // buyers can never both win.
           const claim = await client.query(
-            `UPDATE inventory_units SET status = 'sold', updated_at = now()
+            `UPDATE inventory_units SET status = 'reserved', updated_at = now()
              WHERE id = $1 AND product_id = $2 AND status = 'available'
              RETURNING id, storage, color, condition, price_cents`,
             [item.inventoryUnitId, item.productId]
@@ -170,7 +202,7 @@ publicRouter.post("/orders", writeLimiter, validateBody(orderSchema), async (req
           if (claim.rows.length === 0) throw httpError(409, "One of the items in your order was just purchased by someone else. Please refresh and try again.");
           const u = claim.rows[0];
           lines.push({
-            productId: product.id, unitId: u.id, qty: 1, unitPrice: Number(u.price_cents),
+            productId: product.id, unitId: u.id, variantId: null, qty: 1, unitPrice: Number(u.price_cents),
             label: [u.storage, u.color, u.condition].filter(Boolean).join(" · "),
           });
         } else {
@@ -178,6 +210,7 @@ publicRouter.post("/orders", writeLimiter, validateBody(orderSchema), async (req
           const v = await client.query(
             `SELECT id, storage, color, price_cents, stock_qty FROM product_variants
              WHERE product_id = $1 AND storage IS NOT DISTINCT FROM $2
+               AND ($3::text IS NULL OR color IS NOT DISTINCT FROM $3)
              ORDER BY (color IS NOT DISTINCT FROM $3) DESC LIMIT 1`,
             [item.productId, item.storage || null, item.color || null]
           );
@@ -191,8 +224,8 @@ publicRouter.post("/orders", writeLimiter, validateBody(orderSchema), async (req
             if (dec.rows.length === 0) throw httpError(409, `${product.name} is out of stock in that configuration.`);
           }
           lines.push({
-            productId: product.id, unitId: null, qty: item.qty, unitPrice: Number(variant.price_cents),
-            label: [variant.storage, item.color].filter(Boolean).join(" · "),
+            productId: product.id, unitId: null, variantId: variant.id, qty: item.qty, unitPrice: Number(variant.price_cents),
+            label: [variant.storage, variant.color].filter(Boolean).join(" · "),
           });
         }
       }
@@ -207,9 +240,9 @@ publicRouter.post("/orders", writeLimiter, validateBody(orderSchema), async (req
 
       for (const l of lines) {
         await client.query(
-          `INSERT INTO order_items (order_id, product_id, inventory_unit_id, variant_label, unit_price_cents, qty)
-           VALUES ($1,$2,$3,$4,$5,$6)`,
-          [order.id, l.productId, l.unitId, l.label, l.unitPrice, l.qty]
+          `INSERT INTO order_items (order_id, product_id, inventory_unit_id, variant_id, variant_label, unit_price_cents, qty)
+           VALUES ($1,$2,$3,$4,$5,$6,$7)`,
+          [order.id, l.productId, l.unitId, l.variantId, l.label, l.unitPrice, l.qty]
         );
         if (l.unitId) await client.query(`UPDATE inventory_units SET locked_by_order_id = $1 WHERE id = $2`, [order.id, l.unitId]);
       }
@@ -232,7 +265,7 @@ const reservationSchema = z.object({
   notes: z.string().max(500).optional().nullable(),
 });
 
-publicRouter.post("/reservations", writeLimiter, validateBody(reservationSchema), async (req, res, next) => {
+publicRouter.post("/reservations", guardLocalCommerceWrites, writeLimiter, validateBody(reservationSchema), async (req, res, next) => {
   try {
     const b = req.body;
     const prod = await pool.query(`SELECT id, sales_mode, visibility FROM products WHERE id = $1`, [b.productId]);

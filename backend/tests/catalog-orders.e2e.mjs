@@ -20,6 +20,8 @@ let r = await post("/api/orders",{name:"Tamper",phone:"01000000001",items:[{prod
 check("tampered price is ignored: 2 x iPhone 14 128GB = 56000 EGP", r.status===201 && r.data.order.total===56000, JSON.stringify(r.data));
 r = await post("/api/orders",{name:"X",phone:"01000000002",items:[{productId:iph14.id,storage:"999GB",qty:1}]});
 check("nonexistent configuration rejected (400)", r.status===400, JSON.stringify(r.data));
+r = await post("/api/orders",{name:"X",phone:"01000000008",items:[{productId:iph14.id,storage:"128GB",color:"Imaginary Color",qty:1}]});
+check("unavailable color rejected instead of silently choosing another variant (400)", r.status===400, JSON.stringify(r.data));
 r = await post("/api/orders",{name:"X",phone:"01000000003",items:[{productId:bySlug["iphone-17-pro"].id,storage:"256GB",qty:1}]});
 check("reservation-only product cannot be ordered (400)", r.status===400, JSON.stringify(r.data));
 r = await post("/api/orders",{name:"X",phone:"01000000004",items:[{productId:bySlug["iphone-13-pro-max"].id,qty:1}]});

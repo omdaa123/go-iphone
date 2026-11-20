@@ -3,7 +3,7 @@ import "dotenv/config";
 import { pool } from "../db.js";
 
 // Seeds the minimum needed to log in and start using the Admin app:
-// the storefront's 7 categories, the 5 default collections, and your
+// the storefront's 8 categories, the 5 default collections, and your
 // first OWNER account. Credentials come from environment variables —
 // never hardcode a real password into a file that might get committed.
 
@@ -15,6 +15,7 @@ const CATEGORIES = [
   { key: "airpods", label: "AirPods" },
   { key: "apple-accessory", label: "Apple Accessories" },
   { key: "other-accessory", label: "Other Accessories" },
+  { key: "other-devices", label: "Other Devices" },
 ];
 
 const COLLECTIONS = [
@@ -26,6 +27,9 @@ const COLLECTIONS = [
 ];
 
 async function seed() {
+  if (process.env.NODE_ENV === "production" && process.env.ALLOW_PRODUCTION_SEED !== "true") {
+    throw new Error("Production seed blocked. Verify the target database and explicitly set ALLOW_PRODUCTION_SEED=true for a one-off manual run.");
+  }
   for (const [i, c] of CATEGORIES.entries()) {
     await pool.query(
       `INSERT INTO categories (key, label, sort_order) VALUES ($1,$2,$3)

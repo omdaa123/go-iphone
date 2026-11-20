@@ -226,7 +226,7 @@ function productGallery(product) {
    photo yet, it falls back to the centered/padded vector glyph so
    that illustrative fallback still reads as a deliberate icon rather
    than a stretched, cropped line drawing. */
-function ProductImage({ product, hex, size = 200, className = "", imgClassName = "" }) {
+function ProductImage({ product, hex, size = 200, className = "", imgClassName = "", fit = "cover", objectPosition = "center", zoom = 100 }) {
   const src = productImageSrc(product);
   if (src) {
     return (
@@ -234,7 +234,8 @@ function ProductImage({ product, hex, size = 200, className = "", imgClassName =
         src={src}
         alt={product?.name || ""}
         draggable={false}
-        className={`absolute inset-0 w-full h-full object-cover object-center ${imgClassName}`}
+        style={{ objectPosition, transform: `scale(${Math.max(70, Math.min(180, Number(zoom) || 100)) / 100})` }}
+        className={`absolute inset-0 w-full h-full ${fit === "contain" ? "object-contain object-center bg-white p-[11%]" : "object-cover"} ${imgClassName}`}
       />
     );
   }
@@ -301,12 +302,14 @@ function getAvailability(p) {
    breaks, and every product is automatically already a member of
    the right built-in collections. */
 function getCollections(p) {
-  if (p.collections && p.collections.length) return p.collections;
+  // Preserve explicit assignments and merge any legacy product flags. This
+  // keeps older products visible in their original merchandising groups.
+  const assigned = Array.isArray(p.collections) ? p.collections : [];
   const legacy = [];
   if (p.featured) legacy.push("featured");
   if (p.bestSeller) legacy.push("best-sellers");
   if (p.newArrival) legacy.push("new-arrivals");
-  return legacy;
+  return Array.from(new Set([...assigned, ...legacy]));
 }
 function hasCollection(p, id) {
   return getCollections(p).includes(id);
@@ -337,6 +340,18 @@ function priceFrom(product) {
 function categoryLabel(key) {
   return store.categories.find((c) => c.key === key)?.label || key;
 }
+function categoryParentKey(category) {
+  return category?.parentKey || category?.parent_key || category?.parentCategoryKey ||
+    category?.parent_category_key || category?.parentId || category?.parent_id ||
+    (typeof category?.parent === "string" ? category.parent : category?.parent?.key) || null;
+}
+const OTHER_DEVICE_BRANCH_KEYS = new Set([
+  "smartphone", "smartwatch", "tablet", "speakers", "headphones", "other-electronics",
+]);
+function isTopLevelStoreCategory(category) {
+  return !categoryParentKey(category) && !OTHER_DEVICE_BRANCH_KEYS.has(category?.key);
+}
+
 function conditionTone(cond) {
   if (cond === "New" || cond === "Excellent") return T.ok;
   if (cond === "Very Good") return T.brassDeep;
@@ -432,7 +447,7 @@ function SectionHeading({ eyebrow, title, action, onAction }) {
     <div className="flex flex-wrap items-end justify-between mb-10 md:mb-12 gap-x-4 gap-y-2">
       <div>
         {eyebrow && <p style={{ color: T.graphite, fontSize: "13px", letterSpacing: "0.02em" }} className="mb-2">{eyebrow}</p>}
-        <h2 style={{ color: T.ink, fontFamily: FONT_DISPLAY, fontWeight: 700, letterSpacing: "-0.02em", fontSize: "clamp(1.9rem, 3.2vw, 2.75rem)", lineHeight: 1.12 }}>{title}</h2>
+        <h2 style={{ color: "var(--collection-heading-color, inherit)", fontFamily: "inherit", fontWeight: "var(--collection-heading-weight, 700)", letterSpacing: "-0.02em", fontSize: "var(--collection-heading-size, clamp(1.9rem, 3.2vw, 2.75rem))", lineHeight: 1.12 }}>{title}</h2>
       </div>
       {action && (
         <button onClick={onAction} className="group inline-flex items-center text-sm font-medium shrink-0 relative pb-1" style={{ color: T.ink }}>
@@ -471,8 +486,8 @@ function ProductCard({ product, onOpen, onToggleCompare, isComparing, compareDis
         onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onOpen(product.id); } }}
         className="text-left w-full cursor-pointer"
       >
-        <div style={{ backgroundColor: T.stone, aspectRatio: "1 / 1.05" }} className="relative w-full overflow-hidden">
-          <ProductImage product={product} size={132} className="transition-transform duration-500 ease-out group-hover:scale-[1.04]" imgClassName="transition-transform duration-500 ease-out group-hover:scale-[1.04]" />
+        <div style={{ backgroundColor: "#fff", aspectRatio: "1 / 1.05" }} className="relative w-full overflow-hidden">
+          <ProductImage product={product} size={132} fit="contain" />
         </div>
         <div className="pt-3.5">
           {status && <p className="mb-1.5"><Badge tone={statusTone}>{status}</Badge></p>}
@@ -503,11 +518,13 @@ function ProductCard({ product, onOpen, onToggleCompare, isComparing, compareDis
   );
 }
 
-function ProductRail({ title, action, products, onOpen, onToggleCompare, compareIds, onNavAction }) {
+function ProductRail({ title, action, products, onOpen, onToggleCompare, compareIds, onNavAction, coverImage, description }) {
   const ref = useRef(null);
   const scroll = (dir) => ref.current?.scrollBy({ left: dir * 300, behavior: "smooth" });
   return (
     <section className="max-w-7xl mx-auto px-6 md:px-10 py-16 md:py-32">
+      {coverImage && <div className="mb-8 overflow-hidden" style={{height:"clamp(120px,18vw,220px)",backgroundColor:T.stone}}><img src={coverImage} alt={title} className="w-full h-full object-cover"/></div>}
+      {description && <p style={{color:T.graphite}} className="text-sm mb-4 max-w-2xl">{description}</p>}
       <SectionHeading title={title} action={action} onAction={onNavAction} />
       {products.length ? (
         <div className="relative">
@@ -584,13 +601,38 @@ function Navbar({ go, cartCount, compareCount, onSearch, onCart }) {
           </button>
 
           <nav className="hidden md:flex items-center gap-9">
-            {CATEGORIES.filter((c) => c.key !== "apple-accessory" && c.key !== "other-accessory").map((c) => (
+            {CATEGORIES.filter((c) => isTopLevelStoreCategory(c) && !["apple-accessory", "other-accessory", "other-devices", "accessories"].includes(String(c.key || "").toLowerCase()) && !/accessor(?:y|ies)/i.test(String(c.label || ""))).map((c) => (
               <button key={c.key} onClick={() => go("catalog", { category: c.key })}
                 style={{ color: T.ink, fontSize: "13.5px" }} className="group relative font-medium py-1">
                 {c.label}
                 <span className="absolute left-0 -bottom-0 h-px w-0 group-hover:w-full transition-all duration-300" style={{ backgroundColor: T.ink }} />
               </button>
             ))}
+            <div className="relative group/other">
+              <button onClick={() => go("catalog", { category: "other-devices" })}
+                style={{ color: T.ink, fontSize: "13.5px" }} className="group relative font-medium py-1 inline-flex items-center gap-1">
+                Other Devices
+                <ChevronDown size={12} className="transition-transform duration-200 group-hover/other:rotate-180" style={{ color: T.graphite }} />
+                <span className="absolute left-0 -bottom-0 h-px w-0 group-hover:w-full transition-all duration-300" style={{ backgroundColor: T.ink }} />
+              </button>
+              <div className="absolute left-0 top-full pt-2 opacity-0 invisible translate-y-1 group-hover/other:opacity-100 group-hover/other:visible group-hover/other:translate-y-0 transition-all duration-150 z-20">
+                <div style={{ backgroundColor: T.paper, borderColor: T.line }} className="border shadow-sm min-w-[205px] py-1.5">
+                  {[
+                    { key: "smartphone", label: "Smartphones" },
+                    { key: "smartwatch", label: "Smart Watches" },
+                    { key: "tablet", label: "Tablets" },
+                    { key: "speakers", label: "Speakers" },
+                    { key: "headphones", label: "Headphones" },
+                    { key: "other-electronics", label: "Other Electronics" },
+                  ].map((branch) => (
+                    <button key={branch.key} onClick={() => go("catalog", { category: "other-devices", subcategory: branch.key })}
+                      style={{ color: T.ink }} className="block w-full text-left px-4 py-2.5 text-[13.5px] hover:bg-black/[0.03] transition-colors">
+                      {branch.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
             <div className="relative group/acc">
               <button onClick={() => go("catalog", { category: "apple-accessory" })}
                 style={{ color: T.ink, fontSize: "13.5px" }} className="group relative font-medium py-1 inline-flex items-center gap-1">
@@ -639,7 +681,7 @@ function Navbar({ go, cartCount, compareCount, onSearch, onCart }) {
             <button onClick={() => setMenuOpen(false)} style={{ color: T.ink }} className="p-2 -m-2"><X size={22} /></button>
           </div>
           <div className="flex-1 overflow-y-auto px-6 py-4 flex flex-col">
-            {CATEGORIES.filter((c) => c.key !== "apple-accessory" && c.key !== "other-accessory").map((c) => (
+            {CATEGORIES.filter((c) => isTopLevelStoreCategory(c) && !["apple-accessory", "other-accessory", "other-devices", "accessories"].includes(String(c.key || "").toLowerCase()) && !/accessor(?:y|ies)/i.test(String(c.label || ""))).map((c) => (
               <button key={c.key} onClick={() => { go("catalog", { category: c.key }); setMenuOpen(false); }}
                 style={{ color: T.ink, borderColor: T.line }} className="text-2xl font-medium tracking-tight py-4 border-b text-left">
                 {c.label}
@@ -652,6 +694,27 @@ function Navbar({ go, cartCount, compareCount, onSearch, onCart }) {
                   style={{ color: T.graphite }} className="text-sm font-medium text-left">Apple Accessories</button>
                 <button onClick={() => { go("catalog", { category: "other-accessory" }); setMenuOpen(false); }}
                   style={{ color: T.graphite }} className="text-sm font-medium text-left">Other Accessories</button>
+              </div>
+            </div>
+            <div style={{ borderColor: T.line }} className="border-b py-4">
+              <button onClick={() => { go("catalog", { category: "other-devices" }); setMenuOpen(false); }}
+                style={{ color: T.ink }} className="text-2xl font-medium tracking-tight text-left mb-3">
+                Other Devices
+              </button>
+              <div className="flex flex-col gap-3 pl-0.5">
+                {[
+                  { key: "smartphone", label: "Smartphones" },
+                  { key: "smartwatch", label: "Smart Watches" },
+                  { key: "tablet", label: "Tablets" },
+                  { key: "speakers", label: "Speakers" },
+                  { key: "headphones", label: "Headphones" },
+                  { key: "other-electronics", label: "Other Electronics" },
+                ].map((branch) => (
+                  <button key={branch.key} onClick={() => { go("catalog", { category: "other-devices", subcategory: branch.key }); setMenuOpen(false); }}
+                    style={{ color: T.graphite }} className="text-sm font-medium text-left">
+                    {branch.label}
+                  </button>
+                ))}
               </div>
             </div>
             <button onClick={() => { go("compare"); setMenuOpen(false); }} style={{ color: T.graphite, borderColor: T.line }} className="text-sm font-medium py-4 border-b text-left flex items-center justify-between">Compare devices <Scale size={15} /></button>
@@ -732,8 +795,15 @@ function heroProductFor(products, slide) {
 }
 
 function Hero({ go }) {
-  const { products, heroSlides: ALL_SLIDES } = useStoreData();
-  const HERO_SLIDES = ALL_SLIDES.filter((s) => s.active !== false);
+  const { products, heroSlides: ALL_SLIDES, siteContent } = useStoreData();
+  const schedules = siteContent?.heroSlideSchedules || {};
+  const now = Date.now();
+  const HERO_SLIDES = ALL_SLIDES.filter((s) => {
+    const schedule = schedules[s.id] || {};
+    return s.active !== false &&
+      (!schedule.publishAt || new Date(schedule.publishAt).getTime() <= now) &&
+      (!schedule.unpublishAt || new Date(schedule.unpublishAt).getTime() > now);
+  });
   const SLIDES = HERO_SLIDES.length ? HERO_SLIDES : [{
     id: "default-hero",
     eyebrow: "GO IPHONE",
@@ -776,7 +846,12 @@ const heroProduct = heroProductFor(products, slide);
     <section style={{ backgroundColor: T.ink }} className="relative overflow-hidden min-h-[560px] md:min-h-[640px]">
       {/* Full-bleed image layer — always covers the entire hero, edge to edge */}
       <div key={slide.id} className="hero-fade absolute inset-0">
-        {customImage ? (
+        {(slide.video || slide.mobileVideo) ? (
+          <>
+            {(slide.mobileVideo || slide.video) && <video key={(slide.mobileVideo || slide.video) + "-mobile"} src={slide.mobileVideo || slide.video} autoPlay muted loop playsInline preload="metadata" aria-hidden="true" className="md:hidden absolute inset-0 w-full h-full object-cover object-center" />}
+            {(slide.video || slide.mobileVideo) && <video key={(slide.video || slide.mobileVideo) + "-desktop"} src={slide.video || slide.mobileVideo} autoPlay muted loop playsInline preload="metadata" aria-hidden="true" className="hidden md:block absolute inset-0 w-full h-full object-cover object-center" />}
+          </>
+        ) : customImage ? (
           <>
             <img src={customMobileImage} alt="" className="md:hidden absolute inset-0 w-full h-full object-cover object-center" />
             <img src={customImage} alt="" className="hidden md:block absolute inset-0 w-full h-full object-cover object-center" />
@@ -847,44 +922,48 @@ function representativeProduct(categoryKey) {
 
 function CategoryGrid({ go }) {
   const { categories: CATEGORIES, siteContent } = useStoreData();
-  const categoryImages = siteContent.categoryImages || {};
-  const shown = CATEGORIES.filter((c) => c.key !== "other-accessory");
-  // Woven bento pattern: a category spans 2 grid columns, the rest span 1.
-  // Because col-span-2 always means "half the row" whether the row has 2
-  // columns (mobile) or 4 (desktop), this single set of classes produces a
-  // sensible layout at every breakpoint with no responsive span overrides.
-  const wide = new Set(["iphone", "apple-accessory"]);
-
+  const config = siteContent.shopCategoriesSection || {};
+  // API category records may expose the parent relation as parent_key or parentKey.
+  const source = CATEGORIES.filter((c) => isTopLevelStoreCategory(c) && c.key !== "other-accessory" && (c.key === "apple-accessory" || (!["accessories"].includes(String(c.key || "").toLowerCase()) && !/accessor(?:y|ies)/i.test(String(c.label || "")))));
+  const order = Array.isArray(config.order) ? config.order : [];
+  const shown = source.filter(c => config.cards?.[c.key]?.visible !== false).sort((a,b)=>{const ai=order.indexOf(a.key),bi=order.indexOf(b.key);return (ai<0?999:ai)-(bi<0?999:bi);});
+  const columns = Math.max(2,Math.min(6,Number(config.columns)||4));
+  const sectionStyle = {backgroundColor:config.backgroundColor||"transparent",color:config.textColor||"inherit",paddingTop:Number(config.paddingY??80),paddingBottom:Number(config.paddingY??80)};
   return (
-    <section className="max-w-7xl mx-auto px-6 md:px-10 py-20 md:py-28">
-      <SectionHeading title="Shop by category" />
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
+    <section className="max-w-7xl mx-auto px-6 md:px-10" style={sectionStyle}>
+      <div className="mb-8 md:mb-10">
+        {config.eyebrow!=="" && <p style={{color:config.textColor||T.graphite,fontSize:11,letterSpacing:".16em",fontWeight:750,textTransform:"uppercase",opacity:.68,marginBottom:10}}>{config.eyebrow??"EXPLORE"}</p>}
+        <SectionHeading title={config.title??"Shop by category"} />
+        {config.description && <p style={{color:config.textColor||T.graphite,opacity:.72}} className="text-sm mt-3 max-w-2xl">{config.description}</p>}
+      </div>
+      <div style={{display:"grid",gridTemplateColumns:"repeat(var(--category-columns),minmax(0,1fr))","--category-columns":columns,gap:Number(config.gap??12)}} className="shop-category-grid">
         {shown.map((c) => {
-          const override = categoryImages[c.key];
-          const rep = representativeProduct(c.key);
-          const hasPhoto = !!override || !!(rep && productImageSrc(rep));
-          const isWide = wide.has(c.key);
+          const card=config.cards?.[c.key]||{};
+          const override=card.imageUrl||c.image_url||c.imageUrl||null;
+          const rep=representativeProduct(c.key);
+          const hasPhoto=!!override||!!(rep&&productImageSrc(rep));
+          const isWide=card.wide??["iphone","apple-accessory","other-devices"].includes(c.key);
+          const span=isWide&&columns>=3?2:1;
+          const imageFit=card.imageFit&&card.imageFit!=="inherit"?card.imageFit:(config.imageFit||"cover");
+          const textColor=card.textColor||(hasPhoto?"#fff":(config.textColor||T.ink));
+          const overlay=hasPhoto&&config.showOverlay!==false?Number(config.overlayOpacity??35)/100:0;
+          const textPlacement=config.textPlacement||"bottom";
           return (
-            <button key={c.key} onClick={() => go("catalog", { category: c.key })}
-              style={{ backgroundColor: T.stone }}
-              className={`group relative h-48 md:h-60 flex flex-col justify-between p-5 md:p-6 text-left overflow-hidden ${isWide ? "col-span-2" : "col-span-1"}`}>
-              <div className="absolute inset-0 pointer-events-none">
-                {override ? (
-                  <img src={override} alt="" className="absolute inset-0 w-full h-full object-cover object-center transition-transform duration-300 ease-out group-hover:scale-105" />
-                ) : rep ? (
-                  <ProductImage product={rep} size={isWide ? 118 : 78} className="transition-transform duration-300 ease-out group-hover:-translate-y-1" imgClassName="transition-transform duration-300 ease-out group-hover:-translate-y-1" />
-                ) : (
-                  <div className="absolute inset-0 flex items-center justify-center" style={{ padding: isWide ? "0 15%" : "14%" }}>
-                    <DeviceGlyph category={c.key === "apple-accessory" ? "pencil" : c.key} hex={DEFAULT_DEVICE_HEX} size={isWide ? 118 : 78} className="transition-transform duration-300 ease-out group-hover:-translate-y-1" />
-                  </div>
-                )}
-              </div>
-              <span />
-              <span className="relative flex items-center gap-1.5">
-                <span style={{ color: hasPhoto ? "#fff" : T.ink, textShadow: hasPhoto ? "0 1px 3px rgba(0,0,0,0.4)" : "none" }} className="text-sm font-medium">{c.label}</span>
-                <ChevronRight size={14} style={{ color: hasPhoto ? "#fff" : T.ink }} className="opacity-0 -translate-x-1 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-200" />
-              </span>
-            </button>
+            <article key={c.key} style={{gridColumn:`span ${span}`,minWidth:0}}>
+              <button type="button" onClick={() => go("catalog", { category: c.key })}
+                style={{backgroundColor:card.backgroundColor||T.stone,borderRadius:Number(config.cardRadius??4),height:Number(config.cardHeight??192),color:textColor}}
+                className={`group relative w-full flex flex-col ${textPlacement==="top"?"justify-start":textPlacement==="center"?"justify-center":"justify-end"} p-5 md:p-6 text-left overflow-hidden transition-transform duration-300 hover:-translate-y-0.5`}>
+                <div className="absolute inset-0 pointer-events-none">
+                  {override ? <img src={override} alt="" style={{objectFit:imageFit}} className="absolute inset-0 w-full h-full transition-transform duration-300 ease-out group-hover:scale-105"/> : rep ? <ProductImage product={rep} size={span===2?118:78} className="transition-transform duration-300 ease-out group-hover:-translate-y-1" imgClassName="transition-transform duration-300 ease-out group-hover:-translate-y-1"/> : <div className="absolute inset-0 flex items-center justify-center"><DeviceGlyph category={c.key==="apple-accessory"?"pencil":c.key} hex={DEFAULT_DEVICE_HEX} size={span===2?118:78}/></div>}
+                  {overlay>0&&<div className="absolute inset-0" style={{background:`linear-gradient(180deg,rgba(0,0,0,${overlay*.35}) 0%,rgba(0,0,0,${overlay}) 100%)`}}/>}
+                </div>
+                <span/>
+                <span className={`relative flex items-center gap-1.5 ${textPlacement==="top"?"self-start":textPlacement==="center"?"self-center":"self-start"}`} style={{marginTop:textPlacement==="top"?0:"auto"}}>
+                  <span style={{color:textColor,textShadow:hasPhoto?"0 1px 4px rgba(0,0,0,.35)":"none"}} className="text-sm font-semibold">{card.label??c.label}</span>
+                  <ChevronRight size={14} style={{color:textColor}} className="opacity-0 -translate-x-1 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-200"/>
+                </span>
+              </button>
+            </article>
           );
         })}
       </div>
@@ -895,22 +974,30 @@ function CategoryGrid({ go }) {
 /* ============================================================
    EDITORIAL FEATURE
    ============================================================ */
-function EditorialFeature({ product, go }) {
-  if (!product) return null;
+function EditorialFeature({ product, go, config = {} }) {
+  if (!product) return (
+    <section className="max-w-7xl mx-auto px-6 md:px-10" style={{paddingTop:(config.sectionPadding??64)+"px",paddingBottom:(config.sectionPadding??64)+"px",background:config.sectionBackground||"transparent",color:config.headingColor||"inherit",fontFamily:config.headingFont&&config.headingFont!=="inherit"?config.headingFont:"inherit"}}>
+      <div style={{ backgroundColor: T.stone, borderColor: T.line }} className="border px-6 py-12 md:px-12 text-center">
+        <p style={{ color: T.graphite, fontSize: "12.5px", letterSpacing: "0.08em" }} className="mb-3 uppercase">{config.eyebrow||"Featured"}</p>
+        <h2 style={{ color: T.ink, fontFamily: FONT_DISPLAY, fontWeight: 700, fontSize: "clamp(1.8rem, 3vw, 2.5rem)" }} className="mb-3">{config.featuredTitle||"Featured devices coming soon"}</h2>
+        <p style={{ color: T.graphite }} className="text-sm">{config.storeDescription||"Our featured picks will appear here as soon as products are available."}</p>
+      </div>
+    </section>
+  );
   return (
-    <section className="max-w-7xl mx-auto px-6 md:px-10 py-16 md:py-24">
-      <div className="grid md:grid-cols-[1.3fr_1fr] gap-0 md:gap-16 items-stretch">
-        <div style={{ backgroundColor: T.stone }} className="relative order-2 md:order-1 aspect-[4/3] md:aspect-auto overflow-hidden">
-          <ProductImage product={product} size={300} />
+    <section className="max-w-7xl mx-auto px-6 md:px-10" style={{paddingTop:(config.sectionPadding??64)+"px",paddingBottom:(config.sectionPadding??64)+"px",background:config.sectionBackground||"transparent",color:config.headingColor||"inherit",fontFamily:config.headingFont&&config.headingFont!=="inherit"?config.headingFont:"inherit"}}>
+      <div className="grid md:grid-cols-[1.2fr_1fr] gap-0 md:gap-12 items-stretch">
+        <div style={{ backgroundColor: "#ffffff" }} className="relative order-2 md:order-1 aspect-[4/3] md:min-h-[440px] overflow-hidden">
+          <ProductImage product={product} size={340} objectPosition={`${config.featuredImageX??50}% ${config.featuredImageY??50}%`} zoom={config.featuredImageZoom??100} />
         </div>
         <div className="order-1 md:order-2 flex flex-col justify-center py-10 md:py-0">
-          <p style={{ color: T.graphite, fontSize: "12.5px", letterSpacing: "0.08em" }} className="mb-5 uppercase">Featured</p>
-          <h2 style={{ color: T.ink, fontFamily: FONT_DISPLAY, fontWeight: 700, letterSpacing: "-0.03em", fontSize: "clamp(2.2rem, 3.4vw, 3.1rem)", lineHeight: 1.06 }} className="mb-5">{product.name}</h2>
-          <p style={{ color: T.graphite }} className="text-base max-w-sm mb-8 leading-relaxed">{product.specs.chip} · {product.specs.display}</p>
+          <p style={{ color: T.graphite, fontSize: "12.5px", letterSpacing: "0.08em" }} className="mb-5 uppercase">{config.eyebrow||"Featured"}</p>
+          <h2 style={{ color: config.headingColor||T.ink, fontFamily: config.headingFont&&config.headingFont!=="inherit"?config.headingFont:FONT_DISPLAY, fontWeight: Number(config.headingWeight||700), letterSpacing: "-0.03em", fontSize: (config.headingSize||42)+"px", lineHeight: 1.06 }} className="mb-5">{config.featuredTitle||product.name}</h2>
+          <p style={{ color: config.headingColor||T.graphite }} className="text-base max-w-sm mb-8 leading-relaxed">{config.storeDescription||`${product.specs.chip} · ${product.specs.display}`}</p>
           <p style={{ color: T.ink, fontVariantNumeric: "tabular-nums", fontWeight: 600 }} className="text-xl mb-9">{CURRENCY(priceFrom(product))}</p>
           <button onClick={() => go("product", { id: product.id })}
-            style={{ backgroundColor: T.ink }} className="inline-flex self-start text-white text-sm font-medium px-8 py-4 hover:opacity-90 transition-opacity">
-            View {product.name}
+            style={{ backgroundColor: config.accentColor||T.ink }} className="inline-flex self-start text-white text-sm font-medium px-8 py-4 hover:opacity-90 transition-opacity">
+            {config.ctaText||`View ${product.name}`}
           </button>
         </div>
       </div>
@@ -947,14 +1034,14 @@ function ToolsSection({ onRecommend, onCompare }) {
   const settings = siteContent.toolsSection || {};
   if (settings.visible === false || (rec.visible === false && cmp.visible === false)) return null;
   return (
-    <section className="max-w-7xl mx-auto px-6 md:px-10 py-16 md:py-32">
+    <section style={{ backgroundColor: settings.backgroundColor || "transparent", paddingTop: (settings.paddingY ?? 96) + "px", paddingBottom: (settings.paddingY ?? 96) + "px" }} className="max-w-7xl mx-auto px-6 md:px-10">
       <SectionHeading eyebrow={settings.eyebrow || "Tools"} title={settings.title || "Not sure which to choose?"} />
       <div className="grid md:grid-cols-2 gap-10 md:gap-14">
         {rec.visible !== false && (
           <ToolCard
             icon={Sparkles}
-            image={settings.recommendationImage || rec.image}
-            eyebrow="Guided shopping"
+            image={rec.image || settings.recommendationImage}
+            eyebrow={rec.eyebrow || "Guided shopping"}
             title={rec.title}
             description={rec.description}
             cta={rec.cta}
@@ -964,8 +1051,8 @@ function ToolsSection({ onRecommend, onCompare }) {
         {cmp.visible !== false && (
           <ToolCard
             icon={Scale}
-            image={settings.comparisonImage || cmp.image}
-            eyebrow="Side by side"
+            image={cmp.image || settings.comparisonImage}
+            eyebrow={cmp.eyebrow || "Side by side"}
             title={cmp.title}
             description={cmp.description}
             cta={cmp.cta}
@@ -993,20 +1080,26 @@ function TrustSection() {
     { id: "delivery", icon: CircleCheck, title: "Cash on delivery", desc: "Pay when your order arrives, anywhere we deliver." },
   ];
   const icons = { warranty: ShieldCheck, battery: BatteryMedium, grading: Check, delivery: CircleCheck };
-  const points = defaults.map(base => {
-    const saved = (settings.points || []).find(point => point.id === base.id) || {};
-    return { ...base, ...saved, icon: icons[base.id] };
-  }).filter(point => point.visible !== false);
+  const savedPoints = Array.isArray(settings.points) ? settings.points : [];
+  const points = [
+    ...defaults.map(base => {
+      const saved = savedPoints.find(point => point.id === base.id) || {};
+      return { ...base, ...saved, icon: icons[base.id] };
+    }),
+    ...savedPoints.filter(point => !defaults.some(base => base.id === point.id)).map(point => ({
+      ...point, icon: CircleCheck,
+    })),
+  ].filter(point => point.visible !== false);
   if (settings.visible === false || !points.length) return null;
   return (
-    <section style={{ borderColor: T.line }} className="max-w-7xl mx-auto px-6 md:px-10 py-20 md:py-24 border-t">
+    <section style={{ borderColor: T.line, backgroundColor: settings.backgroundColor || "transparent", color: settings.textColor || T.ink, paddingTop: (settings.paddingY ?? 80) + "px", paddingBottom: (settings.paddingY ?? 80) + "px" }} className="max-w-7xl mx-auto px-6 md:px-10 border-t">
       <div className="grid grid-cols-2 md:grid-cols-4 gap-x-8 gap-y-10">
         {points.map(({ icon: Icon, title, desc, image }) => (
           <div key={title} className="flex flex-col gap-3">
             {image ? <img src={image} alt="" loading="lazy" style={{ width: 34, height: 34, objectFit: "contain" }} /> : <Icon size={18} strokeWidth={1.5} style={{ color: T.graphite }} />}
             <div>
-              <p style={{ color: T.ink }} className="text-sm font-medium mb-1">{title}</p>
-              <p style={{ color: T.graphite }} className="text-xs leading-relaxed">{desc}</p>
+              <p style={{ color: settings.textColor || T.ink }} className="text-sm font-medium mb-1">{title}</p>
+              <p style={{ color: settings.descriptionColor || T.graphite }} className="text-xs leading-relaxed">{desc}</p>
             </div>
           </div>
         ))}
@@ -1019,36 +1112,41 @@ function TrustSection() {
    FOOTER
    ============================================================ */
 function Footer({ go }) {
+  const { siteContent } = useStoreData();
+  const settings = siteContent.footerSection || {};
+  const defaults = [
+    { id: "shop", title: "Shop", links: ["iphone","ipad","mac","watch","airpods"].map(k=>({label:categoryLabel(k),category:k})) },
+    { id: "tools", title: "Tools", links: [{label:"Find your perfect device",action:"recommend"},{label:"Compare devices",action:"compare"}] },
+    { id: "store", title: "Store", links: [{label:"Alexandria, Egypt",textOnly:true},{label:"Cash on delivery available",textOnly:true}] },
+  ];
+  const groups = settings.groups || defaults;
+  const runLink = link => {
+    if (link.url) { window.open(link.url, "_blank", "noopener,noreferrer"); return; }
+    if (link.category) { go("catalog", { category: link.category }); return; }
+    if (link.action === "recommend" || link.action === "compare") { go(link.action); return; }
+  };
   return (
     <footer style={{ backgroundColor: T.ink }} className="mt-6">
       <div className="max-w-7xl mx-auto px-6 md:px-10 py-20 grid md:grid-cols-4 gap-12 md:gap-10">
         <div>
           <div className="flex items-center gap-2.5 mb-5"><BrandMark size={30} /><span className="text-white font-semibold tracking-tight">Go iPhone</span></div>
-          <p className="text-white/45 text-sm max-w-xs leading-relaxed">A premium independent retailer for Apple devices — new and certified pre-owned.</p>
+          <p className="text-white/45 text-sm max-w-xs leading-relaxed">{settings.description || "A premium independent retailer for Apple devices — new and certified pre-owned."}</p>
         </div>
-        <div>
-          <p className="text-white/70 text-xs font-medium tracking-wide mb-4">Shop</p>
-          <div className="flex flex-col gap-3">
-            {["iphone", "ipad", "mac", "watch", "airpods"].map((k) => (
-              <button key={k} onClick={() => go("catalog", { category: k })} className="text-white/50 text-sm text-left hover:text-white transition-colors">{categoryLabel(k)}</button>
-            ))}
+        {groups.map((group,index) => (
+          <div key={group.id || index}>
+            <p className="text-white/70 text-xs font-medium tracking-wide mb-4">{group.title}</p>
+            <div className="flex flex-col gap-3">
+              {(group.links || []).map((link,linkIndex) => (
+                link.textOnly || (!link.category && !link.action && !link.url)
+                  ? <p key={link.id || linkIndex} className="text-white/50 text-sm">{link.label}</p>
+                  : <button key={link.id || linkIndex} onClick={() => runLink(link)} className="text-white/50 text-sm text-left hover:text-white transition-colors">{link.label}</button>
+              ))}
+            </div>
           </div>
-        </div>
-        <div>
-          <p className="text-white/70 text-xs font-medium tracking-wide mb-4">Tools</p>
-          <div className="flex flex-col gap-3">
-            <button onClick={() => go("recommend")} className="text-white/50 text-sm text-left hover:text-white transition-colors">Find your perfect device</button>
-            <button onClick={() => go("compare")} className="text-white/50 text-sm text-left hover:text-white transition-colors">Compare devices</button>
-          </div>
-        </div>
-        <div>
-          <p className="text-white/70 text-xs font-medium tracking-wide mb-4">Store</p>
-          <p className="text-white/50 text-sm">Alexandria, Egypt</p>
-          <p className="text-white/50 text-sm mt-1.5">Cash on delivery available</p>
-        </div>
+        ))}
       </div>
       <div style={{ borderColor: "rgba(255,255,255,0.1)" }} className="border-t px-6 md:px-10 py-6 flex items-center justify-between gap-4">
-        <p className="text-white/30 text-xs">© {new Date().getFullYear()} Go iPhone. Not affiliated with Apple Inc.</p>
+        <p className="text-white/30 text-xs">{(settings.copyright || "© {year} Go iPhone. Not affiliated with Apple Inc.").replace("{year}", String(new Date().getFullYear()))}</p>
       </div>
     </footer>
   );
@@ -1083,9 +1181,11 @@ function CompareTray({ compareIds, onClear, go }) {
    horizontal rail, so the two sections don't read as the same
    component twice.
    ============================================================ */
-function ProductGrid({ title, action, products, onOpen, onToggleCompare, compareIds, onNavAction }) {
+function ProductGrid({ title, action, products, onOpen, onToggleCompare, compareIds, onNavAction, coverImage, description }) {
   return (
     <section className="max-w-7xl mx-auto px-6 md:px-10 py-20 md:py-28">
+      {coverImage && <div className="mb-8 overflow-hidden" style={{height:"clamp(120px,18vw,220px)",backgroundColor:T.stone}}><img src={coverImage} alt={title} className="w-full h-full object-cover"/></div>}
+      {description && <p style={{color:T.graphite}} className="text-sm mb-4 max-w-2xl">{description}</p>}
       <SectionHeading title={title} action={action} onAction={onNavAction} />
       {products.length ? (
         <div className="grid grid-cols-2 md:grid-cols-3 gap-x-6 gap-y-12 md:gap-x-8 md:gap-y-16">
@@ -1108,38 +1208,22 @@ function ProductGrid({ title, action, products, onOpen, onToggleCompare, compare
    reads as its own trust-building composition rather than a third
    copy of the best-seller / latest-arrivals pattern.
    ============================================================ */
-function CertifiedPreownedSection({ products, go, onOpen, onToggleCompare, compareIds }) {
+function CertifiedPreownedSection({ products, go, onOpen, onToggleCompare, compareIds, config = {} }) {
+  const ink=config.headingColor||T.ink, muted=config.bodyColor||config.headingColor||T.graphite;
+  const list=products.slice(0,Math.max(1,Number(config.productLimit)||8));
+  const columns=Math.max(2,Math.min(5,Number(config.productColumns)||2));
+  const introWidth=config.introWidth==="wide"?"1.1fr 1.2fr":config.introWidth==="balanced"?"1fr 1.3fr":"0.85fr 1.4fr";
+  const gridStyle=config.productsLayout==="rail"?{display:"flex",overflowX:"auto",gap:20,scrollSnapType:"x mandatory"}:{display:"grid",gridTemplateColumns:"repeat(var(--certified-columns),minmax(0,1fr))","--certified-columns":columns,gap:24};
   return (
-    <section style={{ backgroundColor: T.stone }} className="py-20 md:py-28">
-      <div className="max-w-7xl mx-auto px-6 md:px-10 grid md:grid-cols-[0.85fr_1.4fr] gap-10 md:gap-16">
+    <section style={{backgroundColor:config.sectionBackground||T.stone,color:ink,paddingTop:Number(config.sectionPadding??80),paddingBottom:Number(config.sectionPadding??80),"--collection-card-radius":(config.cardRadius??16)+"px"}} className="certified-preowned-section">
+      <div className="max-w-7xl mx-auto px-6 md:px-10 grid gap-10 md:gap-16" style={{gridTemplateColumns:`minmax(0,${introWidth.split(" ")[0]}) minmax(0,${introWidth.split(" ")[1]})`}}>
         <div>
-          <p style={{ color: T.graphite, fontSize: "12.5px", letterSpacing: "0.08em" }} className="mb-5 uppercase">Certified pre-owned</p>
-          <h2 style={{ color: T.ink, fontFamily: FONT_DISPLAY, fontWeight: 700, letterSpacing: "-0.02em", fontSize: "clamp(1.9rem, 2.6vw, 2.5rem)", lineHeight: 1.14 }} className="mb-5 max-w-xs">
-            Carefully checked. Clearly graded. Honestly priced.
-          </h2>
-          <p style={{ color: T.graphite }} className="text-sm leading-relaxed max-w-xs mb-8">
-            Every unit is individually inspected — battery health, cosmetic condition, and storage are disclosed upfront, backed by a Go iPhone warranty.
-          </p>
-          <button onClick={() => go("catalog", { category: "iphone" })}
-            style={{ backgroundColor: T.ink }} className="text-white text-sm font-medium px-7 py-3.5 hover:opacity-90 transition-opacity">
-            Browse certified pre-owned
-          </button>
+          <p style={{color:config.accentColor||muted,fontSize:12,letterSpacing:".12em"}} className="mb-5 uppercase font-semibold">{config.eyebrow??"CERTIFIED PRE-OWNED"}</p>
+          <h2 style={{color:ink,fontFamily:config.headingFont&&config.headingFont!=="inherit"?config.headingFont:FONT_DISPLAY,fontWeight:config.headingWeight||700,letterSpacing:"-.02em",fontSize:`clamp(1.5rem,2.6vw,${Number(config.headingSize)||40}px)`,lineHeight:1.14}} className="mb-5 max-w-xl">{config.heroTitle??"Carefully checked. Clearly graded. Honestly priced."}</h2>
+          <p style={{color:muted}} className="text-sm leading-relaxed max-w-xl mb-8">{config.heroDescription??"Every unit is individually inspected — battery health, cosmetic condition, and storage are disclosed upfront, backed by a Go iPhone warranty."}</p>
+          <button onClick={() => go("catalog",{category:config.ctaCategory||"iphone"})} style={{backgroundColor:config.accentColor||ink}} className="text-white text-sm font-medium px-7 py-3.5 hover:opacity-90 transition-opacity">{config.ctaText??"Browse certified pre-owned"}</button>
         </div>
-        {products.length ? (
-          <div className="grid grid-cols-2 gap-5 md:gap-6">
-            {products.map((p) => (
-              <ProductCard key={p.id} product={p} onOpen={onOpen} onToggleCompare={onToggleCompare}
-                isComparing={compareIds.includes(p.id)} compareDisabled={compareIds.length >= 3} />
-            ))}
-          </div>
-        ) : (
-          <div className="flex items-center justify-center border border-dashed px-6 py-12 text-center" style={{ borderColor: T.line }}>
-            <div>
-              <p style={{ color: T.ink }} className="text-base font-medium">Certified pre-owned devices coming soon</p>
-              <p style={{ color: T.graphite }} className="text-sm mt-2">Quality-checked devices will be listed here soon.</p>
-            </div>
-          </div>
-        )}
+        {list.length ? <div style={gridStyle} className={config.productsLayout==="rail"?"certified-product-rail":"certified-product-grid"}>{list.map(p=><div key={p.id} style={{minWidth:config.productsLayout==="rail"?260:0,scrollSnapAlign:"start"}}><ProductCard product={p} onOpen={onOpen} onToggleCompare={onToggleCompare} isComparing={compareIds.includes(p.id)} compareDisabled={compareIds.length>=3}/></div>)}</div> : <div className="flex items-center justify-center border border-dashed px-6 py-12 text-center" style={{borderColor:T.line}}><div><p style={{color:ink}} className="text-base font-medium">Certified pre-owned devices coming soon</p><p style={{color:muted}} className="text-sm mt-2">Quality-checked devices will be listed here soon.</p></div></div>}
       </div>
     </section>
   );
@@ -1148,54 +1232,136 @@ function CertifiedPreownedSection({ products, go, onOpen, onToggleCompare, compa
 function HomePage({ go, compareIds, onToggleCompare }) {
   const { products: allProducts, siteContent } = useStoreData();
   const PRODUCTS = allProducts.filter(isPublished);
-  const collectionSettings = siteContent.collections || [];
+  const collectionDetails = siteContent.collectionDetails && typeof siteContent.collectionDetails === "object" ? siteContent.collectionDetails : {};
+  const collectionSettings = Array.isArray(siteContent.collections)
+    ? siteContent.collections.map(collection => ({ ...collection, ...(collectionDetails[collection.id] || {}) }))
+    : [];
   const preowned = PRODUCTS.filter((p) => p.hasUnits);
-  const featured = PRODUCTS.find((p) => hasCollection(p, "featured") && p.category === "iphone");
-  const merchandisingSections = collectionSettings
-    .filter((c) => c.visible !== false)
-    .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
-    .map((c) => ({
-      ...c,
-      products: c.id === "featured"
-        ? (featured ? [featured] : [])
-        : c.id === "certified-refurbished"
-          ? preowned
-          : PRODUCTS.filter((p) => hasCollection(p, c.id)),
-    }))
-    .filter((c) => c.products.length > 0);
+  const featured = PRODUCTS.find((p) => String(p.id) === String(collectionDetails.featured?.featuredProductId || ""))
+    || PRODUCTS.find((p) => hasCollection(p, "featured") && p.category === "iphone")
+    || PRODUCTS.find((p) => p.category === "iphone")
+    || PRODUCTS[0];
+  // Always provide the four core storefront sections, even if an older
+  // database or saved homepage configuration omitted their collection rows.
+  const builtInCollections = [
+    { id: "featured", name: "Featured", order: 0, visible: true, homepageVisible: true, system: true },
+    { id: "new-arrivals", name: "New Arrivals", order: 1, visible: true, homepageVisible: true, system: true },
+    { id: "best-sellers", name: "Best Sellers", order: 2, visible: true, homepageVisible: true, system: true },
+    { id: "certified-refurbished", name: "Certified Pre-Owned", order: 3, visible: true, homepageVisible: true, system: true },
+  ];
+  const mergedCollections = builtInCollections.map((base) => ({
+    ...base,
+    ...(collectionSettings.find((c) => c.id === base.id) || {}),
+    ...(collectionDetails[base.id] || {}),
+  })).concat(collectionSettings.filter((c) => !builtInCollections.some((base) => base.id === c.id)));
+  const merchandisingSections = mergedCollections
+    .filter((c) => c.visible !== false && c.homepageVisible !== false)
+    .sort((a, b) => (a.homepageOrder ?? a.order ?? 0) - (b.homepageOrder ?? b.order ?? 0))
+    .map((c) => {
+      const assigned = PRODUCTS.filter((p) => hasCollection(p, c.id));
+      let products = assigned;
+      if (c.id === "featured") products = featured ? [featured] : [];
+      else if (c.id === "certified-refurbished") products = preowned;
+      else if (c.id === "new-arrivals") {
+        products = (assigned.length ? assigned : [...PRODUCTS]
+          .sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime()))
+          .slice(0, 8);
+      } else if (c.id === "best-sellers" && !assigned.length) {
+        products = PRODUCTS.filter((p) => Number(p.soldQty) > 0)
+          .sort((a, b) => Number(b.soldQty) - Number(a.soldQty))
+          .slice(0, 8);
+      }
+      return { ...c, products };
+    })
+    .filter((c) => c.products.length > 0 || ["featured", "new-arrivals", "best-sellers", "certified-refurbished"].includes(c.id));
   const defaultLayout = [
-    { id: "hero", visible: true, order: 0 },
-    { id: "categories", visible: true, order: 1 },
-    { id: "collections", visible: true, order: 2 },
-    { id: "tools", visible: true, order: 3 },
-    { id: "trust", visible: true, order: 4 },
+    { id: "hero", type: "hero", visible: true, order: 0 },
+    { id: "categories", type: "categories", visible: true, order: 1 },
+    { id: "collection-featured", type: "product-collection", collectionId: "featured", visible: true, order: 2 },
+    { id: "collection-new-arrivals", type: "product-collection", collectionId: "new-arrivals", visible: true, order: 3 },
+    { id: "collection-best-sellers", type: "product-collection", collectionId: "best-sellers", visible: true, order: 4 },
+    { id: "collection-certified-refurbished", type: "product-collection", collectionId: "certified-refurbished", visible: true, order: 5 },
+    ...mergedCollections.filter(c => !["featured","new-arrivals","best-sellers","certified-refurbished"].includes(c.id)).map((c,index)=>({id:"collection-"+c.id,type:"product-collection",collectionId:c.id,visible:true,order:6+index})),
+    { id: "tools", type: "tools", visible: true, order: 100 },
+    { id: "trust", type: "trust", visible: true, order: 101 },
   ];
   const savedLayout = Array.isArray(siteContent.homepageLayout) ? siteContent.homepageLayout : [];
-  const homepageLayout = defaultLayout.map(base => ({
-    ...base,
-    ...(savedLayout.find(item => item.id === base.id) || {}),
-  })).sort((a, b) => a.order - b.order);
+  const normalizedSavedLayout = savedLayout.map(item => ({ ...item, type: item.type || item.id }));
+  const homepageLayoutBase = savedLayout.length ? normalizedSavedLayout.flatMap(item => {
+    if (item.type !== "collections") return [item];
+    return merchandisingSections.map((section,index)=>({id:"collection-"+section.id,type:"product-collection",collectionId:section.id,visible:section.visible!==false,label:section.name,order:(item.order??0)+index/100}));
+  }) : defaultLayout.map(item => ({ ...item, type: item.type || item.id }));
+  const homepageLayout = [...homepageLayoutBase,...merchandisingSections
+    .filter(section=>!homepageLayoutBase.some(item=>item.type==="product-collection"&&item.collectionId===section.id))
+    .map((section,index)=>({id:"collection-"+section.id,type:"product-collection",collectionId:section.id,visible:section.visible!==false,label:section.name,order:homepageLayoutBase.length+index}))]
+    .sort((a, b) => (a.order??0) - (b.order??0));
+  const now = Date.now();
+  const isInPublishWindow = item => {
+    const scheduleEnabled = item.scheduleEnabled ?? Boolean(item.publishAt || item.unpublishAt);
+    if (!scheduleEnabled) return true;
+    return (!item.publishAt || new Date(item.publishAt).getTime() <= now) &&
+      (!item.unpublishAt || new Date(item.unpublishAt).getTime() > now);
+  };
 
   function renderCollection(section, index) {
-    if (section.id === "featured") return <EditorialFeature key={section.id} product={section.products[0]} go={go} />;
-    if (section.id === "certified-refurbished") return <CertifiedPreownedSection key={section.id} products={section.products} go={go} onOpen={(id) => go("product", { id })} onToggleCompare={onToggleCompare} compareIds={compareIds} />;
-    const onNavAction = () => go("catalog", { category: section.products[0]?.category || "iphone" });
-    const props = { title: section.name, action: "View all", onNavAction, products: section.products, onOpen: (id) => go("product", { id }), onToggleCompare, compareIds };
-    if (section.id === "best-sellers") return <ProductGrid key={section.id} {...props} />;
-    if (section.id === "new-arrivals") return <ProductRail key={section.id} {...props} />;
-    const RailOrGrid = index % 2 === 0 ? ProductRail : ProductGrid;
-    return <RailOrGrid key={section.id} {...props} />;
+    const detailStyle = {
+      background: section.sectionBackground || "transparent",
+      color: section.headingColor || "inherit",
+      fontFamily: section.headingFont && section.headingFont !== "inherit" ? section.headingFont : "inherit",
+      "--collection-heading-size": (section.headingSize || 32) + "px",
+      "--collection-heading-weight": section.headingWeight || "700",
+      "--collection-accent": section.accentColor || "#ad8642",
+      "--collection-card-radius": (section.cardRadius ?? 16) + "px",
+      paddingTop: section.id === "certified-refurbished" ? undefined : (section.sectionPadding != null ? Number(section.sectionPadding) : undefined),
+      paddingBottom: section.id === "certified-refurbished" ? undefined : (section.sectionPadding != null ? Number(section.sectionPadding) : undefined),
+    };
+    let content;
+    if (section.id === "featured") content = <EditorialFeature product={section.products[0]} go={go} config={section} />;
+    else if (section.id === "certified-refurbished") content = <CertifiedPreownedSection products={section.products} config={section} go={go} onOpen={(id) => go("product", { id })} onToggleCompare={onToggleCompare} compareIds={compareIds} />;
+    else {
+      const onNavAction = () => go("catalog", { category: section.products[0]?.category || "iphone" });
+      const props = { title: section.name, action: "View all", onNavAction, products: section.products, onOpen: (id) => go("product", { id }), onToggleCompare, compareIds, coverImage: section.imageUrl || null, description: section.storeDescription || "" };
+      if (section.id === "best-sellers") content = section.productsLayout === "rail" ? <ProductRail {...props}/> : <ProductGrid {...props}/>;
+      else if (section.id === "new-arrivals") content = section.productsLayout === "grid" ? <ProductGrid {...props}/> : <ProductRail {...props}/>;
+      else {
+        const RailOrGrid = section.productsLayout === "grid" ? ProductGrid : section.productsLayout === "rail" ? ProductRail : index % 2 === 0 ? ProductRail : ProductGrid;
+        content = <RailOrGrid {...props}/>;
+      }
+    }
+    return <div key={section.id} className="collection-custom-style" style={detailStyle}>{content}</div>;
+  }
+
+  function renderCustomHomepageSection(item) {
+    const style = { backgroundColor: item.backgroundColor || "#f5f3ef", color: item.textColor || "#20242b", padding: Math.max(0, Number(item.paddingY ?? 64)) + "px 24px" };
+    const inner = { maxWidth: 1240, margin: "0 auto" };
+    const heading = <div style={{ maxWidth: 680, margin: item.layout === "centered" ? "0 auto 28px" : "0 0 24px", textAlign: item.layout === "centered" ? "center" : "left" }}>{item.eyebrow && <div style={{fontSize:11,fontWeight:800,letterSpacing:".16em",textTransform:"uppercase",opacity:.65,marginBottom:10}}>{item.eyebrow}</div>}{item.title && <h2 style={{fontSize:"clamp(27px,4vw,46px)",lineHeight:1.08,fontWeight:750,margin:"0 0 12px"}}>{item.title}</h2>}{item.description && <p style={{fontSize:15,lineHeight:1.75,opacity:.78}}>{item.description}</p>}</div>;
+    const image = item.imageUrl ? <img src={item.imageUrl} alt="" style={{width:"100%",minHeight:240,maxHeight:480,objectFit:"cover",borderRadius:18}}/> : null;
+    const action = item.ctaText && <button type="button" onClick={() => item.buttonUrl ? (window.location.href=item.buttonUrl) : go("catalog",{category:item.linkCategoryKey||"iphone"})} style={{border:0,borderRadius:999,padding:"13px 22px",background:item.textColor||"#20242b",color:item.backgroundColor||"#fff",fontWeight:750,cursor:"pointer",marginTop:20}}>{item.ctaText}</button>;
+    if(item.type==="announcement") return <section key={item.id} style={{...style,padding:"15px 24px"}}><div style={{...inner,display:"flex",justifyContent:"center",alignItems:"center",gap:14,flexWrap:"wrap",textAlign:"center"}}><strong>{item.title}</strong><span>{item.description}</span>{action}</div></section>;
+    if(item.type==="image-text") return <section key={item.id} style={style}><div style={{...inner,display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(280px,1fr))",gap:42,alignItems:"center"}}>{item.imagePosition==="right" ? <>{heading}{image}</> : <>{image || <div style={{minHeight:180}}/>}{heading}</>}</div><div style={inner}>{action}</div></section>;
+    if(item.type==="promo-banners") return <section key={item.id} style={style}><div style={inner}>{heading}<div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(220px,1fr))",gap:16}}>{(item.banners?.length?item.banners:[{title:item.title||"Discover more",description:item.description,imageUrl:item.imageUrl}]).map((banner,index)=><article key={index} style={{position:"relative",minHeight:220,borderRadius:18,overflow:"hidden",background:"#dfe3e8",color:"#20242b"}}>{banner.imageUrl&&<img src={banner.imageUrl} alt="" style={{position:"absolute",inset:0,width:"100%",height:"100%",objectFit:"cover"}}/>}<div style={{position:"relative",padding:24,minHeight:220,display:"flex",flexDirection:"column",justifyContent:"end",background:"linear-gradient(0deg,rgba(0,0,0,.58),transparent 78%)",color:"#fff"}}><h3 style={{fontSize:24,fontWeight:750,margin:0}}>{banner.title}</h3>{banner.description&&<p>{banner.description}</p>}</div></article>)}</div></div></section>;
+    if(item.type==="featured-product") { const product=PRODUCTS.find(p=>p.id===item.productId)||featured; return <section key={item.id} style={style}><div style={inner}>{heading}{product&&<EditorialFeature product={product} go={go} />}{action}</div></section>; }
+    if(item.type==="testimonials") return <section key={item.id} style={style}><div style={inner}>{heading}<div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(230px,1fr))",gap:16}}>{(item.testimonials||[]).map((quote,index)=><article key={index} style={{background:"rgba(255,255,255,.62)",border:"1px solid rgba(0,0,0,.08)",borderRadius:16,padding:24}}><div style={{fontSize:26,letterSpacing:2}}>★★★★★</div><p style={{fontSize:16,lineHeight:1.7}}>“{quote.quote}”</p><strong>{quote.name}</strong><div style={{fontSize:12,opacity:.65}}>{quote.detail}</div></article>)}</div></div></section>;
+    if(item.type==="rich-text") return <section key={item.id} style={style}><div style={{...inner,maxWidth:850,textAlign:item.layout==="centered"?"center":"left"}}>{heading}{action}</div></section>;
+    return null;
   }
 
   return (
     <div>
-      {homepageLayout.filter(item => item.visible !== false).map(item => {
-        if (item.id === "hero") return <Hero key={item.id} go={go} />;
-        if (item.id === "categories") return <CategoryGrid key={item.id} go={go} />;
-        if (item.id === "collections") return <React.Fragment key={item.id}>{merchandisingSections.map(renderCollection)}</React.Fragment>;
-        if (item.id === "tools") return <ToolsSection key={item.id} onRecommend={() => go("recommend")} onCompare={() => go("compare")} />;
-        if (item.id === "trust") return <TrustSection key={item.id} />;
-        return null;
+      {homepageLayout.filter(item => item.visible !== false && isInPublishWindow(item)).map(item => {
+        const type = item.type || item.id;
+        if (["announcement","image-text","promo-banners","featured-product","testimonials","rich-text"].includes(type)) return <div key={item.id} data-homepage-section={item.id} draggable>{renderCustomHomepageSection(item)}</div>;
+        const sectionStyle = { backgroundColor: item.backgroundColor || "transparent", color: item.textColor || "inherit", paddingTop: item.paddingY != null ? Number(item.paddingY) : undefined, paddingBottom: item.paddingY != null ? Number(item.paddingY) : undefined };
+        let content = null;
+        if (type === "hero") content = <Hero go={go} />;
+        if (type === "categories") content = <CategoryGrid go={go} />;
+        if (type === "product-collection") {
+          const collection = merchandisingSections.find(section => section.id === item.collectionId);
+          if (collection) content = renderCollection(collection, merchandisingSections.indexOf(collection));
+        }
+        if (type === "tools") content = <ToolsSection onRecommend={() => go("recommend")} onCompare={() => go("compare")} />;
+        if (type === "trust") content = <TrustSection />;
+        return content ? <div key={item.id} data-homepage-section={item.id} draggable style={sectionStyle}>{content}</div> : null;
       })}
     </div>
   );
@@ -1233,18 +1399,20 @@ function buildFilterOptions(category) {
   return options;
 }
 
-function CatalogPage({ category, go, compareIds, onToggleCompare }) {
+function CatalogPage({ category, subcategory: initialSubcategory = "all", go, compareIds, onToggleCompare }) {
   const { products: allProducts } = useStoreData();
   const [active, setActive] = useState({});
+  const [subcategory, setSubcategory] = useState("all");
+  const [deviceSubcategory, setDeviceSubcategory] = useState("all");
   const [sort, setSort] = useState("relevance");
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [filtersMounted, filtersVisible] = useMountTransition(filtersOpen, 260);
-  useEffect(() => setActive({}), [category]);
+  useEffect(() => { setActive({}); setSubcategory(initialSubcategory || "all"); setDeviceSubcategory("all"); }, [category, initialSubcategory]);
 
   const options = useMemo(() => buildFilterOptions(category), [category, allProducts]);
   const keys = CATEGORY_FILTER_KEYS[category] || [];
 
-  const items = allProducts.filter((p) => p.category === category && isPublished(p)).filter((p) => {
+  const items = allProducts.filter((p) => p.category === category && isPublished(p) && (category !== "other-devices" || subcategory === "all" || p.productType === subcategory) && (category !== "other-devices" || subcategory !== "other-electronics" || deviceSubcategory === "all" || p.specs?.["Product subcategory"] === deviceSubcategory)).filter((p) => {
     return keys.every((key) => {
       const chosen = active[key];
       if (!chosen || !chosen.length) return true;
@@ -1293,6 +1461,30 @@ function CatalogPage({ category, go, compareIds, onToggleCompare }) {
           </select>
         </div>
       </div>
+
+      {category === "other-devices" && (
+        <div className="flex flex-wrap gap-2 mb-8" aria-label="Other Devices categories">
+          {[
+            { key: "all", label: "All devices" },
+            { key: "smartphone", label: "Smartphones" },
+            { key: "smartwatch", label: "Smart Watches" },
+            { key: "tablet", label: "Tablets" },
+            { key: "speakers", label: "Speakers" },
+            { key: "headphones", label: "Headphones" },
+            { key: "other-electronics", label: "Other Electronics" },
+          ].map((branch) => (
+            <button key={branch.key} onClick={() => { setSubcategory(branch.key); setDeviceSubcategory("all"); }}
+              style={{ borderColor: subcategory === branch.key ? T.ink : T.line, backgroundColor: subcategory === branch.key ? T.ink : "transparent", color: subcategory === branch.key ? "#fff" : T.ink }}
+              className="border px-4 py-2.5 text-sm font-medium transition-colors">
+              {branch.label}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {category === "other-devices" && subcategory === "other-electronics" && (
+        <div className="mb-8 text-sm" style={{ color: T.graphite }}>Browse additional electronics and accessories in this branch.</div>
+      )}
 
       <div className="flex flex-col md:flex-row gap-10">
         {keys.length > 0 && (
@@ -1647,8 +1839,23 @@ function ProductDetailPage({ productId, go, onAddToCart, compareIds, onToggleCom
 
           <div style={{ borderColor: T.line }} className="border-t mt-8 pt-6 flex flex-col gap-2">
             <p style={{ color: T.graphite }} className="text-sm flex items-center gap-2"><ShieldCheck size={15} /> {product.hasUnits ? selectedUnit?.warranty : "12-month Go iPhone warranty"}</p>
-            <p style={{ color: T.graphite }} className="text-sm flex items-center gap-2"><BatteryMedium size={15} /> {product.hasUnits ? `Battery health ${selectedUnit?.battery}%` : "100% battery health, sealed unit"}</p>
+            <p style={{ color: T.graphite }} className="text-sm flex items-center gap-2"><BatteryMedium size={15} /> {product.hasUnits ? `Battery health ${selectedUnit?.battery ?? "Not recorded"}${selectedUnit?.battery != null ? "%" : ""}` : "100% battery health, sealed unit"}</p>
           </div>
+          {product.hasUnits && selectedUnit?.conditionReport && Object.keys(selectedUnit.conditionReport).length > 0 && (
+            <div style={{ borderColor: T.line }} className="border-t mt-5 pt-5">
+              <h3 style={{ color: T.ink }} className="text-sm font-semibold mb-3">Device condition</h3>
+              <div className="grid grid-cols-2 gap-3 text-xs">
+                {["battery","display","camera","housing","other"].filter(k=>selectedUnit.conditionReport[k]?.status && selectedUnit.conditionReport[k].status!=="not-checked").map(k=>{
+                  const part=selectedUnit.conditionReport[k];
+                  const statusLabel={original:"Original · not replaced",replaced:"Replaced",issue:"Issue reported"}[part.status]||part.status;
+                  const typeLabel={"genuine-new":"Genuine Apple · new","genuine-used":"Genuine Apple · used",aftermarket:"Third-party replacement",unknown:"Part type unverified","not-applicable":"N/A"}[part.type]||"";
+                  return <div key={k}><b style={{color:T.ink}} className="capitalize">{k==="display"?"Screen":k==="housing"?"Body":k}</b><p style={{color:T.graphite}}>{statusLabel}{typeLabel?" · "+typeLabel:""}</p></div>;
+                })}
+              </div>
+              {(selectedUnit.conditionReport.cosmetic || selectedUnit.conditionReport.cosmeticNotes) && <p style={{color:T.graphite}} className="text-xs mt-3"><b style={{color:T.ink}}>Cosmetic condition:</b> {selectedUnit.conditionReport.cosmetic||"Not graded"}{selectedUnit.conditionReport.cosmeticNotes?" · "+selectedUnit.conditionReport.cosmeticNotes:""}</p>}
+              {Object.keys(selectedUnit.conditionReport.tests||{}).length>0 && <div className="mt-3"><b style={{color:T.ink}} className="text-xs">Functional checks</b><p style={{color:T.graphite}} className="text-xs mt-1">{Object.entries(selectedUnit.conditionReport.tests).filter(([,v])=>v!=="not-checked").map(([k,v])=>k.replace(/([A-Z])/g," $1")+": "+({pass:"Working",fail:"Issue found","not-applicable":"N/A"}[v]||v)).join(" · ")||"Not tested"}</p></div>}
+            </div>
+          )}
         </div>
       </div>
 
@@ -1671,108 +1878,74 @@ function ProductDetailPage({ productId, go, onAddToCart, compareIds, onToggleCom
    COMPARE PAGE
    ============================================================ */
 const COMPARE_GROUPS = [
-  { title: "Overview", rows: [
-    { key: "price", label: "Price" },
-    { key: "condition", label: "Condition" },
+  { title: "Price & overview", rows: [
+    { key: "price", label: "Price" }, { key: "condition", label: "Condition" }, { key: "batteryHealth", label: "Battery health" },
+    { key: "storage", label: "Storage" }, { key: "color", label: "Color" },
+    { key: "warranty", label: "Warranty" },
   ] },
-  { title: "Design", rows: [
-    { key: "size", label: "Size" },
-    { key: "weight", label: "Weight" },
-    { key: "materials", label: "Materials" },
-    { key: "colors", label: "Colors" },
-  ] },
-  { title: "Display", rows: [
-    { key: "display", label: "Display" },
-  ] },
-  { title: "Performance", rows: [
-    { key: "chip", label: "Chip" },
-  ] },
-  { title: "Camera", rows: [
-    { key: "mainCamera", label: "Main camera" },
-    { key: "frontCamera", label: "Front camera" },
-  ] },
-  { title: "Battery", rows: [
-    { key: "battery", label: "Battery" },
-  ] },
-  { title: "Connectivity", rows: [
-    { key: "connectivity", label: "Connectivity" },
+  { title: "Technical specifications", rows: [
+    { key: "chip", label: "Processor / chip" }, { key: "display", label: "Display" },
+    { key: "mainCamera", label: "Main camera" }, { key: "frontCamera", label: "Front camera" },
+    { key: "battery", label: "Battery / runtime" }, { key: "connectivity", label: "Connectivity" },
+    { key: "weight", label: "Weight" }, { key: "materials", label: "Materials" },
   ] },
 ];
 
 function ComparePage({ compareIds, onToggleCompare, onClear, go }) {
   const { products: PRODUCTS } = useStoreData();
   const items = compareIds.map((id) => PRODUCTS.find((p) => p.id === id)).filter(Boolean);
-
-  if (items.length === 0) {
-    return (
-      <div className="max-w-3xl mx-auto px-6 py-28 text-center">
-        <Scale size={28} style={{ color: T.mist }} className="mx-auto mb-4" />
-        <h1 style={{ color: T.ink }} className="text-2xl font-semibold mb-2">Nothing to compare yet</h1>
-        <p style={{ color: T.graphite }} className="text-sm mb-7">Add up to three devices from any product page or catalog card.</p>
-        <button onClick={() => go("catalog", { category: "iphone" })} style={{ backgroundColor: T.ink }} className="text-white text-sm font-medium px-7 py-3.5">Browse iPhone</button>
-      </div>
-    );
-  }
-
-  function cell(product, key) {
-    if (key === "price") return CURRENCY(priceFrom(product));
-    if (key === "colors") return (product.colors || []).join(", ") || "—";
-    if (key === "condition") return product.hasUnits ? "Certified pre-owned" : "New";
-    return product.specs[key] || "—";
-  }
-
-  return (
-    <div className="max-w-6xl mx-auto px-6 md:px-10 py-12">
-      <div className="flex items-end justify-between mb-8">
-        <h1 style={{ color: T.ink, fontFamily: FONT_DISPLAY, fontWeight: 700, letterSpacing: "-0.02em", fontSize: "clamp(1.9rem, 3.2vw, 2.75rem)", lineHeight: 1.12 }}>Compare devices</h1>
-        <button onClick={onClear} style={{ color: T.ink }} className="text-sm font-medium underline underline-offset-4">Clear all</button>
-      </div>
-
-      <div className="overflow-x-auto">
-        <table style={{ minWidth: "640px" }} className="w-full border-collapse">
-          <thead>
-            <tr>
-              <th style={{ backgroundColor: T.paper }} className="w-32 sm:w-40 sticky left-0 z-20" />
-              {items.map((p) => (
-                <th key={p.id} style={{ borderColor: T.line, backgroundColor: T.paper }} className="border-b px-4 pb-6 text-left align-top sticky top-16">
-                  <div className="flex flex-col items-start gap-4">
-                    <div style={{ backgroundColor: T.stone }} className="relative w-28 h-28 overflow-hidden">
-                      <ProductImage product={p} size={92} />
-                    </div>
-                    <div>
-                      <p style={{ color: T.ink, fontFamily: FONT_DISPLAY, fontWeight: 700, letterSpacing: "-0.01em" }} className="text-lg leading-snug">{p.name}</p>
-                      <button onClick={() => onToggleCompare(p.id)} style={{ color: T.mist }} className="text-xs mt-1.5 inline-flex items-center gap-1"><X size={11} /> Remove</button>
-                    </div>
-                    <button onClick={() => go("product", { id: p.id })} style={{ borderColor: T.line, color: T.ink }} className="border px-3.5 py-2 text-xs font-medium">View product</button>
-                  </div>
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {COMPARE_GROUPS.map((group) => (
-              <React.Fragment key={group.title}>
-                <tr>
-                  <td style={{ color: T.graphite, backgroundColor: T.paper, fontSize: "11.5px", letterSpacing: "0.08em" }} className="pt-9 pb-2 font-semibold uppercase sticky left-0 z-10">{group.title}</td>
-                  {items.map((p) => <td key={p.id} className="pt-9 pb-2" />)}
-                </tr>
-                {group.rows.map((row) => (
-                  <tr key={row.key}>
-                    <td style={{ color: T.graphite, borderColor: T.line, backgroundColor: T.paper }} className="border-b py-4 text-sm pr-4 sticky left-0 z-10">{row.label}</td>
-                    {items.map((p) => (
-                      <td key={p.id} style={{ color: T.ink, borderColor: T.line }} className="border-b py-4 px-4 text-sm">{cell(p, row.key)}</td>
-                    ))}
-                  </tr>
-                ))}
-              </React.Fragment>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  );
+  const [mode, setMode] = useState("all");
+  const [unitChoices, setUnitChoices] = useState({});
+  const [detailsOpen, setDetailsOpen] = useState({});
+  const getUnits = (p) => unitsFor(p.id);
+  const chosenUnit = (p) => {
+    const list = getUnits(p);
+    return list.find((u) => u.id === unitChoices[p.id]) || list.slice().sort((a,b) => a.price-b.price)[0] || null;
+  };
+  const readSpec = (p, key) => {
+    const specs = p.specs || {};
+    const aliases = {
+      chip:["chip","processor","cpu"], display:["display","display size","screen size","screen"],
+      mainCamera:["main camera","rear camera","camera"], frontCamera:["front camera","selfie camera"],
+      battery:["battery","battery life","battery capacity"], connectivity:["connectivity","wireless"],
+      weight:["weight"], materials:["materials","material"], storage:["storage","capacity"],
+    };
+    const candidates = aliases[key] || [key];
+    const found = Object.entries(specs).find(([k,v]) => candidates.includes(k.toLowerCase()) && v != null && String(v).trim() && String(v)!=="—");
+    if (found) return String(found[1]);
+    const metaAliases = {chip:p.chip,display:p.display||p.screenSize,weight:p.weight,connectivity:p.connectivity,battery:p.batteryLife};
+    return metaAliases[key] || "—";
+  };
+  const cell = (p,key) => {
+    const unit = chosenUnit(p);
+    if (key==="price") return unit ? CURRENCY(unit.price) : CURRENCY(priceFrom(p));
+    if (key==="condition") return unit?.condition || (p.hasUnits ? "Pre-owned" : "New");
+    if (key==="storage") return unit?.storage || (p.storageOptions||[]).join(", ") || readSpec(p,key);
+    if (key==="color") return unit?.color || (p.colors||[]).join(", ") || "—";
+    if (key==="warranty") return unit?.warranty || "—";
+    if (key==="batteryHealth") return unit?.battery != null ? unit.battery + "%" : "—";
+    return readSpec(p,key);
+  };
+  const specRows = useMemo(() => {
+    const keys = new Map();
+    items.forEach(p => Object.keys(p.specs||{}).forEach(k => {
+      const normalized = k.toLowerCase();
+      if (!["model","color","storage","condition"].includes(normalized)) keys.set(normalized,{key:"spec:"+normalized,label:k,source:k});
+    }));
+    return [...keys.values()];
+  }, [items]);
+  const rows = [...COMPARE_GROUPS.map(g=>({...g,rows:g.rows})),{title:"More specifications",rows:specRows}];
+  const rowValue = (p,row) => row.source ? ((Object.entries(p.specs||{}).find(([k])=>k.toLowerCase()===row.source.toLowerCase())||[])[1]||"—") : cell(p,row.key);
+  const visibleRows = (group) => group.rows.filter(row => mode!=="differences" || new Set(items.map(p=>String(rowValue(p,row)))).size>1);
+  if (items.length === 0) return <div className="max-w-3xl mx-auto px-6 py-28 text-center"><Scale size={28} style={{color:T.mist}} className="mx-auto mb-4"/><h1 style={{color:T.ink}} className="text-2xl font-semibold mb-2">Nothing to compare yet</h1><p style={{color:T.graphite}} className="text-sm mb-7">Add up to three devices from any product page or catalog card.</p><button onClick={()=>go("catalog",{category:"iphone"})} style={{backgroundColor:T.ink}} className="text-white text-sm font-medium px-7 py-3.5">Browse iPhone</button></div>;
+  return <div className="max-w-6xl mx-auto px-6 md:px-10 py-12">
+    <div className="flex flex-wrap items-end justify-between gap-4 mb-7"><div><h1 style={{color:T.ink,fontFamily:FONT_DISPLAY,fontWeight:700,letterSpacing:"-0.02em",fontSize:"clamp(1.9rem,3.2vw,2.75rem)"}}>Compare devices</h1><p style={{color:T.graphite}} className="text-sm mt-2">Compare price, original specifications and the condition of each available device.</p></div><button onClick={onClear} style={{color:T.ink}} className="text-sm underline">Clear all</button></div>
+    <div className="flex flex-wrap gap-2 mb-6"><button onClick={()=>setMode("all")} className="border px-4 py-2 text-xs" style={{borderColor:T.line,background:mode==="all"?T.ink:"transparent",color:mode==="all"?"#fff":T.ink}}>All specifications</button><button onClick={()=>setMode("differences")} className="border px-4 py-2 text-xs" style={{borderColor:T.line,background:mode==="differences"?T.ink:"transparent",color:mode==="differences"?"#fff":T.ink}}>Differences only</button></div>
+    <div className="overflow-x-auto"><table style={{minWidth:"680px"}} className="w-full border-collapse"><thead><tr><th style={{backgroundColor:T.paper}} className="w-32 sm:w-40 sticky left-0 z-20"/>{items.map(p=>{const list=getUnits(p),unit=chosenUnit(p);return <th key={p.id} style={{borderColor:T.line,backgroundColor:T.paper}} className="border-b px-4 pb-5 text-left align-top"><div className="flex flex-col items-start gap-3"><div style={{backgroundColor:T.stone}} className="relative w-28 h-28 overflow-hidden"><ProductImage product={p} size={92}/></div><div><p style={{color:T.ink,fontFamily:FONT_DISPLAY,fontWeight:700}} className="text-lg">{p.name}</p><p style={{color:T.graphite}} className="text-xs mt-1">{unit?.condition || (p.hasUnits?"Pre-owned":"New")}</p><button onClick={()=>onToggleCompare(p.id)} style={{color:T.mist}} className="text-xs mt-1 inline-flex items-center gap-1"><X size={11}/>Remove</button></div>{list.length>1&&<label className="text-xs" style={{color:T.graphite}}>Specific unit<select className="block border mt-1 p-2 max-w-full" style={{borderColor:T.line,background:T.paper,color:T.ink}} value={unit?.id||""} onChange={e=>setUnitChoices(v=>({...v,[p.id]:e.target.value}))}>{list.map(u=><option key={u.id} value={u.id}>{[u.storage,u.color,u.condition,u.battery!=null?u.battery+"% battery":null,CURRENCY(u.price)].filter(Boolean).join(" · ")}</option>)}</select></label>}<p style={{color:T.ink,fontWeight:700,fontVariantNumeric:"tabular-nums"}} className="text-base">{unit?CURRENCY(unit.price):CURRENCY(priceFrom(p))}</p><button onClick={()=>go("product",{id:p.id})} style={{borderColor:T.line,color:T.ink}} className="border px-3.5 py-2 text-xs">View product</button></div></th>})}</tr></thead>
+    <tbody>{rows.map(group=>{const shown=visibleRows(group);if(!shown.length)return null;return <React.Fragment key={group.title}><tr><td colSpan={items.length+1} style={{color:T.graphite,background:T.paper,fontSize:"11px",letterSpacing:"0.08em"}} className="pt-7 pb-2 font-semibold uppercase">{group.title}</td></tr>{shown.map(row=><tr key={row.key}><td style={{color:T.graphite,borderColor:T.line,background:T.paper}} className="border-b py-3 text-sm pr-4 sticky left-0 z-10">{row.label}</td>{items.map(p=><td key={p.id} style={{color:T.ink,borderColor:T.line}} className="border-b py-3 px-4 text-sm">{rowValue(p,row)}</td>)}</tr>)}</React.Fragment>})}</tbody></table></div>
+    {items.some(p=>getUnits(p).length>0)&&<div className="mt-7"><button onClick={()=>setDetailsOpen(v=>({...v,condition:!v.condition}))} style={{color:T.ink,borderColor:T.line}} className="border px-4 py-3 text-sm font-medium">{detailsOpen.condition?"Hide":"Show"} condition details</button>{detailsOpen.condition&&<div className="grid md:grid-cols-2 gap-4 mt-4">{items.filter(p=>getUnits(p).length).map(p=>{const u=chosenUnit(p),r=u?.conditionReport||{};return <section key={p.id} className="border p-4" style={{borderColor:T.line}}><h3 style={{color:T.ink}} className="font-semibold mb-3">{p.name} · {u?.color||u?.storage}</h3><div className="grid grid-cols-2 gap-2 text-xs" style={{color:T.graphite}}>{["battery","display","camera","housing","other"].map(k=><div key={k}><b className="capitalize">{k}</b><p>{r[k]?.status||"Not recorded"} · {r[k]?.type||"Unknown"}</p></div>)}<div className="col-span-2"><b>Functional tests</b><p>{Object.entries(r.tests||{}).map(([k,v])=>k+": "+v).join(" · ")||"Not recorded"}</p></div><div className="col-span-2"><b>Cosmetic condition</b><p>{r.cosmetic||"Not graded"}{r.cosmeticNotes?" · "+r.cosmeticNotes:""}</p></div></div></section>})}</div>}</div>}
+  </div>;
 }
-
 /* ============================================================
    RECOMMENDATION WIZARD
    ============================================================ */
@@ -2125,7 +2298,8 @@ function CheckoutPage({ cart, go, onPlaceOrder }) {
    focus). Cart + compare stay in the browser (localStorage) — they
    are per-shopper and not sensitive.
    ============================================================ */
-const API_URL = (import.meta.env.VITE_API_URL || "http://localhost:4000").replace(/\/$/, "");
+const IS_ADMIN_PREVIEW = new URLSearchParams(window.location.search).get("adminPreview") === "1";
+const API_URL = (import.meta.env.VITE_API_URL || (import.meta.env.DEV ? (IS_ADMIN_PREVIEW ? "" : "http://localhost:4000") : "")).replace(/\/$/, "");
 
 async function apiFetch(path, options = {}) {
   const res = await fetch(`${API_URL}${path}`, {
@@ -2171,6 +2345,138 @@ function defaultSiteContent() {
 function StoreDataProvider({ children }) {
   const [catalog, setCatalog] = useState({ categories: [], products: [], deviceUnits: [], heroSlides: [], siteContent: defaultSiteContent() });
   const [status, setStatus] = useState("loading"); // loading | ready | error
+  const [previewDraft, setPreviewDraft] = useState(null);
+  const adminPreview = new URLSearchParams(window.location.search).get("adminPreview") === "1";
+  useEffect(() => {
+    if (!adminPreview) return;
+    const receiveDraft = event => {
+      if (event.source !== window.parent || event.data?.type !== "GO_IPHONE_ADMIN_PREVIEW") return;
+      const payload = event.data.payload || {};
+      setPreviewDraft({
+        siteContent: payload.siteContent && typeof payload.siteContent === "object" ? payload.siteContent : null,
+        heroSlides: Array.isArray(payload.heroSlides) ? payload.heroSlides : null,
+      });
+    };
+    window.addEventListener("message", receiveDraft);
+    return () => window.removeEventListener("message", receiveDraft);
+  }, [adminPreview]);
+  useEffect(() => {
+    if (!adminPreview || !previewDraft) return;
+    let draggedSectionId = "";
+    let observer;
+    const sectionAt = target => target?.closest?.("[data-homepage-section]");
+    const post = payload => window.parent.postMessage(payload, "*");
+    if (!document.getElementById("go-admin-canvas-styles")) {
+      const style = document.createElement("style");
+      style.id = "go-admin-canvas-styles";
+      style.textContent = `
+        [data-homepage-section]{position:relative!important;outline:1px solid rgba(92,116,145,.24)!important;outline-offset:-1px;transition:outline .15s,box-shadow .15s;cursor:pointer}
+        [data-homepage-section]:hover{outline:2px solid #6886aa!important;outline-offset:-2px;box-shadow:inset 0 0 0 2px rgba(104,134,170,.08)}
+        [data-homepage-section].go-admin-selected{outline:3px solid #4778b8!important;outline-offset:-3px;box-shadow:inset 0 0 0 3px rgba(71,120,184,.10)}
+        .go-admin-section-grip{position:absolute!important;top:8px!important;left:8px!important;z-index:99999!important;border:1px solid #d6dfeb!important;border-radius:7px!important;padding:6px 9px!important;background:#fff!important;color:#30445d!important;font:800 9px/1.2 Arial,sans-serif!important;letter-spacing:.08em!important;box-shadow:0 2px 9px rgba(15,23,42,.14)!important;cursor:grab!important}
+        .go-admin-section-grip:active{cursor:grabbing!important}
+        .go-admin-section-remove{position:absolute!important;top:8px!important;right:8px!important;z-index:99999!important;border:1px solid #f0c7c7!important;border-radius:7px!important;padding:6px 9px!important;background:#fff!important;color:#b42318!important;font:800 9px/1.2 Arial,sans-serif!important;letter-spacing:.08em!important;box-shadow:0 2px 9px rgba(15,23,42,.14)!important;cursor:pointer!important}
+        .go-admin-section-remove:hover{background:#b42318!important;color:#fff!important;border-color:#b42318!important}
+        .go-admin-insert-section{display:flex!important;align-items:center!important;justify-content:center!important;gap:9px!important;width:100%!important;min-height:38px!important;margin:0!important;padding:3px 12px!important;border:0!important;background:transparent!important;color:#61758d!important;cursor:pointer!important;position:relative!important;z-index:100000!important}
+        .go-admin-insert-section:before,.go-admin-insert-section:after{content:""!important;height:1px!important;flex:1!important;background:#cbd5e1!important}
+        .go-admin-insert-section span{display:grid!important;place-items:center!important;width:25px!important;height:25px!important;border:1px solid #aabbd0!important;border-radius:50%!important;background:#fff!important;color:#385d86!important;font:600 19px/1 Arial,sans-serif!important;box-shadow:0 2px 6px rgba(15,23,42,.10)!important}
+        .go-admin-insert-section small{font:800 8px Arial,sans-serif!important;letter-spacing:.12em!important;color:#728198!important}
+        .go-admin-insert-section:hover span{background:#385d86!important;color:#fff!important;border-color:#385d86!important;transform:scale(1.08)}
+      `;
+      document.head.appendChild(style);
+    }
+    const mountSectionControls = () => {
+      const sections = [...document.querySelectorAll("[data-homepage-section]")];
+      const validIds = new Set(sections.slice(0,-1).map(section=>section.dataset.homepageSection));
+      document.querySelectorAll(".go-admin-insert-section").forEach(button=>{if(!validIds.has(button.dataset.adminInsertAfter))button.remove();});
+      sections.forEach((section,index) => {
+        section.style.outline = "1px solid rgba(92,116,145,.22)";
+        section.style.outlineOffset = "-1px";
+        section.style.position = section.style.position || "relative";
+        section.style.cursor = "pointer";
+        section.title = "Select section · Drag to move";
+        if (!section.querySelector(":scope > .go-admin-section-grip")) {
+          const grip = document.createElement("button");
+          grip.type = "button"; grip.className = "go-admin-section-grip";
+          grip.textContent = "⠿  MOVE";
+          grip.draggable = true;
+          grip.title = "Drag this section to move it";
+          grip.addEventListener("dragstart", event => {
+            draggedSectionId = section.dataset.homepageSection;
+            event.dataTransfer?.setData("text/plain", draggedSectionId);
+            if (event.dataTransfer) event.dataTransfer.effectAllowed = "move";
+          });
+          section.appendChild(grip);
+        }
+        if (!section.querySelector(":scope > .go-admin-section-remove")) {
+          const remove = document.createElement("button");
+          remove.type = "button"; remove.className = "go-admin-section-remove";
+          remove.textContent = "✕  REMOVE";
+          remove.title = "Remove this section from the homepage";
+          remove.addEventListener("click", event => {
+            event.preventDefault(); event.stopPropagation();
+            post({type:"GO_IPHONE_REMOVE_SECTION",sectionId:section.dataset.homepageSection});
+          });
+          section.appendChild(remove);
+        }
+        if (index < sections.length - 1) {
+          const next = section.nextElementSibling;
+          if (!next?.matches?.("[data-admin-insert-after='"+section.dataset.homepageSection+"']")) {
+            const add = document.createElement("button");
+            add.type = "button"; add.className = "go-admin-insert-section";
+            add.dataset.adminInsertAfter = section.dataset.homepageSection;
+            add.innerHTML = "<span>+</span><small>ADD SECTION HERE</small>";
+            add.addEventListener("click", event => {
+              event.preventDefault(); event.stopPropagation();
+              post({type:"GO_IPHONE_ADD_SECTION_AFTER",afterId:section.dataset.homepageSection});
+            });
+            section.after(add);
+          }
+        }
+      });
+    };
+    const selectSection = event => {
+      if (event.target?.closest?.("[data-admin-insert-after],.go-admin-section-grip,.go-admin-section-remove")) return;
+      const section = sectionAt(event.target);
+      if (!section) return;
+      event.preventDefault();
+      event.stopPropagation();
+      document.querySelectorAll("[data-homepage-section].go-admin-selected").forEach(node=>node.classList.remove("go-admin-selected"));
+      section.classList.add("go-admin-selected");
+      post({ type: "GO_IPHONE_SELECT_SECTION", sectionId: section.dataset.homepageSection });
+    };
+    const startDrag = event => {
+      const section = sectionAt(event.target);
+      if (!section) return;
+      draggedSectionId = section.dataset.homepageSection;
+      event.dataTransfer?.setData("text/plain", draggedSectionId);
+      if (event.dataTransfer) event.dataTransfer.effectAllowed = "move";
+    };
+    const allowDrop = event => { if (sectionAt(event.target)) event.preventDefault(); };
+    const dropSection = event => {
+      const target = sectionAt(event.target);
+      if (!target || !draggedSectionId) return;
+      event.preventDefault();
+      event.stopPropagation();
+      window.parent.postMessage({ type: "GO_IPHONE_REORDER_SECTION", fromId: draggedSectionId, toId: target.dataset.homepageSection }, "*");
+      draggedSectionId = "";
+    };
+    mountSectionControls();
+    observer = new MutationObserver(() => mountSectionControls());
+    observer.observe(document.querySelector("[data-homepage-section]")?.parentElement || document.body,{childList:true,subtree:true});
+    document.addEventListener("click", selectSection, true);
+    document.addEventListener("dragstart", startDrag, true);
+    document.addEventListener("dragover", allowDrop, true);
+    document.addEventListener("drop", dropSection, true);
+    return () => {
+      observer?.disconnect();
+      document.querySelectorAll(".go-admin-insert-section,.go-admin-section-grip,.go-admin-section-remove").forEach(node=>node.remove());
+      document.removeEventListener("click", selectSection, true);
+      document.removeEventListener("dragstart", startDrag, true);
+      document.removeEventListener("dragover", allowDrop, true);
+      document.removeEventListener("drop", dropSection, true);
+    };
+  }, [adminPreview, previewDraft]);
 
   // Plain mutable mirror so the pure helper functions (unitsFor, priceFrom,
   // computeRecommendation, ...) always read the live catalog.
@@ -2190,6 +2496,11 @@ function StoreDataProvider({ children }) {
         heroSlides: data.heroSlides || [],
         siteContent: {
           ...d, ...sc,
+          // Keep homepage merchandising collections available even when the
+          // catalog endpoint returns them beside siteContent rather than inside it.
+          collections: Array.isArray(sc.collections)
+            ? sc.collections
+            : Array.isArray(data.collections) ? data.collections : d.collections,
           announcement: { ...d.announcement, ...(sc.announcement || {}) },
           comparisonSection: { ...d.comparisonSection, ...(sc.comparisonSection || {}) },
           recommendationSection: { ...d.recommendationSection, ...(sc.recommendationSection || {}) },
@@ -2213,12 +2524,14 @@ function StoreDataProvider({ children }) {
   }, [load]);
 
   async function addReservation(payload) {
+    if (adminPreview) throw new Error("Reservations are disabled in admin preview.");
     await apiFetch("/api/reservations", { method: "POST", body: JSON.stringify(payload) });
   }
 
   // The server — not this browser — decides prices, checks stock, and claims
   // any specific used device atomically. We only send *what* the shopper wants.
   async function placeOrder(payload) {
+    if (adminPreview) throw new Error("Checkout is disabled in admin preview.");
     try {
       const data = await apiFetch("/api/orders", { method: "POST", body: JSON.stringify(payload) });
       load(true);
@@ -2233,8 +2546,14 @@ function StoreDataProvider({ children }) {
     products: catalog.products,
     units: catalog.deviceUnits,
     categories: catalog.categories,
-    heroSlides: catalog.heroSlides,
-    siteContent: catalog.siteContent,
+    heroSlides: previewDraft?.heroSlides || catalog.heroSlides,
+    siteContent: previewDraft?.siteContent ? {
+      ...catalog.siteContent,
+      ...previewDraft.siteContent,
+      designSystem: { ...catalog.siteContent.designSystem, ...(previewDraft.siteContent.designSystem || {}), colors: { ...catalog.siteContent.designSystem?.colors, ...(previewDraft.siteContent.designSystem?.colors || {}) } },
+      toolsSection: { ...catalog.siteContent.toolsSection, ...(previewDraft.siteContent.toolsSection || {}) },
+      trustSection: { ...catalog.siteContent.trustSection, ...(previewDraft.siteContent.trustSection || {}) },
+    } : catalog.siteContent,
     status, reload: () => load(false),
     addReservation, placeOrder,
   };
@@ -2341,7 +2660,7 @@ function AppShell() {
       <Navbar go={go} cartCount={cart.reduce((s, i) => s + i.qty, 0)} compareCount={compareIds.length} onSearch={() => setSearchOpen(true)} onCart={() => setCartOpen(true)} />
 
       {view === "home" && <HomePage go={go} compareIds={compareIds} onToggleCompare={onToggleCompare} />}
-      {view === "catalog" && <CatalogPage category={params.category || "iphone"} go={go} compareIds={compareIds} onToggleCompare={onToggleCompare} />}
+      {view === "catalog" && <CatalogPage category={params.category || "iphone"} subcategory={params.subcategory || "all"} go={go} compareIds={compareIds} onToggleCompare={onToggleCompare} />}
       {view === "product" && <ProductDetailPage productId={params.id} go={go} onAddToCart={onAddToCart} compareIds={compareIds} onToggleCompare={onToggleCompare} />}
       {view === "compare" && <ComparePage compareIds={compareIds} onToggleCompare={onToggleCompare} onClear={() => setCompareIds([])} go={go} />}
       {view === "recommend" && <RecommendationWizard go={go} onAddToCart={onAddToCart} />}

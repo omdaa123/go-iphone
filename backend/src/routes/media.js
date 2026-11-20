@@ -1,4 +1,4 @@
-import { Router } from "express";
+import { Router, raw as expressRaw } from "express";
 import { z } from "zod";
 import { fileTypeFromBuffer } from "file-type";
 import { pool } from "../db.js";
@@ -9,10 +9,14 @@ import { logAudit } from "../lib/audit.js";
 import { saveFile, deleteFile } from "../lib/storage.js";
 
 export const mediaRouter = Router();
-mediaRouter.use(requireAuth);
+mediaRouter.use(requireAuth, requirePermission("media.write"));
 
 const ALLOWED_TYPES = new Set(["image/jpeg", "image/png", "image/webp", "image/gif"]);
-const MAX_BYTES = 8 * 1024 * 1024; // 8MB — the client already compresses images down before this point
+const ALLOWED_VIDEO_TYPES = new Set(["video/mp4", "video/webm", "video/quicktime"]);
+const MAX_BYTES = 8 * 1024 * 1024;
+const MAX_VIDEO_BYTES = 50 * 1024 * 1024;
+
+const expressRawVideo = expressRaw({ type: ["video/mp4", "video/webm", "video/quicktime", "application/octet-stream"], limit: "50mb" });
 
 const uploadSchema = z.object({
   dataUrl: z.string().startsWith("data:"),
@@ -51,6 +55,29 @@ mediaRouter.post("/", requirePermission("media.write"), validateBody(uploadSchem
     );
 
     await logAudit({ adminUserId: req.admin.id, action: "media.upload", resourceType: "media", resourceId: rows[0].id, after: { url, bytes: buffer.length }, ip: req.ip });
+    res.status(201).json({ media: rows[0] });
+  } catch (err) { next(err); }
+});
+
+// ---------- POST /admin/media/video ----------
+// Raw video upload avoids base64 expansion and the JSON body size limit.
+mediaRouter.post("/video", expressRawVideo, async (req, res, next) => {
+  try {
+    const buffer = req.body;
+    if (!Buffer.isBuffer(buffer) || !buffer.length) return res.status(400).json({ error: "Choose a video file to upload." });
+    if (buffer.length > MAX_VIDEO_BYTES) return res.status(413).json({ error: "Video too large (max 50MB)." });
+    const detected = await fileTypeFromBuffer(buffer);
+    if (!detected || !ALLOWED_VIDEO_TYPES.has(detected.mime)) return res.status(415).json({ error: "Unsupported video. Use MP4, WebM, or MOV." });
+    const url = await saveFile(buffer, detected.ext, detected.mime);
+    const encodedName = String(req.headers["x-file-name"] || `video.${detected.ext}`);
+    let fileName = encodedName;
+    try { fileName = decodeURIComponent(encodedName); } catch { /* Keep the safe encoded fallback. */ }
+    fileName = fileName.slice(0, 200);
+    const { rows } = await pool.query(
+      `INSERT INTO media (url, file_name, usage_tag, bytes, uploaded_by) VALUES ($1,$2,$3,$4,$5) RETURNING *`,
+      [url, fileName, "video", buffer.length, req.admin.id]
+    );
+    await logAudit({ adminUserId: req.admin.id, action: "media.upload", resourceType: "media", resourceId: rows[0].id, after: { url, bytes: buffer.length, type: detected.mime }, ip: req.ip });
     res.status(201).json({ media: rows[0] });
   } catch (err) { next(err); }
 });

@@ -34,29 +34,33 @@ await call(owner,"PATCH",`/admin/products/${pid}`,{visibility:"published"});
 r = await call(jar("anon"),"GET","/api/catalog");
 check("after publishing, product IS visible publicly", r.data.products.some(p=>p.id===pid));
 
-// RBAC: create STAFF + CONTENT users
-r = await call(owner,"POST","/admin/users",{email:"staff@test.com",password:"staff-password-long-1",role:"STAFF"});
-check("OWNER can create STAFF user", r.status===201, JSON.stringify(r.data));
-await call(owner,"POST","/admin/users",{email:"content@test.com",password:"content-password-long-1",role:"CONTENT"});
+// RBAC: create DASHBOARD + CATALOG users
+r = await call(owner,"POST","/admin/users",{email:"staff@test.com",password:"staff-password-long-1",role:"DASHBOARD"});
+check("OWNER can create DASHBOARD user", r.status===201, JSON.stringify(r.data));
+await call(owner,"POST","/admin/users",{email:"content@test.com",password:"content-password-long-1",role:"CATALOG"});
 const staff = jar("staff");
 await call(staff,"POST","/admin/auth/login",{email:"staff@test.com",password:"staff-password-long-1"});
+r = await call(staff,"GET","/admin/stats");
+check("DASHBOARD can view dashboard statistics (200)",r.status===200);
+r = await call(staff,"GET","/admin/products");
+check("DASHBOARD cannot open product management (403)",r.status===403);
 r = await call(staff,"DELETE",`/admin/products/${pid}`);
-check("STAFF cannot DELETE product (403, enforced by API)", r.status===403);
+check("DASHBOARD cannot DELETE product (403, enforced by API)", r.status===403);
 r = await call(staff,"PATCH",`/admin/products/${pid}`,{name:"hacked"});
-check("STAFF cannot edit product (403)", r.status===403);
+check("DASHBOARD cannot edit product (403)", r.status===403);
 r = await call(staff,"GET","/admin/users");
-check("STAFF cannot list admin users (403)", r.status===403);
+check("DASHBOARD cannot list admin users (403)", r.status===403);
 r = await call(staff,"POST","/admin/users",{email:"evil@test.com",password:"evil-password-long-1",role:"OWNER"});
-check("STAFF cannot create an OWNER (403)", r.status===403);
+check("DASHBOARD cannot create an OWNER (403)", r.status===403);
 r = await call(staff,"GET","/admin/orders");
-check("STAFF CAN read orders (200)", r.status===200);
+check("DASHBOARD cannot read customer orders (403)", r.status===403);
 const content = jar("content");
 await call(content,"POST","/admin/auth/login",{email:"content@test.com",password:"content-password-long-1"});
 r = await call(content,"PUT","/admin/site-content/announcement",{text:"Hi",visible:true});
-check("CONTENT role can edit CMS (200)", r.status===200, JSON.stringify(r.data));
+check("CATALOG role can edit CMS (200)", r.status===200, JSON.stringify(r.data));
 r = await call(content,"GET","/admin/orders".replace("orders","orders"));
 r = await call(content,"PATCH","/admin/orders/00000000-0000-0000-0000-000000000000/status",{status:"Completed"});
-check("CONTENT cannot change orders (403)", r.status===403);
+check("CATALOG cannot change orders (403)", r.status===403);
 r = await call(jar("anon"),"PATCH",`/admin/products/${pid}`,{name:"x"});
 check("anonymous cannot edit product (401)", r.status===401);
 
@@ -66,11 +70,18 @@ const results = await Promise.all([0,1,2,3,4].map(mk));
 const created = results.filter(x=>x.status===201).length, conflicts = results.filter(x=>x.status===409).length;
 check(`5 simultaneous buyers, same used phone → exactly 1 order created (got ${created} created, ${conflicts} rejected)`, created===1 && conflicts===4);
 r = await call(owner,"GET",`/admin/products/${pid}/units`);
-check("unit is now 'sold' in DB (set server-side)", r.data.units[0].status==="sold");
+check("unit is reserved in DB until order completion", r.data.units[0].status==="reserved");
 r = await call(jar("anon"),"GET","/api/catalog");
 check("sold unit no longer exposed to storefront", !r.data.deviceUnits.some(u=>u.id===uid));
 r = await call(owner,"GET","/admin/orders");
 check("order visible in Admin → Orders", r.data.orders.length>=1);
+const usedOrder = r.data.orders.find(o => o.items.some(item => item.unitId === uid));
+r = await call(owner,"PATCH",`/admin/orders/${usedOrder.id}/status`,{status:"Cancelled"});
+check("cancelling a used-device order succeeds",r.status===200);
+r = await call(owner,"GET",`/admin/products/${pid}/units`);
+check("cancelled used device returns to available inventory",r.status===200 && r.data.units.some(u=>u.id===uid && u.status==="available"));
+r = await call(jar("anon"),"GET","/api/catalog");
+check("released used device is visible in storefront again",r.status===200 && r.data.deviceUnits.some(u=>u.id===uid));
 
 // 2FA
 r = await call(owner,"POST","/admin/auth/totp-setup");
@@ -94,6 +105,20 @@ check("correct 2FA code grants session", r.status===200 && owner2.cookies.gi_ses
 const old = owner2.cookies.gi_session;
 r = await call(owner2,"POST","/admin/auth/refresh");
 check("refresh rotates session id", r.status===200 && owner2.cookies.gi_session!==old);
+
+// Two concurrent requests carrying the same refresh token must not both win.
+const raceA = jar("refresh-a"), raceB = jar("refresh-b");
+raceA.cookies = { ...owner2.cookies };
+raceB.cookies = { ...owner2.cookies };
+const [raceResultA, raceResultB] = await Promise.all([
+  call(raceA,"POST","/admin/auth/refresh"),
+  call(raceB,"POST","/admin/auth/refresh"),
+]);
+const raceWins = [raceResultA.status, raceResultB.status].filter(s => s===200).length;
+const raceLoses = [raceResultA.status, raceResultB.status].filter(s => s===401).length;
+check("concurrent refresh replay: exactly one request succeeds", raceWins===1 && raceLoses===1,
+  `statuses=${raceResultA.status},${raceResultB.status}`);
+owner2.cookies = { ...(raceResultA.status===200 ? raceA.cookies : raceB.cookies) };
 const stale = jar("stale"); stale.cookies.gi_session = old;
 r = await call(stale,"GET","/admin/products");
 check("old (rotated-out) session id is revoked/unusable", r.status===401);

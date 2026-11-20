@@ -7,9 +7,9 @@ import { validateBody } from "../middleware/validate.js";
 import { logAudit } from "../lib/audit.js";
 
 export const siteContentRouter = Router();
-siteContentRouter.use(requireAuth);
+siteContentRouter.use(requireAuth, requirePermission("cms.write"));
 
-const KNOWN_SECTIONS = ["comparisonSection", "recommendationSection", "announcement", "toolsSection", "trustSection", "homepageLayout", "designSystem"];
+const KNOWN_SECTIONS = ["comparisonSection", "recommendationSection", "announcement", "toolsSection", "trustSection", "homepageLayout", "designSystem", "heroSlideSchedules", "collectionDetails", "footerSection", "shopCategoriesSection"];
 
 // ---------- GET /admin/site-content ----------
 siteContentRouter.get("/", async (req, res, next) => {
@@ -43,7 +43,9 @@ siteContentRouter.put("/:section", requirePermission("cms.write"), validateBody(
 export const settingsRouter = Router();
 settingsRouter.use(requireAuth);
 
-settingsRouter.get("/", async (req, res, next) => {
+const KNOWN_SETTINGS = ["store_profile", "store_contact", "store_fulfillment", "store_checkout"];
+
+settingsRouter.get("/", requirePermission("settings.write"), async (req, res, next) => {
   try {
     const { rows } = await pool.query(`SELECT key, value FROM site_settings`);
     res.json({ settings: Object.fromEntries(rows.map((r) => [r.key, r.value])) });
@@ -52,6 +54,9 @@ settingsRouter.get("/", async (req, res, next) => {
 
 settingsRouter.put("/:key", requirePermission("settings.write"), validateBody(z.any()), async (req, res, next) => {
   try {
+    if (!KNOWN_SETTINGS.includes(req.params.key)) {
+      return res.status(400).json({ error: "Unknown store settings group." });
+    }
     const { rows } = await pool.query(
       `INSERT INTO site_settings (key, value) VALUES ($1, $2)
        ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value RETURNING *`,

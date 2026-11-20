@@ -8,24 +8,26 @@ import { validateBody } from "../middleware/validate.js";
 import { logAudit } from "../lib/audit.js";
 
 export const adminUsersRouter = Router();
-adminUsersRouter.use(requireAuth, requirePermission("admin.manage")); // OWNER only, per the seeded role permissions
+adminUsersRouter.use(requireAuth, requirePermission("admin.manage")); // OWNER and FULL_ACCESS_NO_DASHBOARD after 2FA enrollment
 
 adminUsersRouter.get("/", async (req, res, next) => {
   try {
     const { rows } = await pool.query(
       `SELECT id, email, role, totp_enabled, is_active, created_at, last_login_at FROM admin_users ORDER BY created_at`
     );
-    res.json({ adminUsers: rows });
+    const roleResult = await pool.query(`SELECT name, permissions FROM roles ORDER BY name`);
+    res.json({ adminUsers: rows, roles: roleResult.rows });
   } catch (err) { next(err); }
 });
 
 const createSchema = z.object({
   email: z.string().email(),
   password: z.string().min(12, "Password must be at least 12 characters."),
-  role: z.enum(["OWNER", "MANAGER", "STAFF", "CONTENT"]),
+  role: z.enum(["OWNER", "FULL_ACCESS_NO_DASHBOARD", "DASHBOARD", "CATALOG"]),
 });
 adminUsersRouter.post("/", validateBody(createSchema), async (req, res, next) => {
   try {
+    if (req.body.role === "OWNER" && req.admin.role !== "OWNER") return res.status(403).json({ error: "Only a Super Admin can create another Super Admin." });
     const hash = await argon2.hash(req.body.password, { type: argon2.argon2id });
     const { rows } = await pool.query(
       `INSERT INTO admin_users (email, password_hash, role) VALUES ($1,$2,$3)
@@ -40,10 +42,11 @@ adminUsersRouter.post("/", validateBody(createSchema), async (req, res, next) =>
   }
 });
 
-const roleSchema = z.object({ role: z.enum(["OWNER", "MANAGER", "STAFF", "CONTENT"]) });
+const roleSchema = z.object({ role: z.enum(["FULL_ACCESS_NO_DASHBOARD", "DASHBOARD", "CATALOG"]) });
 adminUsersRouter.patch("/:id/role", validateBody(roleSchema), async (req, res, next) => {
   try {
-    const { rows } = await pool.query(`UPDATE admin_users SET role = $1 WHERE id = $2 RETURNING id, email, role`, [req.body.role, req.params.id]);
+    if (req.params.id === req.admin.id) return res.status(400).json({ error: "You cannot change your own role." });
+    const { rows } = await pool.query(`UPDATE admin_users SET role = $1 WHERE id = $2 AND role <> 'OWNER' RETURNING id, email, role`, [req.body.role, req.params.id]);
     if (!rows[0]) return res.status(404).json({ error: "Admin not found." });
     await logAudit({ adminUserId: req.admin.id, action: "admin_user.role_change", resourceType: "admin_user", resourceId: req.params.id, after: rows[0], ip: req.ip });
     res.json({ adminUser: rows[0] });
@@ -55,10 +58,45 @@ adminUsersRouter.patch("/:id/role", validateBody(roleSchema), async (req, res, n
 adminUsersRouter.post("/:id/deactivate", async (req, res, next) => {
   try {
     if (req.params.id === req.admin.id) return res.status(400).json({ error: "You can't deactivate your own account." });
-    const { rows } = await pool.query(`UPDATE admin_users SET is_active = false WHERE id = $1 RETURNING id, email`, [req.params.id]);
-    if (!rows[0]) return res.status(404).json({ error: "Admin not found." });
+    const { rows } = await pool.query(
+      `UPDATE admin_users SET is_active = false WHERE id = $1 AND (role <> 'OWNER' OR $2 = 'OWNER') RETURNING id, email`,
+      [req.params.id, req.admin.role]
+    );
+    if (!rows[0]) return res.status(404).json({ error: "Admin not found or protected Super Admin account." });
     await pool.query(`UPDATE sessions SET revoked_at = now() WHERE admin_user_id = $1 AND revoked_at IS NULL`, [req.params.id]);
     await logAudit({ adminUserId: req.admin.id, action: "admin_user.deactivate", resourceType: "admin_user", resourceId: req.params.id, ip: req.ip });
     res.json({ ok: true });
+  } catch (err) { next(err); }
+});
+
+adminUsersRouter.patch("/:id/active", async (req, res, next) => {
+  try {
+    const active = z.object({ isActive: z.boolean() }).parse(req.body);
+    if (req.params.id === req.admin.id && !active.isActive) return res.status(400).json({ error: "You can't deactivate your own account." });
+    const { rows } = await pool.query(
+      `UPDATE admin_users SET is_active = $1 WHERE id = $2 AND (role <> 'OWNER' OR $3 = 'OWNER') RETURNING id, email, role, is_active`,
+      [active.isActive, req.params.id, req.admin.role]
+    );
+    if (!rows[0]) return res.status(404).json({ error: "Admin not found." });
+    if (!active.isActive) await pool.query(`UPDATE sessions SET revoked_at = now() WHERE admin_user_id = $1 AND revoked_at IS NULL`, [req.params.id]);
+    await logAudit({ adminUserId: req.admin.id, action: active.isActive ? "admin_user.activate" : "admin_user.deactivate", resourceType: "admin_user", resourceId: req.params.id, after: rows[0], ip: req.ip });
+    res.json({ adminUser: rows[0] });
+  } catch (err) { next(err); }
+});
+
+const permissionMapSchema = z.record(z.string(), z.boolean());
+adminUsersRouter.patch("/roles/:name", async (req, res, next) => {
+  try {
+    const roleName = String(req.params.name || "").toUpperCase();
+    if (!["DASHBOARD", "CATALOG"].includes(roleName)) return res.status(400).json({ error: "This role cannot be edited." });
+    const requested = permissionMapSchema.parse(req.body);
+    const current = await pool.query(`SELECT permissions FROM roles WHERE name = $1`, [roleName]);
+    if (!current.rows[0]) return res.status(404).json({ error: "Role not found." });
+    const allowedKeys = Object.keys(current.rows[0].permissions || {});
+    if (Object.keys(requested).some(key => !allowedKeys.includes(key))) return res.status(400).json({ error: "Unknown permission." });
+    const permissions = Object.fromEntries(allowedKeys.map(key => [key, key === "admin.manage" ? false : requested[key] === true]));
+    const { rows } = await pool.query(`UPDATE roles SET permissions = $1 WHERE name = $2 RETURNING name, permissions`, [permissions, roleName]);
+    await logAudit({ adminUserId: req.admin.id, action: "admin_role.permissions_update", resourceType: "role", resourceId: roleName, after: rows[0], ip: req.ip });
+    res.json({ role: rows[0] });
   } catch (err) { next(err); }
 });

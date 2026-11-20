@@ -1,3 +1,22 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+
+/* Live-controlled homepage category and certified pre-owned sections */
+.shop-category-grid{grid-template-columns:repeat(var(--category-columns,4),minmax(0,1fr))}
+.shop-category-grid article{min-width:0}
+.certified-preowned-section .certified-product-grid{grid-template-columns:repeat(var(--certified-columns,2),minmax(0,1fr))}
+.certified-preowned-section .group.relative.flex.flex-col{border-radius:var(--collection-card-radius,16px);overflow:hidden}
+.certified-preowned-section .group.relative.flex.flex-col>div[role="button"]>div:first-child{border-radius:var(--collection-card-radius,16px);overflow:hidden}
+@media(max-width:767px){
+  .shop-category-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+  .shop-category-grid article{min-width:0}
+  .shop-category-grid button{height:190px!important}
+  .certified-preowned-section>div{grid-template-columns:1fr!important}
+  .certified-preowned-section .certified-product-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+  .certified-preowned-section .certified-product-rail{margin-right:-24px;padding-right:24px}
+}
+@media(min-width:768px) and (max-width:1023px){
+  .shop-category-grid{grid-template-columns:repeat(min(var(--category-columns,4),3),minmax(0,1fr))}
+}

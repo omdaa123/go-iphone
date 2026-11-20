@@ -54,6 +54,11 @@ check("low-stock list present", Array.isArray(r.data.lowStock));
 r = await call(owner, "GET", "/admin/orders");
 const o = r.data.orders.find((x) => x.items.some((i) => i.productName === "Stock Test Phone"));
 check("admin orders list includes items with product names", !!o && o.items[0].qty === 2 && o.items[0].unitPriceCents == 1500000, JSON.stringify(r.data.orders[0]).slice(0, 200));
+r = await call(owner, "PATCH", `/admin/orders/${o.id}/payment-status`, { paymentStatus: "paid" });
+check("Admin can update an order payment status", r.status === 200 && r.data.order.payment_status === "paid");
+r = await call(owner, "PATCH", `/admin/orders/${o.id}/status`, { status: "Cancelled" });
+const afterCancel = await call(owner, "GET", `/admin/products/${pid}`);
+check("cancelling an order restores its reserved variant stock", r.status === 200 && afterCancel.data.variants[0].stock_qty === 2, JSON.stringify(afterCancel.data.variants[0]));
 
 r = await call(owner, "POST", "/admin/hero-slides", { title: "Image Hero", imageMediaId: mediaId, ctaText: "Go", linkCategoryKey: "iphone" });
 check("hero slide with independent image (no product link)", r.status === 201, JSON.stringify(r.data));
@@ -65,9 +70,17 @@ await call(owner, "PATCH", "/admin/categories/mac/image", { imageMediaId: mediaI
 r = await call(owner, "GET", "/admin/categories");
 check("category image set and listed with url", r.data.categories.find((c) => c.key === "mac").image_url);
 check("category image reaches storefront siteContent", (await (await fetch(B + "/api/catalog")).json()).siteContent.categoryImages.mac);
+r = await call(owner, "PATCH", "/admin/categories/mac", { label: "Mac Computers" });
+check("category edit updates label with parameterized SQL", r.status === 200 && r.data.category.label === "Mac Computers", JSON.stringify(r.data));
+r = await call(owner, "PATCH", "/admin/categories/mac", { label: "Mac Computers" });
+check("category edit updates label with parameterized SQL", r.status === 200 && r.data.category.label === "Mac Computers", JSON.stringify(r.data));
 
 r = await call(owner, "PUT", "/admin/site-content/comparisonSection", { title: "Compare iPhone", description: "d", cta: "Compare", image: "https://x/y.png", visible: true });
 check("comparison section saved", r.status === 200);
+r = await call(owner, "PUT", "/admin/site-content/footerSection", { description: "Updated footer", groups: [] });
+check("footer editor settings are accepted by the CMS API", r.status === 200);
+r = await call(owner, "PUT", "/admin/site-content/shopCategoriesSection", { title: "Browse categories" });
+check("homepage category-section settings are accepted by the CMS API", r.status === 200);
 check("…and reaches storefront", (await (await fetch(B + "/api/catalog")).json()).siteContent.comparisonSection.title === "Compare iPhone");
 
 r = await call(owner, "GET", "/admin/audit-logs");
@@ -75,28 +88,30 @@ check("OWNER can read audit logs, with actor emails", r.status === 200 && r.data
 r = await call(owner, "GET", "/admin/login-events");
 check("OWNER can read login events", r.status === 200 && r.data.events.length > 0);
 const mgr = jar();
-await call(owner, "POST", "/admin/users", { email: "mgr@test.com", password: "manager-password-long-1", role: "MANAGER" });
+await call(owner, "POST", "/admin/users", { email: "mgr@test.com", password: "manager-password-long-1", role: "CATALOG" });
 await call(mgr, "POST", "/admin/auth/login", { email: "mgr@test.com", password: "manager-password-long-1" });
 r = await call(mgr, "GET", "/admin/audit-logs");
-check("MANAGER cannot read audit logs (403)", r.status === 403);
+check("CATALOG cannot read audit logs (403)", r.status === 403);
 r = await call(mgr, "GET", "/admin/products");
-check("MANAGER can list products (200)", r.status === 200);
+check("CATALOG can list products (200)", r.status === 200);
 r = await call(mgr, "POST", "/admin/products", { categoryKey: "iphone", productType: "iphone", name: "Mgr Phone", visibility: "draft" });
-check("MANAGER can create products (201)", r.status === 201);
-r = await call(mgr, "PUT", "/admin/settings/storeInfo", { name: "x" });
-check("MANAGER cannot change store settings (403)", r.status === 403);
+check("CATALOG can create products (201)", r.status === 201);
+r = await call(mgr, "PUT", "/admin/settings/store_profile", { name: "x" });
+check("CATALOG cannot change store settings (403)", r.status === 403);
 r = await call(owner, "PUT", "/admin/settings/storeInfo", { name: "Go iPhone", phone: "0100" });
 check("OWNER can change store settings", r.status === 200);
+r = await call(owner, "PUT", "/admin/settings/private_api_key", { secret: "should-not-be-public" });
+check("unknown/private settings keys are rejected", r.status === 400);
 // reading customer data is restricted by role, not just editing
-await call(owner, "POST", "/admin/users", { email: "writer@test.com", password: "writer-password-long-1", role: "CONTENT" });
+await call(owner, "POST", "/admin/users", { email: "writer@test.com", password: "writer-password-long-1", role: "CATALOG" });
 const writer = jar();
 await call(writer, "POST", "/admin/auth/login", { email: "writer@test.com", password: "writer-password-long-1" });
 r = await call(writer, "GET", "/admin/orders");
-check("CONTENT role cannot READ customer orders (403)", r.status === 403);
+check("CATALOG role cannot READ customer orders (403)", r.status === 403);
 r = await call(writer, "GET", "/admin/reservations");
-check("CONTENT role cannot READ customer reservations (403)", r.status === 403);
+check("CATALOG role cannot READ customer reservations (403)", r.status === 403);
 r = await call(writer, "GET", "/admin/stats");
-check("CONTENT role's dashboard stats contain no revenue or customer data", r.status === 200 && !("revenueCents" in r.data) && !("recentOrders" in r.data) && !("orders" in r.data) && !("recentReservations" in r.data), JSON.stringify(Object.keys(r.data)));
+check("CATALOG role cannot access dashboard stats (403)", r.status === 403, JSON.stringify(Object.keys(r.data)));
 r = await call(writer, "GET", "/admin/products");
 check("CONTENT role can still list products (needed to link hero slides)", r.status === 200);
 

@@ -9,7 +9,7 @@ import { logAudit } from "../lib/audit.js";
 export const heroSlidesRouter = Router();
 heroSlidesRouter.use(requireAuth);
 
-heroSlidesRouter.get("/", async (req, res, next) => {
+heroSlidesRouter.get("/", requirePermission("cms.write"), async (req, res, next) => {
   try {
     const { rows } = await pool.query(
       `SELECT s.*, mi.url AS image_url, mm.url AS mobile_image_url FROM hero_slides s
@@ -30,6 +30,8 @@ const slideSchema = z.object({
   linkProductId: z.string().uuid().optional().nullable(),
   imageMediaId: z.string().uuid().optional().nullable(),
   mobileImageMediaId: z.string().uuid().optional().nullable(),
+  videoUrl: z.string().url().max(2048).optional().nullable(),
+  mobileVideoUrl: z.string().url().max(2048).optional().nullable(),
   active: z.boolean().default(true),
   durationMs: z.number().int().min(2000).max(30000).default(6500),
 });
@@ -40,11 +42,11 @@ heroSlidesRouter.post("/", requirePermission("cms.write"), validateBody(slideSch
     const { rows: maxRows } = await pool.query(`SELECT COALESCE(MAX(sort_order), -1) + 1 AS next FROM hero_slides`);
     const { rows } = await pool.query(
       `INSERT INTO hero_slides (eyebrow, title, subtitle, badge, cta_text, link_category_key, link_product_id,
-         image_media_id, mobile_image_media_id, active, sort_order, duration_ms)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12) RETURNING *`,
+         image_media_id, mobile_image_media_id, video_url, mobile_video_url, active, sort_order, duration_ms)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14) RETURNING *`,
       [b.eyebrow ?? null, b.title, b.subtitle ?? null, b.badge ?? null, b.ctaText ?? null,
        b.linkCategoryKey ?? null, b.linkProductId ?? null, b.imageMediaId ?? null, b.mobileImageMediaId ?? null,
-       b.active, maxRows[0].next, b.durationMs]
+       b.videoUrl ?? null, b.mobileVideoUrl ?? null, b.active, maxRows[0].next, b.durationMs]
     );
     await logAudit({ adminUserId: req.admin.id, action: "hero_slide.create", resourceType: "hero_slide", resourceId: rows[0].id, after: rows[0], ip: req.ip });
     res.status(201).json({ heroSlide: rows[0] });
@@ -57,7 +59,7 @@ heroSlidesRouter.patch("/:id", requirePermission("cms.write"), validateBody(slid
     const fields = {
       eyebrow: b.eyebrow, title: b.title, subtitle: b.subtitle, badge: b.badge, cta_text: b.ctaText,
       link_category_key: b.linkCategoryKey, link_product_id: b.linkProductId, image_media_id: b.imageMediaId,
-      mobile_image_media_id: b.mobileImageMediaId, active: b.active, duration_ms: b.durationMs,
+      mobile_image_media_id: b.mobileImageMediaId, video_url: b.videoUrl, mobile_video_url: b.mobileVideoUrl, active: b.active, duration_ms: b.durationMs,
     };
     const sets = []; const params = [];
     for (const [col, val] of Object.entries(fields)) {

@@ -9,7 +9,12 @@
     "dev": "node --watch src/index.js",
     "migrate": "node src/db/migrate.js",
     "seed": "node src/db/seed.js",
-    "seed:catalog": "node src/db/seed-catalog.js"
+    "seed:catalog": "node src/db/seed-catalog.js",
+    "test:e2e:admin-api": "node tests/admin-api.e2e.mjs",
+    "test:e2e:security": "node tests/security.e2e.mjs",
+    "test:e2e:catalog": "node tests/catalog-orders.e2e.mjs",
+    "test:e2e:2fa": "node tests/require-2fa.e2e.mjs",
+    "test:local-write-guard": "node tests/local-write-guard.e2e.mjs"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1161.0",
@@ -19,11 +24,11 @@
     "dotenv": "^16.4.5",
     "express": "^4.19.2",
     "express-rate-limit": "^7.3.1",
-    "file-type": "^19.0.0",
+    "file-type": "^21.3.4",
     "helmet": "^7.1.0",
     "otplib": "^12.0.1",
     "pg": "^8.11.5",
     "qrcode": "^1.5.3",
-    "zod": "^3.23.8"
+    "zod": "^4.6.7"
   }
 }

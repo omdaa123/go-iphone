@@ -8,15 +8,15 @@ CREATE EXTENSION IF NOT EXISTS citext;     -- case-insensitive email
 -- ===================== Identity & access =====================
 
 CREATE TABLE IF NOT EXISTS roles (
-  name TEXT PRIMARY KEY,                  -- OWNER | MANAGER | STAFF | CONTENT
+  name TEXT PRIMARY KEY,
   permissions JSONB NOT NULL
 );
 
 INSERT INTO roles (name, permissions) VALUES
-  ('OWNER',   '{"admin.manage":true,"products.write":true,"inventory.write":true,"orders.write":true,"reservations.write":true,"cms.write":true,"media.write":true,"settings.write":true}'),
-  ('MANAGER', '{"admin.manage":false,"products.write":true,"inventory.write":true,"orders.write":true,"reservations.write":true,"cms.write":true,"media.write":true,"settings.write":false}'),
-  ('STAFF',   '{"admin.manage":false,"products.write":false,"inventory.write":true,"orders.write":true,"reservations.write":true,"cms.write":false,"media.write":false,"settings.write":false}'),
-  ('CONTENT', '{"admin.manage":false,"products.write":false,"inventory.write":false,"orders.write":false,"reservations.write":false,"cms.write":true,"media.write":true,"settings.write":false}')
+  ('OWNER', '{"admin.manage":true,"dashboard.view":true,"dashboard.sales.view":true,"products.write":true,"inventory.write":true,"orders.write":true,"reservations.write":true,"cms.write":true,"media.write":true,"settings.write":true}'),
+  ('FULL_ACCESS_NO_DASHBOARD', '{"admin.manage":true,"dashboard.view":false,"dashboard.sales.view":false,"products.write":true,"inventory.write":true,"orders.write":true,"reservations.write":true,"cms.write":true,"media.write":true,"settings.write":true}'),
+  ('DASHBOARD', '{"admin.manage":false,"dashboard.view":true,"dashboard.sales.view":true,"products.write":false,"inventory.write":false,"orders.write":false,"reservations.write":false,"cms.write":false,"media.write":false,"settings.write":false}'),
+  ('CATALOG', '{"admin.manage":false,"dashboard.view":false,"dashboard.sales.view":false,"products.write":true,"inventory.write":false,"orders.write":false,"reservations.write":false,"cms.write":true,"media.write":true,"settings.write":false}')
 ON CONFLICT (name) DO NOTHING;
 
 CREATE TABLE IF NOT EXISTS admin_users (
@@ -32,6 +32,10 @@ CREATE TABLE IF NOT EXISTS admin_users (
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   last_login_at TIMESTAMPTZ
 );
+
+UPDATE admin_users SET role = 'DASHBOARD' WHERE role = 'STAFF';
+UPDATE admin_users SET role = 'CATALOG' WHERE role IN ('MANAGER','CONTENT');
+DELETE FROM roles WHERE name IN ('MANAGER','STAFF','CONTENT');
 
 CREATE TABLE IF NOT EXISTS sessions (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -96,8 +100,35 @@ CREATE TABLE IF NOT EXISTS categories (
   key TEXT PRIMARY KEY,
   label TEXT NOT NULL,
   image_media_id UUID REFERENCES media(id) ON DELETE SET NULL,
-  sort_order INT NOT NULL DEFAULT 0
+  sort_order INT NOT NULL DEFAULT 0,
+  parent_key TEXT REFERENCES categories(key) ON DELETE SET NULL
 );
+
+-- Category hierarchy and legacy-key normalization belong in migrations,
+-- never in the admin GET endpoint.
+ALTER TABLE categories ADD COLUMN IF NOT EXISTS parent_key TEXT REFERENCES categories(key) ON DELETE SET NULL;
+
+INSERT INTO categories (key, label, sort_order)
+VALUES ('other-devices', 'Other Devices', 7)
+ON CONFLICT (key) DO NOTHING;
+
+INSERT INTO categories (key, label, sort_order, parent_key)
+VALUES ('accessories', 'Accessories', 6, NULL)
+ON CONFLICT (key) DO NOTHING;
+
+INSERT INTO categories (key, label, sort_order, parent_key)
+VALUES
+  ('apple-accessory', 'Apple Accessories', 14, 'accessories'),
+  ('other-accessory', 'Other Accessories', 15, 'accessories'),
+  ('smartphone', 'Smartphones', 8, 'other-devices'),
+  ('smartwatch', 'Smart Watches', 9, 'other-devices'),
+  ('tablet', 'Tablets', 10, 'other-devices'),
+  ('speakers', 'Speakers', 11, 'other-devices'),
+  ('headphones', 'Headphones', 12, 'other-devices'),
+  ('other-electronics', 'Other Electronics', 13, 'other-devices')
+ON CONFLICT (key) DO NOTHING;
+
+
 
 CREATE TABLE IF NOT EXISTS collections (
   id TEXT PRIMARY KEY,
@@ -107,6 +138,15 @@ CREATE TABLE IF NOT EXISTS collections (
   visible BOOLEAN NOT NULL DEFAULT true,
   sort_order INT NOT NULL DEFAULT 0
 );
+
+-- Built-in collections are seeded by migrations, never by public read endpoints.
+INSERT INTO collections (id, name, description, is_system, visible, sort_order)
+VALUES
+  ('featured', 'Featured', 'Hand-picked highlights from the store.', true, true, 0),
+  ('new-arrivals', 'New Arrivals', 'The latest products added to the store.', true, true, 1),
+  ('best-sellers', 'Best Sellers', 'Popular products customers have purchased.', true, true, 2),
+  ('certified-refurbished', 'Certified Refurbished', 'Individually checked pre-owned devices.', true, true, 3)
+ON CONFLICT (id) DO NOTHING;
 
 CREATE TABLE IF NOT EXISTS products (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -132,6 +172,11 @@ CREATE TABLE IF NOT EXISTS products (
 );
 CREATE INDEX IF NOT EXISTS idx_products_category ON products(category_key);
 CREATE INDEX IF NOT EXISTS idx_products_visibility ON products(visibility) WHERE visibility = 'published';
+
+-- Consolidate duplicate branch keys from the earlier plural-key version.
+UPDATE products SET category_key = 'apple-accessory' WHERE category_key = 'apple-accessories';
+UPDATE products SET category_key = 'other-accessory' WHERE category_key = 'other-accessories';
+DELETE FROM categories WHERE key IN ('apple-accessories', 'other-accessories');
 
 CREATE TABLE IF NOT EXISTS product_collections (
   product_id UUID REFERENCES products(id) ON DELETE CASCADE,
@@ -167,6 +212,17 @@ CREATE TABLE IF NOT EXISTS inventory_units (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 CREATE INDEX IF NOT EXISTS idx_units_product_status ON inventory_units(product_id, status);
+ALTER TABLE inventory_units ADD COLUMN IF NOT EXISTS condition_report JSONB NOT NULL DEFAULT '{}'::jsonb;
+
+-- ===================== Customer relationship management =====================
+
+CREATE TABLE IF NOT EXISTS customer_profiles (
+  customer_key TEXT PRIMARY KEY,
+  notes TEXT NOT NULL DEFAULT '',
+  tags JSONB NOT NULL DEFAULT '[]'::jsonb,
+  segment TEXT NOT NULL DEFAULT 'Regular' CHECK (segment IN ('Regular','VIP','Wholesale','At Risk','New')),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
 
 -- ===================== Commerce =====================
 
@@ -190,11 +246,17 @@ CREATE TABLE IF NOT EXISTS order_items (
   order_id UUID NOT NULL REFERENCES orders(id) ON DELETE CASCADE,
   product_id UUID REFERENCES products(id),
   inventory_unit_id UUID REFERENCES inventory_units(id),
+  variant_id UUID REFERENCES product_variants(id) ON DELETE SET NULL,
   variant_label TEXT,
   unit_price_cents BIGINT NOT NULL,
   qty INT NOT NULL
 );
 CREATE INDEX IF NOT EXISTS idx_order_items_order ON order_items(order_id);
+-- Upgrade existing databases as well as fresh installs.
+ALTER TABLE order_items ADD COLUMN IF NOT EXISTS variant_id UUID;
+ALTER TABLE order_items DROP CONSTRAINT IF EXISTS order_items_variant_id_fkey;
+ALTER TABLE order_items ADD CONSTRAINT order_items_variant_id_fkey
+  FOREIGN KEY (variant_id) REFERENCES product_variants(id) ON DELETE SET NULL;
 
 CREATE TABLE IF NOT EXISTS reservations (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -238,3 +300,12 @@ CREATE TABLE IF NOT EXISTS site_settings (
   key TEXT PRIMARY KEY,
   value JSONB NOT NULL
 );
+
+
+-- Shared, windowed counters used by express-rate-limit across backend instances.
+CREATE TABLE IF NOT EXISTS rate_limit_hits (
+  key TEXT PRIMARY KEY,
+  total_hits INTEGER NOT NULL CHECK (total_hits >= 0),
+  reset_at TIMESTAMPTZ NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_rate_limit_hits_reset_at ON rate_limit_hits(reset_at);

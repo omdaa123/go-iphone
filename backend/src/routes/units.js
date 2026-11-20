@@ -19,9 +19,10 @@ const unitSchema = z.object({
   warranty: z.string().optional().nullable(),
   notes: z.string().optional().nullable(),
   photoMediaId: z.string().uuid().optional().nullable(),
+  conditionReport: z.record(z.any()).optional().default({}),
 });
 
-unitsRouter.get("/", async (req, res, next) => {
+unitsRouter.get("/", requirePermission("inventory.write"), async (req, res, next) => {
   try {
     const { rows } = await pool.query(
       `SELECT * FROM inventory_units WHERE product_id = $1 ORDER BY updated_at DESC`,
@@ -31,14 +32,14 @@ unitsRouter.get("/", async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
-unitsRouter.post("/", requirePermission("inventory.write"), validateBody(unitSchema), async (req, res, next) => {
+unitsRouter.post("/", requirePermission("products.write"), validateBody(unitSchema), async (req, res, next) => {
   try {
     const b = req.body;
     const { rows } = await pool.query(
-      `INSERT INTO inventory_units (product_id, storage, color, battery_pct, condition, price_cents, warranty, notes, photo_media_id, sku)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10) RETURNING *`,
+      `INSERT INTO inventory_units (product_id, storage, color, battery_pct, condition, price_cents, warranty, notes, photo_media_id, sku, condition_report)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) RETURNING *`,
       [req.params.productId, b.storage ?? null, b.color ?? null, b.batteryPct ?? null, b.condition ?? null,
-       b.priceCents, b.warranty ?? null, b.notes ?? null, b.photoMediaId ?? null, b.sku ?? null]
+       b.priceCents, b.warranty ?? null, b.notes ?? null, b.photoMediaId ?? null, b.sku ?? null, b.conditionReport ?? {}]
     );
     await logAudit({ adminUserId: req.admin.id, action: "unit.create", resourceType: "inventory_unit", resourceId: rows[0].id, after: rows[0], ip: req.ip });
     res.status(201).json({ unit: rows[0] });
@@ -54,6 +55,7 @@ unitsRouter.patch("/:unitId", requirePermission("inventory.write"), validateBody
     const fields = {
       storage: b.storage, color: b.color, battery_pct: b.batteryPct, condition: b.condition,
       price_cents: b.priceCents, sku: b.sku, warranty: b.warranty, notes: b.notes, photo_media_id: b.photoMediaId,
+      condition_report: b.conditionReport,
     };
     const sets = []; const params = [];
     for (const [col, val] of Object.entries(fields)) {
