@@ -31,7 +31,21 @@ const DEVICE_MODEL_COLORS = {
     "iPhone 14 Pro":["Space Black","Silver","Gold","Deep Purple"],
     "iPhone 14 Pro Max":["Space Black","Silver","Gold","Deep Purple"],
     "iPhone 13 Pro":["Graphite","Gold","Silver","Sierra Blue","Alpine Green"],
-    "iPhone 13 Pro Max":["Graphite","Gold","Silver","Sierra Blue","Alpine Green"]
+    "iPhone 13 Pro Max":["Graphite","Gold","Silver","Sierra Blue","Alpine Green"],
+    "iPhone 17 Pro":["Cosmic Orange","Deep Blue","Silver"],
+    "iPhone 17 Pro Max":["Cosmic Orange","Deep Blue","Silver"],
+    "iPhone Air":["Sky Blue","Light Gold","Cloud White"],
+    "iPhone 17":["Lavender","Sage","Mist Blue","White","Black"],
+    "iPhone 17e":["White","Black"],
+    "iPhone 16":["Ultramarine","Teal","Pink","White","Black"],
+    "iPhone 16 Plus":["Ultramarine","Teal","Pink","White","Black"],
+    "iPhone 16e":["White","Black"],
+    "iPhone 15":["Pink","Yellow","Green","Blue","Black"],
+    "iPhone 15 Plus":["Pink","Yellow","Green","Blue","Black"],
+    "iPhone 14":["Blue","Purple","Yellow","Midnight","Starlight","Product Red"],
+    "iPhone 14 Plus":["Blue","Purple","Yellow","Midnight","Starlight","Product Red"],
+    "iPhone 13":["Green","Pink","Blue","Midnight","Starlight","Product Red"],
+    "iPhone 13 mini":["Green","Pink","Blue","Midnight","Starlight","Product Red"]
   },
   ipad: {
     "iPad Pro 13-inch (M4)":["Space Black","Silver"],
