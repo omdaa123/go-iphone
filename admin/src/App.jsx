@@ -52,12 +52,14 @@ const DEVICE_MODEL_COLORS = {
     "MacBook Air 15-inch (M3)":["Midnight","Starlight","Space Gray","Silver"]
   },
   airpods: {
+    "AirPods 5":["White"],
+    "AirPods 5 with Wireless Charging Case":["White"],
     "AirPods 4":["White"],
     "AirPods 4 with Active Noise Cancellation":["White"],
     "AirPods Pro 3":["White"],
     "AirPods Pro 2":["White"],
-    "AirPods Max (USB-C)":["Midnight","Starlight","Blue","Purple","Orange"],
-    "AirPods Max (Lightning)":["Space Gray","Silver","Green","Sky Blue","Pink"]
+    "AirPods Max 2":["Midnight","Starlight","Blue","Purple","Orange"],
+    "AirPods Max":["Midnight","Starlight","Blue","Purple","Orange"]
   }
 };
 function ColorPickerField({label,value,onChange,options=[],allowCustom=true}) {
@@ -88,7 +90,7 @@ const IPAD_SCREEN_SIZES = ["7.9-inch","8.3-inch","8.5-inch","9.7-inch","10.2-inc
 const IPAD_STORAGE = ["16GB","32GB","64GB","128GB","256GB","512GB","1TB","2TB"];
 const MAC_STORAGE = ["128GB","256GB","512GB","1TB","2TB","4TB","8TB"];
 const MAC_MEMORY = ["8GB","12GB","16GB","18GB","24GB","32GB","36GB","48GB","64GB","96GB","128GB","192GB","256GB","Other / custom"];
-const AIRPODS_MODELS = ["AirPods 4","AirPods 4 with Active Noise Cancellation","AirPods Pro 3","AirPods Pro 2","AirPods Pro (1st generation)","AirPods (3rd generation)","AirPods (2nd generation)","AirPods Max (USB-C)","AirPods Max (Lightning)"];
+const AIRPODS_MODELS = ["AirPods 5","AirPods 5 with Wireless Charging Case","AirPods 4","AirPods 4 with Active Noise Cancellation","AirPods Pro 3","AirPods Pro 2","AirPods Max 2","AirPods Max","AirPods (3rd generation) with MagSafe Charging Case","AirPods (3rd generation) with Lightning Charging Case","AirPods (2nd generation)"];
 
 const OTHER_DEVICE_FIELD_SETS = {
   smartphone: [{key:"brand",label:"Brand"},{key:"model",label:"Model"},{key:"ram",label:"RAM"},{key:"network",label:"Network / SIM support"},{key:"color",label:"Color (optional)"}],
