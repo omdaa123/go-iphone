@@ -23,7 +23,7 @@ function deriveModelGroupKey(product) {
     name: String(product.name || "").trim().toLowerCase(),
     specs, storageOptions: [...(product.storageOptions || [])].sort(),
   });
-  return `auto-${createHash("sha256").update(identity).digest("hex").slice(0, 24)}`;
+  return `auto-${createHash("md5").update(identity).digest("hex")}`;
 }
 
 const productSchema = z.object({
