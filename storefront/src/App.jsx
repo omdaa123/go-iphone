@@ -1852,7 +1852,8 @@ function ProductDetailPage({ productId, go, onAddToCart, compareIds, onToggleCom
                   return <div key={k}><b style={{color:T.ink}} className="capitalize">{k==="display"?"Screen":k==="housing"?"Body":k}</b><p style={{color:T.graphite}}>{statusLabel}{typeLabel?" · "+typeLabel:""}</p></div>;
                 })}
               </div>
-              {selectedUnit.conditionReport.cosmeticNotes && <p style={{color:T.graphite}} className="text-xs mt-3">{selectedUnit.conditionReport.cosmeticNotes}</p>}
+              {(selectedUnit.conditionReport.cosmetic || selectedUnit.conditionReport.cosmeticNotes) && <p style={{color:T.graphite}} className="text-xs mt-3"><b style={{color:T.ink}}>Cosmetic condition:</b> {selectedUnit.conditionReport.cosmetic||"Not graded"}{selectedUnit.conditionReport.cosmeticNotes?" · "+selectedUnit.conditionReport.cosmeticNotes:""}</p>}
+              {Object.keys(selectedUnit.conditionReport.tests||{}).length>0 && <div className="mt-3"><b style={{color:T.ink}} className="text-xs">Functional checks</b><p style={{color:T.graphite}} className="text-xs mt-1">{Object.entries(selectedUnit.conditionReport.tests).filter(([,v])=>v!=="not-checked").map(([k,v])=>k.replace(/([A-Z])/g," $1")+": "+({pass:"Working",fail:"Issue found","not-applicable":"N/A"}[v]||v)).join(" · ")||"Not tested"}</p></div>}
             </div>
           )}
         </div>
