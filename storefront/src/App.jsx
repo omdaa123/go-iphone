@@ -1870,7 +1870,7 @@ function ProductDetailPage({ productId, go, onAddToCart, compareIds, onToggleCom
             <p style={{ color: T.graphite }} className="text-sm flex items-center gap-2"><ShieldCheck size={15} /> {product.hasUnits ? selectedUnit?.warranty : "12-month Go iPhone warranty"}</p>
             <p style={{ color: T.graphite }} className="text-sm flex items-center gap-2"><BatteryMedium size={15} /> {product.hasUnits ? `Battery health ${selectedUnit?.battery ?? "Not recorded"}${selectedUnit?.battery != null ? "%" : ""}` : "100% battery health, sealed unit"}</p>
           </div>
-          {product.hasUnits && selectedUnit?.condition === "Used" && selectedUnit?.conditionDescription && (
+          {product.hasUnits && selectedUnit?.condition && selectedUnit.condition !== "New" && selectedUnit?.conditionDescription && (
             <div style={{borderColor:T.line}} className="border-t mt-5 pt-5">
               <h3 style={{color:T.ink}} className="text-sm font-semibold mb-2">This device's condition</h3>
               <p style={{color:T.graphite}} className="text-sm leading-relaxed">{selectedUnit.conditionDescription}</p>
