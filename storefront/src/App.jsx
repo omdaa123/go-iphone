@@ -331,13 +331,25 @@ function unitsFor(productId) {
   return store.units.filter((u) => u.productId === productId && u.availability === "available");
 }
 function uniqueColorGroupedProducts(products = []) {
-  const seen = new Set();
-  return products.filter(product => {
-    if (!product.modelGroupKey) return true;
-    if (seen.has(product.modelGroupKey)) return false;
-    seen.add(product.modelGroupKey);
-    return true;
-  });
+  const result = [];
+  const groupPositions = new Map();
+  for (const product of products) {
+    if (!product.modelGroupKey) {
+      result.push(product);
+      continue;
+    }
+    const existingIndex = groupPositions.get(product.modelGroupKey);
+    if (existingIndex == null) {
+      groupPositions.set(product.modelGroupKey, result.length);
+      result.push(product);
+      continue;
+    }
+    const current = result[existingIndex];
+    // Prefer a sibling with its own photo so a color family card never
+    // loses the model image just because a newly-added color has no photo yet.
+    if (!productImageSrc(current) && productImageSrc(product)) result[existingIndex] = product;
+  }
+  return result;
 }
 function priceFrom(product) {
   if (product.hasUnits) {
