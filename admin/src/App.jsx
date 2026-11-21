@@ -20,63 +20,68 @@ function CustomModelField({label,value,onChange,options,placeholder}) {
 }
 
 const DEVICE_COLOR_HEX = {
-  "Black":"#252525","White":"#f4f2ed","Blue":"#4d78a8","Pink":"#e6a9b5","Green":"#6f8871","Yellow":"#e8cf65","Purple":"#a99ac8","Red":"#c93d43","Midnight":"#252936","Starlight":"#e8dfcf","Silver":"#c8c9c9","Space Gray":"#777a7d","Space Black":"#333333","Natural Titanium":"#a99f91","Desert Titanium":"#c7a58b","Black Titanium":"#393a3c","White Titanium":"#e3e0d9","Blue Titanium":"#596b80","Gold":"#c9ad7b","Rose Gold":"#d7b2a5","Jet Black":"#202020","Space Gray Aluminum":"#777a7d","Sky Blue":"#a8c8d8","Cosmic Orange":"#df713d","Deep Blue":"#334b70","Cloud White":"#f1eee8","Lavender":"#b9a6d5","Sage":"#a8b7a0","Mist Blue":"#a9c2d2","Light Gold":"#d6c6a3","Graphite":"#55585b","Stainless Steel":"#bfc2c4","Natural":"#b4a99a","Silver Aluminum":"#c9cacc"
+  "Black":"#252525","White":"#f4f2ed","Blue":"#4d78a8","Pink":"#e6a9b5","Green":"#6f8871","Yellow":"#e8cf65","Purple":"#a99ac8","Red":"#c93d43","Midnight":"#252936","Starlight":"#e8dfcf","Silver":"#c8c9c9","Space Gray":"#777a7d","Space Grey":"#777a7d","Space Black":"#333333","Natural Titanium":"#a99f91","Desert Titanium":"#c7a58b","Black Titanium":"#393a3c","White Titanium":"#e3e0d9","Blue Titanium":"#596b80","Gold":"#c9ad7b","Rose Gold":"#d7b2a5","Jet Black":"#202020","Sky Blue":"#a8c8d8","Cosmic Orange":"#df713d","Deep Blue":"#334b70","Cloud White":"#f1eee8","Lavender":"#b9a6d5","Sage":"#a8b7a0","Mist Blue":"#a9c2d2","Light Gold":"#d6c6a3","Graphite":"#55585b","Stainless Steel":"#bfc2c4","Natural":"#b4a99a","Silver Aluminum":"#c9cacc","Ultramarine":"#4e5eb8","Teal":"#5c9a91","Coral":"#f18d78","Product Red":"#c93d43","(PRODUCT)RED":"#c93d43","Midnight Green":"#40564b","Pacific Blue":"#4b718d","Sierra Blue":"#9bbbd3","Alpine Green":"#526b58","Deep Purple":"#59456e","Gold Stainless Steel":"#c9ad7b","Silver Stainless Steel":"#c8c9c9","Graphite Stainless Steel":"#55585b","Orange":"#df713d","Indigo":"#40558a","Blush":"#dca7a4","Citrus":"#d4c76d"
 };
 const DEVICE_MODEL_COLORS = {
   iphone: {
-    "iPhone 16 Pro":["Black Titanium","White Titanium","Natural Titanium","Desert Titanium"],
-    "iPhone 16 Pro Max":["Black Titanium","White Titanium","Natural Titanium","Desert Titanium"],
-    "iPhone 15 Pro":["Black Titanium","White Titanium","Blue Titanium","Natural Titanium"],
-    "iPhone 15 Pro Max":["Black Titanium","White Titanium","Blue Titanium","Natural Titanium"],
-    "iPhone 14 Pro":["Space Black","Silver","Gold","Deep Purple"],
-    "iPhone 14 Pro Max":["Space Black","Silver","Gold","Deep Purple"],
-    "iPhone 13 Pro":["Graphite","Gold","Silver","Sierra Blue","Alpine Green"],
-    "iPhone 13 Pro Max":["Graphite","Gold","Silver","Sierra Blue","Alpine Green"],
-    "iPhone 17 Pro":["Cosmic Orange","Deep Blue","Silver"],
-    "iPhone 17 Pro Max":["Cosmic Orange","Deep Blue","Silver"],
-    "iPhone Air":["Sky Blue","Light Gold","Cloud White"],
-    "iPhone 17":["Lavender","Sage","Mist Blue","White","Black"],
-    "iPhone 17e":["White","Black"],
-    "iPhone 16":["Ultramarine","Teal","Pink","White","Black"],
-    "iPhone 16 Plus":["Ultramarine","Teal","Pink","White","Black"],
-    "iPhone 16e":["White","Black"],
-    "iPhone 15":["Pink","Yellow","Green","Blue","Black"],
-    "iPhone 15 Plus":["Pink","Yellow","Green","Blue","Black"],
-    "iPhone 14":["Blue","Purple","Yellow","Midnight","Starlight","Product Red"],
-    "iPhone 14 Plus":["Blue","Purple","Yellow","Midnight","Starlight","Product Red"],
-    "iPhone 13":["Green","Pink","Blue","Midnight","Starlight","Product Red"],
-    "iPhone 13 mini":["Green","Pink","Blue","Midnight","Starlight","Product Red"]
+    "iPhone X":["Silver","Space Gray"],"iPhone XS":["Silver","Space Gray","Gold"],"iPhone XS Max":["Silver","Space Gray","Gold"],
+    "iPhone XR":["Black","White","Blue","Yellow","Coral","(PRODUCT)RED"],
+    "iPhone 11":["Purple","Green","Yellow","Black","White","(PRODUCT)RED"],
+    "iPhone 11 Pro":["Midnight Green","Space Gray","Silver","Gold"],"iPhone 11 Pro Max":["Midnight Green","Space Gray","Silver","Gold"],
+    "iPhone SE (2nd generation)":["Black","White","(PRODUCT)RED"],
+    "iPhone 12 mini":["Black","White","(PRODUCT)RED","Green","Blue","Purple"],"iPhone 12":["Black","White","(PRODUCT)RED","Green","Blue","Purple"],
+    "iPhone 12 Pro":["Graphite","Silver","Gold","Pacific Blue"],"iPhone 12 Pro Max":["Graphite","Silver","Gold","Pacific Blue"],
+    "iPhone 13 mini":["(PRODUCT)RED","Starlight","Midnight","Blue","Pink","Green"],"iPhone 13":["(PRODUCT)RED","Starlight","Midnight","Blue","Pink","Green"],
+    "iPhone 13 Pro":["Graphite","Gold","Silver","Sierra Blue","Alpine Green"],"iPhone 13 Pro Max":["Graphite","Gold","Silver","Sierra Blue","Alpine Green"],
+    "iPhone SE (3rd generation)":["Midnight","Starlight","(PRODUCT)RED"],
+    "iPhone 14":["Midnight","Starlight","(PRODUCT)RED","Blue","Purple","Yellow"],"iPhone 14 Plus":["Midnight","Starlight","(PRODUCT)RED","Blue","Purple","Yellow"],
+    "iPhone 14 Pro":["Space Black","Silver","Gold","Deep Purple"],"iPhone 14 Pro Max":["Space Black","Silver","Gold","Deep Purple"],
+    "iPhone 15":["Black","Blue","Green","Yellow","Pink"],"iPhone 15 Plus":["Black","Blue","Green","Yellow","Pink"],
+    "iPhone 15 Pro":["Black Titanium","White Titanium","Blue Titanium","Natural Titanium"],"iPhone 15 Pro Max":["Black Titanium","White Titanium","Blue Titanium","Natural Titanium"],
+    "iPhone 16":["Black","White","Pink","Teal","Ultramarine"],"iPhone 16 Plus":["Black","White","Pink","Teal","Ultramarine"],
+    "iPhone 16 Pro":["Black Titanium","White Titanium","Natural Titanium","Desert Titanium"],"iPhone 16 Pro Max":["Black Titanium","White Titanium","Natural Titanium","Desert Titanium"],
+    "iPhone 16e":["Black","White"],"iPhone 17":["Black","White","Mist Blue","Sage","Lavender"],
+    "iPhone 17 Pro":["Silver","Cosmic Orange","Deep Blue"],"iPhone 17 Pro Max":["Silver","Cosmic Orange","Deep Blue"],
+    "iPhone Air":["Sky Blue","Light Gold","Cloud White","Space Black"],"iPhone 17e":["Black","White"]
   },
   ipad: {
-    "iPad Pro 13-inch (M4)":["Space Black","Silver"],
-    "iPad Pro 11-inch (M4)":["Space Black","Silver"],
-    "iPad Air 13-inch (M3)":["Space Gray","Starlight","Blue","Purple"],
-    "iPad Air 11-inch (M3)":["Space Gray","Starlight","Blue","Purple"],
-    "iPad Air 13-inch (M2)":["Space Gray","Starlight","Blue","Purple"],
-    "iPad Air 11-inch (M2)":["Space Gray","Starlight","Blue","Purple"],
-    "iPad mini (A20 Pro)":["Space Gray","Blue","Purple","Starlight"],
-    "iPad mini (A17 Pro)":["Space Gray","Blue","Purple","Starlight"],
-    "iPad (A16)":["Silver","Blue","Pink","Yellow"]
+    "iPad Pro 13-inch (M5)":["Space Black","Silver"],"iPad Pro 11-inch (M5)":["Space Black","Silver"],
+    "iPad Pro 13-inch (M4)":["Space Black","Silver"],"iPad Pro 11-inch (M4)":["Space Black","Silver"],
+    "iPad Air 13-inch (M4)":["Blue","Purple","Starlight","Space Gray"],"iPad Air 11-inch (M4)":["Blue","Purple","Starlight","Space Gray"],
+    "iPad Air 13-inch (M3)":["Space Gray","Starlight","Blue","Purple"],"iPad Air 11-inch (M3)":["Space Gray","Starlight","Blue","Purple"],
+    "iPad Air 13-inch (M2)":["Space Gray","Starlight","Blue","Purple"],"iPad Air 11-inch (M2)":["Space Gray","Starlight","Blue","Purple"],
+    "iPad mini (A20 Pro)":["Space Gray","Blue","Purple","Starlight"],"iPad mini (A17 Pro)":["Space Gray","Blue","Purple","Starlight"],
+    "iPad (A16)":["Silver","Blue","Pink","Yellow"],"iPad (10th generation)":["Silver","Blue","Pink","Yellow"],
+    "iPad Air (5th generation)":["Space Gray","Starlight","Pink","Purple","Blue"],"iPad mini (6th generation)":["Space Gray","Pink","Purple","Starlight"],
+    "iPad Air (4th generation)":["Space Gray","Silver","Rose Gold","Green","Sky Blue"],"iPad (9th generation)":["Space Gray","Silver"],
+    "iPad mini (5th generation)":["Space Gray","Silver","Gold"],"iPad Pro 12.9-inch (6th generation)":["Space Gray","Silver"],"iPad Pro 11-inch (4th generation)":["Space Gray","Silver"]
   },
   mac: {
-    "MacBook Air 13-inch (M4)":["Sky Blue","Midnight","Starlight","Silver"],
-    "MacBook Air 15-inch (M4)":["Sky Blue","Midnight","Starlight","Silver"],
-    "MacBook Pro 14-inch (M4)":["Space Black","Silver"],
-    "MacBook Pro 16-inch (M4)":["Space Black","Silver"],
-    "MacBook Air 13-inch (M3)":["Midnight","Starlight","Space Gray","Silver"],
-    "MacBook Air 15-inch (M3)":["Midnight","Starlight","Space Gray","Silver"]
+    "MacBook Neo":["Indigo","Blush","Citrus","Silver"],
+    "MacBook Air 13-inch (M5)":["Sky Blue","Midnight","Starlight","Silver"],"MacBook Air 15-inch (M5)":["Sky Blue","Midnight","Starlight","Silver"],
+    "MacBook Air 13-inch (M4)":["Sky Blue","Midnight","Starlight","Silver"],"MacBook Air 15-inch (M4)":["Sky Blue","Midnight","Starlight","Silver"],
+    "MacBook Air 13-inch (M3)":["Midnight","Starlight","Space Gray","Silver"],"MacBook Air 15-inch (M3)":["Midnight","Starlight","Space Gray","Silver"],
+    "MacBook Air 13-inch (M2)":["Midnight","Starlight","Space Gray","Silver"],"MacBook Air 15-inch (M2)":["Midnight","Starlight","Space Gray","Silver"],
+    "MacBook Air 13-inch (M1)":["Space Gray","Silver","Gold"],
+    "MacBook Pro 14-inch (M5)":["Space Black","Silver"],"MacBook Pro 14-inch (M5 Pro)":["Space Black","Silver"],"MacBook Pro 14-inch (M5 Max)":["Space Black","Silver"],
+    "MacBook Pro 16-inch (M5 Pro)":["Space Black","Silver"],"MacBook Pro 16-inch (M5 Max)":["Space Black","Silver"],
+    "MacBook Pro 14-inch (M4)":["Space Black","Silver"],"MacBook Pro 16-inch (M4)":["Space Black","Silver"],
+    "MacBook Pro 14-inch (M3)":["Space Black","Silver"],"MacBook Pro 16-inch (M3)":["Space Black","Silver"],
+    "MacBook Pro 14-inch (M2 Pro)":["Space Gray","Silver"],"MacBook Pro 16-inch (M2 Pro)":["Space Gray","Silver"]
   },
   airpods: {
-    "AirPods 5":["White"],
-    "AirPods 5 with Wireless Charging Case":["White"],
-    "AirPods 4":["White"],
-    "AirPods 4 with Active Noise Cancellation":["White"],
-    "AirPods Pro 3":["White"],
-    "AirPods Pro 2":["White"],
-    "AirPods Max 2":["Midnight","Starlight","Blue","Purple","Orange"],
-    "AirPods Max":["Midnight","Starlight","Blue","Purple","Orange"]
+    "AirPods 5":["White"],"AirPods 5 with Wireless Charging Case":["White"],"AirPods 4":["White"],"AirPods 4 with Active Noise Cancellation":["White"],
+    "AirPods Pro 3":["White"],"AirPods Pro 2":["White"],"AirPods Max 2":["Midnight","Starlight","Blue","Purple","Orange"],
+    "AirPods Max":["Midnight","Starlight","Blue","Purple","Orange"],"AirPods Max (Lightning)":["Space Gray","Silver","Sky Blue","Green","Pink"],
+    "AirPods (3rd generation) with MagSafe Charging Case":["White"],"AirPods (3rd generation) with Lightning Charging Case":["White"],"AirPods (2nd generation)":["White"]
   }
 };
+function appleModelGroupKey(category, model, condition) {
+  const slug = value => String(value || "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+  const modelKey = slug(model).slice(0, 72) || "custom-model";
+  if (condition !== "New") return `apple-used-${category}-${modelKey}-${Math.random().toString(36).slice(2, 9)}`.slice(0, 120);
+  return `apple-${category}-${modelKey}-new`.slice(0, 120);
+}
 function ColorPickerField({label,value,onChange,options=[],allowCustom=true}) {
   const [custom,setCustom]=useState(false);
   const choices=[...new Set(options.filter(Boolean))];
@@ -588,7 +593,7 @@ function Products({ onError }) {
   async function save(event) {
     event.preventDefault();
     if (editing === "new" && form.categoryKey === "watch") {
-      if (!watchModel.trim() || !watchPrice) { onError("Choose the Apple Watch model and enter its selling price."); return; }
+      if (!watchModel.trim() || !watchPrice || (watchCondition === "New" && !watchColor)) { onError("Choose the Apple Watch model, its official finish and selling price."); return; }
       if (watchCondition === "Used" && watchBattery !== "" && (Number(watchBattery) < 1 || Number(watchBattery) > 100)) { onError("Battery health must be between 1 and 100."); return; }
       setSaving(true);
       try {
@@ -596,7 +601,7 @@ function Products({ onError }) {
         const watchSpec = WATCH_MODELS.find(model => model.name === name);
         if (!watchSpec) { onError("Choose a valid Apple Watch model from the catalog."); return; }
         const created = await request("/products", { method: "POST", body: JSON.stringify({
-          name, categoryKey: "watch", productType: "smartwatch", tagline: form.tagline || null,
+          name, modelGroupKey: appleModelGroupKey("watch", name, watchCondition), categoryKey: "watch", productType: "smartwatch", tagline: form.tagline || null,
           specs: { Model: name, Condition: watchCondition, "Model number": watchModelNumber || "Not recorded", Collection: watchEdition, "Release year": String(watchSpec.year), "Case size": watchSize, Connectivity: watchConnectivity, "Case material": watchMaterial, Color: watchColor, Display: watchTech.displayType || watchSpec.display, "Peak brightness": watchTech.brightness || "Not specified", Resolution: watchTech.resolution?.[watchSize] || "See exact model number", "Display area": watchTech.displayArea?.[watchSize] || null, Chip: watchSpec.chip, Capacity: watchSpec.capacity, Battery: watchTech.battery || "See exact model", Charging: watchTech.charging || null, "Water resistance": watchTech.water || "Check exact model", "Dust resistance": watchTech.dust || "Not specified", Glass: watchTech.glass || "Varies by case material", Weight: watchTech.weight?.[watchSize] || null, "Wrist fit": watchTech.wristFit?.[watchSize] || null, Dimensions: watchTech.dimensionsByMaterial?.[watchMaterial]?.[watchSize] || watchTech.dimensions?.[watchSize] || null, GPS: watchTech.gps || "GPS / GPS + Cellular by variant", Wireless: watchTech.wireless || "See exact model", Compatibility: watchTech.compatibility || null, Audio: watchTech.audio || null, Sensors: watchTech.sensors || "See exact model", "Key features": watchTech.features || null, ...(watchBand ? { "Band style": watchBand } : {}), ...parseCustomSpecs() },
           storageOptions: [watchSize], colors: [watchColor], meta: { modelName: name, modelNumber: watchModelNumber || null, bandCollection: watchEdition, releaseYear: watchSpec.year, caseSize: watchSize, connectivity: watchConnectivity, caseMaterial: watchMaterial, color: watchColor, display: watchTech.displayType || watchSpec.display, brightness: watchTech.brightness || null, resolution: watchTech.resolution?.[watchSize] || null, chip: watchSpec.chip, capacity: watchSpec.capacity, waterResistance: watchTech.water || null, dustResistance: watchTech.dust || null, batteryLife: watchTech.battery || null, glass: watchTech.glass || null, gps: watchTech.gps || null, wireless: watchTech.wireless || null, sensors: watchTech.sensors || null, dimensions: watchTech.dimensionsByMaterial?.[watchMaterial]?.[watchSize] || watchTech.dimensions?.[watchSize] || null, displayArea: watchTech.displayArea?.[watchSize] || null, weight: watchTech.weight?.[watchSize] || null, wristFit: watchTech.wristFit?.[watchSize] || null, charging: watchTech.charging || null, compatibility: watchTech.compatibility || null, audio: watchTech.audio || null, features: watchTech.features || null, ...(watchBand ? { bandStyle: watchBand } : {}) },
           hasUnits: true, visibility: form.visibility, salesMode: form.salesMode, availability: "in_stock",
@@ -614,41 +619,41 @@ function Products({ onError }) {
       return;
     }
     if (editing === "new" && form.categoryKey === "ipad") {
-      if (!ipadModel || !ipadPrice) { onError("Choose an iPad model and enter its selling price."); return; }
+      if (!ipadModel || !ipadPrice || (ipadCondition === "New" && !ipadColor)) { onError("Choose an iPad model, its official finish and selling price."); return; }
       if (ipadCondition==="Used" && ipadBattery!=="" && (Number(ipadBattery)<1 || Number(ipadBattery)>100)) { onError("Battery health must be between 1 and 100."); return; }
       setSaving(true); try {
-        const created=await request("/products",{method:"POST",body:JSON.stringify({name:ipadModel,categoryKey:"ipad",productType:"tablet",tagline:form.tagline||null,specs:{Model:ipadModel,Condition:ipadCondition,"Display size":ipadScreen,Chip:ipadChip||"Not recorded",Storage:ipadStorage,Connectivity:ipadConnectivity,Color:ipadColor||"Not specified","Apple Pencil":ipadPencil||"Not specified",Keyboard:ipadKeyboard||"Not specified",...parseCustomSpecs()},storageOptions:[ipadStorage],colors:ipadColor?[ipadColor]:[],meta:{modelName:ipadModel,screenSize:ipadScreen,chip:ipadChip||null,connectivity:ipadConnectivity,color:ipadColor||null,pencilSupport:ipadPencil||null,keyboard:ipadKeyboard||null},hasUnits:true,visibility:form.visibility,salesMode:form.salesMode,availability:"in_stock",variants:[],primaryImageMediaId:primaryImageMediaId||null,galleryMediaIds,collectionIds})});
+        const created=await request("/products",{method:"POST",body:JSON.stringify({name:ipadModel,modelGroupKey:appleModelGroupKey("ipad",ipadModel,ipadCondition),categoryKey:"ipad",productType:"tablet",tagline:form.tagline||null,specs:{Model:ipadModel,Condition:ipadCondition,"Display size":ipadScreen,Chip:ipadChip||"Not recorded",Storage:ipadStorage,Connectivity:ipadConnectivity,Color:ipadColor||"Not specified","Apple Pencil":ipadPencil||"Not specified",Keyboard:ipadKeyboard||"Not specified",...parseCustomSpecs()},storageOptions:[ipadStorage],colors:ipadColor?[ipadColor]:[],meta:{modelName:ipadModel,screenSize:ipadScreen,chip:ipadChip||null,connectivity:ipadConnectivity,color:ipadColor||null,pencilSupport:ipadPencil||null,keyboard:ipadKeyboard||null},hasUnits:true,visibility:form.visibility,salesMode:form.salesMode,availability:"in_stock",variants:[],primaryImageMediaId:primaryImageMediaId||null,galleryMediaIds,collectionIds})});
         await request("/products/"+created.product.id+"/units",{method:"POST",body:JSON.stringify({storage:ipadStorage,color:[ipadColor,ipadConnectivity].filter(Boolean).join(" · "),batteryPct:ipadCondition==="New"||ipadBattery===""?null:Number(ipadBattery),condition:ipadCondition==="New"?"New":ipadGrade,sku:ipadSku||null,priceCents:Math.round(Number(ipadPrice)*100),warranty:null,notes:[ipadPencil?"Pencil: "+ipadPencil:null,ipadKeyboard?"Keyboard: "+ipadKeyboard:null,ipadCondition==="Used"?ipadNotes:null].filter(Boolean).join(" · ")||null})});
         setEditing(null);setRefresh(v=>v+1);
       } catch(e){onError(e.message);} finally{setSaving(false);} return;
     }
     if (editing === "new" && form.categoryKey === "mac") {
-      if (!macModel || !macPrice) { onError("Choose a Mac model and enter its selling price."); return; }
+      if (!macModel || !macPrice || (macCondition === "New" && !macColor)) { onError("Choose a Mac model, its official finish and selling price."); return; }
       if (macCondition==="Used" && macBattery!=="" && (Number(macBattery)<1 || Number(macBattery)>100)) { onError("Battery health must be between 1 and 100."); return; }
       setSaving(true); try {
         const desktop=/^(iMac|Mac mini|Mac Studio|Mac Pro)/.test(macModel);
-        const created=await request("/products",{method:"POST",body:JSON.stringify({name:macModel,categoryKey:"mac",productType:desktop?"desktop-computer":"laptop",tagline:form.tagline||null,specs:{Model:macModel,Condition:macCondition,"Display size":macScreen||"Not applicable / not recorded",Chip:macChip||"Not recorded",CPU:macCpu||"Not recorded",GPU:macGpu||"Not recorded",Memory:macMemory,Storage:macStorage,Color:macColor||"Not specified","Keyboard layout":macKeyboard,"Battery cycles":macCycles||"Not recorded",...parseCustomSpecs()},storageOptions:[macStorage],colors:macColor?[macColor]:[],meta:{modelName:macModel,screenSize:macScreen||null,chip:macChip||null,cpu:macCpu||null,gpu:macGpu||null,unifiedMemory:macMemory,storage:macStorage,color:macColor||null,keyboardLayout:macKeyboard,batteryCycles:macCycles||null},hasUnits:true,visibility:form.visibility,salesMode:form.salesMode,availability:"in_stock",variants:[],primaryImageMediaId:primaryImageMediaId||null,galleryMediaIds,collectionIds})});
+        const created=await request("/products",{method:"POST",body:JSON.stringify({name:macModel,modelGroupKey:appleModelGroupKey("mac",macModel,macCondition),categoryKey:"mac",productType:desktop?"desktop-computer":"laptop",tagline:form.tagline||null,specs:{Model:macModel,Condition:macCondition,"Display size":macScreen||"Not applicable / not recorded",Chip:macChip||"Not recorded",CPU:macCpu||"Not recorded",GPU:macGpu||"Not recorded",Memory:macMemory,Storage:macStorage,Color:macColor||"Not specified","Keyboard layout":macKeyboard,"Battery cycles":macCycles||"Not recorded",...parseCustomSpecs()},storageOptions:[macStorage],colors:macColor?[macColor]:[],meta:{modelName:macModel,screenSize:macScreen||null,chip:macChip||null,cpu:macCpu||null,gpu:macGpu||null,unifiedMemory:macMemory,storage:macStorage,color:macColor||null,keyboardLayout:macKeyboard,batteryCycles:macCycles||null},hasUnits:true,visibility:form.visibility,salesMode:form.salesMode,availability:"in_stock",variants:[],primaryImageMediaId:primaryImageMediaId||null,galleryMediaIds,collectionIds})});
         await request("/products/"+created.product.id+"/units",{method:"POST",body:JSON.stringify({storage:macStorage,color:macColor||null,batteryPct:macCondition==="New"||macBattery===""?null:Number(macBattery),condition:macCondition==="New"?"New":macGrade,sku:macSku||null,priceCents:Math.round(Number(macPrice)*100),warranty:null,notes:[macChip?"Chip: "+macChip:null,macMemory?"Memory: "+macMemory:null,macCycles?"Battery cycles: "+macCycles:null,macCondition==="Used"?macNotes:null].filter(Boolean).join(" · ")||null})});
         setEditing(null);setRefresh(v=>v+1);
       } catch(e){onError(e.message);} finally{setSaving(false);} return;
     }
     if (editing === "new" && form.categoryKey === "airpods") {
-      if (!airpodsModel.trim() || !airpodsPrice) { onError("Choose an AirPods model and enter its selling price."); return; }
+      if (!airpodsModel.trim() || !airpodsPrice || (airpodsCondition === "New" && !airpodsColor)) { onError("Choose an AirPods model, its official finish and selling price."); return; }
       if (airpodsCondition === "Used" && airpodsBattery !== "" && (Number(airpodsBattery)<1 || Number(airpodsBattery)>100)) { onError("Battery health must be between 1 and 100."); return; }
       setSaving(true); try {
         const name=airpodsModel.trim();
-        const created=await request("/products",{method:"POST",body:JSON.stringify({name,categoryKey:"airpods",productType:"wireless-earbuds",tagline:form.tagline||null,specs:{Model:name,Condition:airpodsCondition,Generation:airpodsGeneration||"Not specified",Connectivity:airpodsConnectivity,"Charging case":airpodsCase,Color:airpodsColor,...parseCustomSpecs()},storageOptions:[],colors:airpodsColor?[airpodsColor]:[],meta:{modelName:name,generation:airpodsGeneration||null,connectivity:airpodsConnectivity,chargingCase:airpodsCase,color:airpodsColor},hasUnits:true,visibility:form.visibility,salesMode:form.salesMode,availability:"in_stock",variants:[],primaryImageMediaId:primaryImageMediaId||null,galleryMediaIds,collectionIds})});
+        const created=await request("/products",{method:"POST",body:JSON.stringify({name,modelGroupKey:appleModelGroupKey("airpods",name,airpodsCondition),categoryKey:"airpods",productType:"wireless-earbuds",tagline:form.tagline||null,specs:{Model:name,Condition:airpodsCondition,Generation:airpodsGeneration||"Not specified",Connectivity:airpodsConnectivity,"Charging case":airpodsCase,Color:airpodsColor,...parseCustomSpecs()},storageOptions:[],colors:airpodsColor?[airpodsColor]:[],meta:{modelName:name,generation:airpodsGeneration||null,connectivity:airpodsConnectivity,chargingCase:airpodsCase,color:airpodsColor},hasUnits:true,visibility:form.visibility,salesMode:form.salesMode,availability:"in_stock",variants:[],primaryImageMediaId:primaryImageMediaId||null,galleryMediaIds,collectionIds})});
         await request("/products/"+created.product.id+"/units",{method:"POST",body:JSON.stringify({storage:airpodsGeneration||null,color:airpodsColor||null,batteryPct:airpodsCondition==="New"||airpodsBattery===""?null:Number(airpodsBattery),condition:airpodsCondition==="New"?"New":airpodsGrade,sku:airpodsSku||null,priceCents:Math.round(Number(airpodsPrice)*100),warranty:null,notes:[airpodsConnectivity,airpodsCase,airpodsCondition==="Used"?airpodsNotes:null].filter(Boolean).join(" · ")||null})});
         setEditing(null);setRefresh(v=>v+1);
       } catch(e){onError(e.message);} finally{setSaving(false);} return;
     }
     if (editing === "new" && form.categoryKey === "iphone") {
-      if (!iphoneModel || !iphonePrice) { onError("Choose an iPhone model and enter its selling price."); return; }
+      if (!iphoneModel || !iphonePrice || (iphoneCondition === "New" && !iphoneColor)) { onError("Choose an iPhone model, its official finish and selling price."); return; }
       setSaving(true);
       try {
         const created = await request("/products", { method: "POST", body: JSON.stringify({
-          name: iphoneModel, categoryKey: "iphone", productType: "smartphone", tagline: form.tagline || null,
-          specs: { Model: iphoneModel, Condition: iphoneCondition, ...(iphoneCondition === "Used" ? { "Condition grade": iphoneGrade } : {}), ...(iphoneRegion ? { "Regional version": iphoneRegion } : {}), "SIM configuration": iphoneSim, ...parseCustomSpecs() },
+          name: iphoneModel, modelGroupKey: appleModelGroupKey("iphone", iphoneModel, iphoneCondition), categoryKey: "iphone", productType: "smartphone", tagline: form.tagline || null,
+          specs: { Model: iphoneModel, Condition: iphoneCondition, Color: iphoneColor || "Not specified", ...(iphoneCondition === "Used" ? { "Condition grade": iphoneGrade } : {}), ...(iphoneRegion ? { "Regional version": iphoneRegion } : {}), "SIM configuration": iphoneSim, ...parseCustomSpecs() },
           storageOptions: [iphoneStorage], colors: iphoneColor ? [iphoneColor] : [],
           meta: { modelName: iphoneModel, ...(iphoneRegion ? { regionalVersion: iphoneRegion } : {}), simConfiguration: iphoneSim },
           hasUnits: true, visibility: form.visibility, salesMode: form.salesMode, availability: "in_stock",
@@ -695,13 +700,13 @@ function Products({ onError }) {
         {iphoneStep===1 && <div className="editor-grid"><CustomModelField label="Choose iPhone model" value={iphoneModel} onChange={v=>{setIphoneModel(v);setIphoneColor(DEVICE_MODEL_COLORS.iphone[v]?.[0]||"");}} options={IPHONE_MODELS} placeholder="Enter any iPhone model or edition"/><p className="field-wide muted">Choose the exact model, starting from iPhone X.</p></div>}
         {iphoneStep===2 && <div className="editor-grid">
           <label>Storage<CustomSelect value={iphoneStorage} onChange={e=>setIphoneStorage(e.target.value)}>{["64GB","128GB","256GB","512GB","1TB","2TB"].map(v=><option key={v}>{v}</option>)}</CustomSelect></label>
-          <ColorPickerField label="Official color" value={iphoneColor} onChange={setIphoneColor} options={DEVICE_MODEL_COLORS.iphone[iphoneModel]||[]} />
           <label>Country / region (optional)<CustomSelect value={iphoneRegion} onChange={e=>setIphoneRegion(e.target.value)}><option value="">Not specified</option>{["International","USA","China / Hong Kong","Japan","Middle East"].map(v=><option key={v}>{v}</option>)}</CustomSelect></label>
           <label>SIM configuration<CustomSelect value={iphoneSim} onChange={e=>setIphoneSim(e.target.value)}>{["Physical SIM + eSIM","Dual physical SIM","eSIM only","Dual eSIM","Physical SIM only","Verify from model number"].map(v=><option key={v}>{v}</option>)}</CustomSelect></label>
           <p className="field-wide muted">SIM support varies by region and exact model number. Confirm the physical device before saving.</p>
         </div>}
         {iphoneStep===3 && <div className="editor-grid">
-          <label>Device condition<CustomSelect value={iphoneCondition} onChange={e=>setIphoneCondition(e.target.value)}><option>New</option><option>Used</option></CustomSelect></label>
+          <label>Device condition<CustomSelect value={iphoneCondition} onChange={e=>{const condition=e.target.value;setIphoneCondition(condition);setIphoneColor(condition==="New"?(DEVICE_MODEL_COLORS.iphone[iphoneModel]||[])[0]||"": "");}}><option>New</option><option>Used</option></CustomSelect></label>
+          {iphoneCondition==="New" ? <ColorPickerField label="Official Apple finish" value={iphoneColor} onChange={setIphoneColor} options={DEVICE_MODEL_COLORS.iphone[iphoneModel]||[]} allowCustom={false}/> : <label>Actual device color<input value={iphoneColor} onChange={e=>setIphoneColor(e.target.value)} placeholder="Enter the device's actual color"/></label>}
           {iphoneCondition==="Used" && <>
             <label>Battery health (%)<input type="number" min="1" max="100" value={iphoneBattery} onChange={e=>setIphoneBattery(e.target.value)} placeholder="e.g. 88"/></label>
             <label>Condition grade<CustomSelect value={iphoneGrade} onChange={e=>setIphoneGrade(e.target.value)}>{["Like New","Excellent","Good","Fair"].map(v=><option key={v}>{v}</option>)}</CustomSelect></label>
@@ -723,7 +728,6 @@ function Products({ onError }) {
             <label>Case size<CustomSelect value={watchSize} onChange={e=>setWatchSize(e.target.value)}>{["38mm","40mm","41mm","42mm","44mm","45mm","46mm","49mm"].map(v=><option key={v}>{v}</option>)}</CustomSelect></label>
             <label>Connectivity<CustomSelect value={watchConnectivity} onChange={e=>setWatchConnectivity(e.target.value)}>{watchConnectivityOptions.map(v=><option key={v}>{v}</option>)}</CustomSelect></label>
             <label>Case material<CustomSelect value={watchMaterial} onChange={e=>{const material=e.target.value;setWatchMaterial(material);setWatchConnectivity((selectedWatchModel?.connectivityByMaterial?.[material]||selectedWatchModel?.connectivity||[])[0]||"");setWatchColor((selectedWatchModel?.colorsByMaterial?.[material]||selectedWatchModel?.colors||[])[0]||"");}}>{watchMaterialOptions.map(v=><option key={v}>{v}</option>)}</CustomSelect></label>
-            <ColorPickerField label="Official color" value={watchColor} onChange={setWatchColor} options={watchColorOptions} />
             <label>Special collection / band<CustomSelect value={watchEdition} onChange={e=>{const edition=e.target.value;setWatchEdition(edition);if(edition==="Hermès"&&selectedWatchModel){const material=selectedWatchModel.materials.includes("Titanium")?"Titanium":selectedWatchModel.materials.includes("Stainless Steel")?"Stainless Steel":selectedWatchModel.materials[0];setWatchMaterial(material);setWatchConnectivity((selectedWatchModel.connectivityByMaterial?.[material]||selectedWatchModel.connectivity)[0]);setWatchColor((WATCH_HERMES_COLORS[watchModel] || selectedWatchModel.colorsByMaterial?.[material] || selectedWatchModel.colors)[0]);}}}>{watchEditionOptions.map(v=><option key={v}>{v}</option>)}</CustomSelect></label>
             <label>Band style / size<input value={watchBand} onChange={e=>setWatchBand(e.target.value)} placeholder={watchEdition==="Hermès"?"e.g. Grand H / Single Tour / Double Tour":watchEdition==="Nike band"?"e.g. Nike Sport Band / Nike Sport Loop":"e.g. Sport Band / M-L"}/></label>
             <label>Model number (optional)<input value={watchModelNumber} onChange={e=>setWatchModelNumber(e.target.value.trim().toUpperCase())} placeholder="e.g. A3335 / A3452"/></label>
@@ -734,7 +738,8 @@ function Products({ onError }) {
             </div><p>Battery figures are Apple's estimates. Actual performance depends on settings, network and usage. Confirm regional model number for cellular bands and exact compatibility.</p></div>
           </div>}
           {watchStep===3 && <div className="editor-grid">
-          <label>Device condition<CustomSelect value={watchCondition} onChange={e=>setWatchCondition(e.target.value)}><option>New</option><option>Used</option></CustomSelect></label>
+          <label>Device condition<CustomSelect value={watchCondition} onChange={e=>{const condition=e.target.value;setWatchCondition(condition);setWatchColor(condition==="New"?(watchColorOptions[0]||""):"");}}><option>New</option><option>Used</option></CustomSelect></label>
+          {watchCondition==="New" ? <ColorPickerField label="Official Apple finish" value={watchColor} onChange={setWatchColor} options={watchColorOptions} allowCustom={false}/> : <label>Actual device color<input value={watchColor} onChange={e=>setWatchColor(e.target.value)} placeholder="Enter the device's actual color"/></label>}
           {watchCondition==="Used" && <><label>Battery health (%)<input type="number" min="1" max="100" value={watchBattery} onChange={e=>setWatchBattery(e.target.value)} placeholder="e.g. 92"/></label><label>Condition grade<CustomSelect value={watchGrade} onChange={e=>setWatchGrade(e.target.value)}>{["Like New","Excellent","Good","Fair"].map(v=><option key={v}>{v}</option>)}</CustomSelect></label><label className="field-wide">Defects / repairs / notes<input value={watchNotes} onChange={e=>setWatchNotes(e.target.value)} placeholder="Scratches, replaced parts, repairs…"/></label></>}
           <label>Selling price (EGP)<input type="number" min="0" step="0.01" required value={watchPrice} onChange={e=>setWatchPrice(e.target.value)}/></label>
           <label>SKU (optional)<input value={watchSku} onChange={e=>setWatchSku(e.target.value)}/></label>
@@ -745,15 +750,15 @@ function Products({ onError }) {
       {editing==="new" && form.categoryKey==="ipad" && <section className="iphone-wizard watch-wizard">
         <div className="iphone-wizard-steps"><span className={ipadStep===1?"active":""}>01 · Model</span><span className={ipadStep===2?"active":""}>02 · Configuration</span><span className={ipadStep===3?"active":""}>03 · Condition & price</span></div>
         {ipadStep===1 && <div className="editor-grid"><CustomModelField label="iPad model" value={ipadModel} onChange={v=>{setIpadModel(v);setIpadColor(DEVICE_MODEL_COLORS.ipad[v]?.[0]||"");}} options={IPAD_MODELS} placeholder="Enter any iPad model or generation"/><label>Display size<CustomSelect value={ipadScreen} onChange={e=>setIpadScreen(e.target.value)}>{IPAD_SCREEN_SIZES.map(v=><option key={v}>{v}</option>)}</CustomSelect></label><label>Chip<input value={ipadChip} onChange={e=>setIpadChip(e.target.value)} placeholder="e.g. M5 / M4 / A16"/></label><p className="field-wide muted">Confirm chip and display size from the exact device model when needed.</p></div>}
-        {ipadStep===2 && <div className="editor-grid"><label>Storage<CustomSelect value={ipadStorage} onChange={e=>setIpadStorage(e.target.value)}>{IPAD_STORAGE.map(v=><option key={v}>{v}</option>)}</CustomSelect></label><label>Connectivity<CustomSelect value={ipadConnectivity} onChange={e=>setIpadConnectivity(e.target.value)}>{["Wi-Fi","Wi-Fi + Cellular"].map(v=><option key={v}>{v}</option>)}</CustomSelect></label><ColorPickerField label="Official color" value={ipadColor} onChange={setIpadColor} options={DEVICE_MODEL_COLORS.ipad[ipadModel]||[]} /><label>Apple Pencil support<input value={ipadPencil} onChange={e=>setIpadPencil(e.target.value)} placeholder="e.g. Apple Pencil Pro / USB-C"/></label><label>Keyboard / accessory<input value={ipadKeyboard} onChange={e=>setIpadKeyboard(e.target.value)} placeholder="e.g. Magic Keyboard / none"/></label><p className="field-wide muted">Pencil and keyboard compatibility varies by generation.</p></div>}
-        {ipadStep===3 && <div className="editor-grid"><label>Condition<CustomSelect value={ipadCondition} onChange={e=>setIpadCondition(e.target.value)}><option>New</option><option>Used</option></CustomSelect></label>{ipadCondition==="Used" && <><label>Battery health (%)<input type="number" min="1" max="100" value={ipadBattery} onChange={e=>setIpadBattery(e.target.value)}/></label><label>Grade<CustomSelect value={ipadGrade} onChange={e=>setIpadGrade(e.target.value)}>{["Like New","Excellent","Good","Fair"].map(v=><option key={v}>{v}</option>)}</CustomSelect></label><label className="field-wide">Defects / repairs / notes<input value={ipadNotes} onChange={e=>setIpadNotes(e.target.value)} placeholder="Scratches, replaced parts, repairs…"/></label></>}<label>Selling price (EGP)<input type="number" min="0" step="0.01" required value={ipadPrice} onChange={e=>setIpadPrice(e.target.value)}/></label><label>SKU (optional)<input value={ipadSku} onChange={e=>setIpadSku(e.target.value)}/></label><label>Visibility<CustomSelect value={form.visibility} onChange={e=>setForm(f=>({...f,visibility:e.target.value}))}><option value="draft">Draft</option><option value="published">Published</option><option value="hidden">Hidden</option></CustomSelect></label></div>}
+        {ipadStep===2 && <div className="editor-grid"><label>Storage<CustomSelect value={ipadStorage} onChange={e=>setIpadStorage(e.target.value)}>{IPAD_STORAGE.map(v=><option key={v}>{v}</option>)}</CustomSelect></label><label>Connectivity<CustomSelect value={ipadConnectivity} onChange={e=>setIpadConnectivity(e.target.value)}>{["Wi-Fi","Wi-Fi + Cellular"].map(v=><option key={v}>{v}</option>)}</CustomSelect></label><label>Apple Pencil support<input value={ipadPencil} onChange={e=>setIpadPencil(e.target.value)} placeholder="e.g. Apple Pencil Pro / USB-C"/></label><label>Keyboard / accessory<input value={ipadKeyboard} onChange={e=>setIpadKeyboard(e.target.value)} placeholder="e.g. Magic Keyboard / none"/></label><p className="field-wide muted">Pencil and keyboard compatibility varies by generation.</p></div>}
+        {ipadStep===3 && <div className="editor-grid"><label>Condition<CustomSelect value={ipadCondition} onChange={e=>{const condition=e.target.value;setIpadCondition(condition);setIpadColor(condition==="New"?(DEVICE_MODEL_COLORS.ipad[ipadModel]||[])[0]||"": "");}}><option>New</option><option>Used</option></CustomSelect></label>{ipadCondition==="New" ? <ColorPickerField label="Official Apple finish" value={ipadColor} onChange={setIpadColor} options={DEVICE_MODEL_COLORS.ipad[ipadModel]||[]} allowCustom={false}/> : <label>Actual device color<input value={ipadColor} onChange={e=>setIpadColor(e.target.value)} placeholder="Enter the device's actual color"/></label>}{ipadCondition==="Used" && <><label>Battery health (%)<input type="number" min="1" max="100" value={ipadBattery} onChange={e=>setIpadBattery(e.target.value)}/></label><label>Grade<CustomSelect value={ipadGrade} onChange={e=>setIpadGrade(e.target.value)}>{["Like New","Excellent","Good","Fair"].map(v=><option key={v}>{v}</option>)}</CustomSelect></label><label className="field-wide">Defects / repairs / notes<input value={ipadNotes} onChange={e=>setIpadNotes(e.target.value)} placeholder="Scratches, replaced parts, repairs…"/></label></>}<label>Selling price (EGP)<input type="number" min="0" step="0.01" required value={ipadPrice} onChange={e=>setIpadPrice(e.target.value)}/></label><label>SKU (optional)<input value={ipadSku} onChange={e=>setIpadSku(e.target.value)}/></label><label>Visibility<CustomSelect value={form.visibility} onChange={e=>setForm(f=>({...f,visibility:e.target.value}))}><option value="draft">Draft</option><option value="published">Published</option><option value="hidden">Hidden</option></CustomSelect></label></div>}
         <div className="modal-foot"><button type="button" className="btn secondary" onClick={()=>ipadStep===1?setEditing(null):setIpadStep(v=>v-1)}>{ipadStep===1?"Cancel":"Back"}</button>{ipadStep<3?<button type="button" className="btn primary" disabled={ipadStep===1&&!ipadModel} onClick={()=>setIpadStep(v=>v+1)}>Continue <ArrowRight size={14}/></button>:<button type="submit" className="btn primary" disabled={saving}>{saving?"Creating…":"Create iPad & stock unit"}</button>}</div>
       </section>}
       {editing==="new" && form.categoryKey==="mac" && <section className="iphone-wizard watch-wizard">
         <div className="iphone-wizard-steps"><span className={macStep===1?"active":""}>01 · Model</span><span className={macStep===2?"active":""}>02 · Configuration</span><span className={macStep===3?"active":""}>03 · Condition & price</span></div>
         {macStep===1 && <div className="editor-grid"><CustomModelField label="Mac model" value={macModel} onChange={v=>{setMacModel(v);setMacColor(DEVICE_MODEL_COLORS.mac[v]?.[0]||"");}} options={MAC_MODELS} placeholder="Enter any Mac model or configuration"/><label>Display size<input value={macScreen} onChange={e=>setMacScreen(e.target.value)} placeholder="e.g. 13.6-inch / None"/></label><label>Apple chip / processor<input value={macChip} onChange={e=>setMacChip(e.target.value)} placeholder="e.g. M5 Pro / M4 / Intel Core i7"/></label><label>CPU details<input value={macCpu} onChange={e=>setMacCpu(e.target.value)} placeholder="e.g. 12-core CPU"/></label><label>GPU details<input value={macGpu} onChange={e=>setMacGpu(e.target.value)} placeholder="e.g. 16-core GPU"/></label></div>}
-        {macStep===2 && <div className="editor-grid"><label>Unified memory / RAM<CustomSelect value={macMemory} onChange={e=>setMacMemory(e.target.value)}>{MAC_MEMORY.map(v=><option key={v}>{v}</option>)}</CustomSelect></label><label>Storage<CustomSelect value={macStorage} onChange={e=>setMacStorage(e.target.value)}>{MAC_STORAGE.map(v=><option key={v}>{v}</option>)}</CustomSelect></label><ColorPickerField label="Official color" value={macColor} onChange={setMacColor} options={DEVICE_MODEL_COLORS.mac[macModel]||[]} /><label>Keyboard layout<CustomSelect value={macKeyboard} onChange={e=>setMacKeyboard(e.target.value)}>{["English","Arabic / English","Arabic","Other / not specified"].map(v=><option key={v}>{v}</option>)}</CustomSelect></label><p className="field-wide muted">For desktop Macs, enter display size as None and specify included accessories in notes.</p></div>}
-        {macStep===3 && <div className="editor-grid"><label>Condition<CustomSelect value={macCondition} onChange={e=>setMacCondition(e.target.value)}><option>New</option><option>Used</option></CustomSelect></label>{macCondition==="Used" && <><label>Battery health (%)<input type="number" min="1" max="100" value={macBattery} onChange={e=>setMacBattery(e.target.value)}/></label><label>Battery cycle count<input type="number" min="0" value={macCycles} onChange={e=>setMacCycles(e.target.value)}/></label><label>Grade<CustomSelect value={macGrade} onChange={e=>setMacGrade(e.target.value)}>{["Like New","Excellent","Good","Fair"].map(v=><option key={v}>{v}</option>)}</CustomSelect></label><label className="field-wide">Defects / repairs / accessories<input value={macNotes} onChange={e=>setMacNotes(e.target.value)} placeholder="Repairs, scratches, charger, box…"/></label></>}<label>Selling price (EGP)<input type="number" min="0" step="0.01" required value={macPrice} onChange={e=>setMacPrice(e.target.value)}/></label><label>SKU (optional)<input value={macSku} onChange={e=>setMacSku(e.target.value)}/></label><label>Visibility<CustomSelect value={form.visibility} onChange={e=>setForm(f=>({...f,visibility:e.target.value}))}><option value="draft">Draft</option><option value="published">Published</option><option value="hidden">Hidden</option></CustomSelect></label></div>}
+        {macStep===2 && <div className="editor-grid"><label>Unified memory / RAM<CustomSelect value={macMemory} onChange={e=>setMacMemory(e.target.value)}>{MAC_MEMORY.map(v=><option key={v}>{v}</option>)}</CustomSelect></label><label>Storage<CustomSelect value={macStorage} onChange={e=>setMacStorage(e.target.value)}>{MAC_STORAGE.map(v=><option key={v}>{v}</option>)}</CustomSelect></label><label>Keyboard layout<CustomSelect value={macKeyboard} onChange={e=>setMacKeyboard(e.target.value)}>{["English","Arabic / English","Arabic","Other / not specified"].map(v=><option key={v}>{v}</option>)}</CustomSelect></label><p className="field-wide muted">For desktop Macs, enter display size as None and specify included accessories in notes.</p></div>}
+        {macStep===3 && <div className="editor-grid"><label>Condition<CustomSelect value={macCondition} onChange={e=>{const condition=e.target.value;setMacCondition(condition);setMacColor(condition==="New"?(DEVICE_MODEL_COLORS.mac[macModel]||[])[0]||"": "");}}><option>New</option><option>Used</option></CustomSelect></label>{macCondition==="New" ? <ColorPickerField label="Official Apple finish" value={macColor} onChange={setMacColor} options={DEVICE_MODEL_COLORS.mac[macModel]||[]} allowCustom={false}/> : <label>Actual device color<input value={macColor} onChange={e=>setMacColor(e.target.value)} placeholder="Enter the device's actual color"/></label>}{macCondition==="Used" && <><label>Battery health (%)<input type="number" min="1" max="100" value={macBattery} onChange={e=>setMacBattery(e.target.value)}/></label><label>Battery cycle count<input type="number" min="0" value={macCycles} onChange={e=>setMacCycles(e.target.value)}/></label><label>Grade<CustomSelect value={macGrade} onChange={e=>setMacGrade(e.target.value)}>{["Like New","Excellent","Good","Fair"].map(v=><option key={v}>{v}</option>)}</CustomSelect></label><label className="field-wide">Defects / repairs / accessories<input value={macNotes} onChange={e=>setMacNotes(e.target.value)} placeholder="Repairs, scratches, charger, box…"/></label></>}<label>Selling price (EGP)<input type="number" min="0" step="0.01" required value={macPrice} onChange={e=>setMacPrice(e.target.value)}/></label><label>SKU (optional)<input value={macSku} onChange={e=>setMacSku(e.target.value)}/></label><label>Visibility<CustomSelect value={form.visibility} onChange={e=>setForm(f=>({...f,visibility:e.target.value}))}><option value="draft">Draft</option><option value="published">Published</option><option value="hidden">Hidden</option></CustomSelect></label></div>}
         <div className="modal-foot"><button type="button" className="btn secondary" onClick={()=>macStep===1?setEditing(null):setMacStep(v=>v-1)}>{macStep===1?"Cancel":"Back"}</button>{macStep<3?<button type="button" className="btn primary" disabled={macStep===1&&!macModel} onClick={()=>setMacStep(v=>v+1)}>Continue <ArrowRight size={14}/></button>:<button type="submit" className="btn primary" disabled={saving}>{saving?"Creating…":"Create Mac & stock unit"}</button>}</div>
       </section>}
       {editing==="new" && form.categoryKey==="airpods" && <section className="iphone-wizard watch-wizard">
@@ -763,8 +768,8 @@ function Products({ onError }) {
           <label>Generation / variant<input value={airpodsGeneration} onChange={e=>setAirpodsGeneration(e.target.value)} placeholder="e.g. USB-C / 2024 / Axxxx"/></label>
           <label>Connectivity<input value={airpodsConnectivity} onChange={e=>setAirpodsConnectivity(e.target.value)} placeholder="Bluetooth / custom"/></label>
           <label>Charging case<CustomSelect value={airpodsCase} onChange={e=>setAirpodsCase(e.target.value)}>{["Lightning Charging Case","USB-C Charging Case","Wireless Charging Case","MagSafe Charging Case","Smart Case","No case / replacement"].map(v=><option key={v}>{v}</option>)}</CustomSelect></label>
-          <ColorPickerField label="Available color" value={airpodsColor} onChange={setAirpodsColor} options={DEVICE_MODEL_COLORS.airpods[airpodsModel]||["White"]} />
-          <label>Condition<CustomSelect value={airpodsCondition} onChange={e=>setAirpodsCondition(e.target.value)}><option>New</option><option>Used</option></CustomSelect></label>
+          <label>Condition<CustomSelect value={airpodsCondition} onChange={e=>{const condition=e.target.value;setAirpodsCondition(condition);setAirpodsColor(condition==="New"?(DEVICE_MODEL_COLORS.airpods[airpodsModel]||["White"])[0]||"":"");}}><option>New</option><option>Used</option></CustomSelect></label>
+          {airpodsCondition==="New" ? <ColorPickerField label="Official Apple finish" value={airpodsColor} onChange={setAirpodsColor} options={DEVICE_MODEL_COLORS.airpods[airpodsModel]||["White"]} allowCustom={false}/> : <label>Actual device color<input value={airpodsColor} onChange={e=>setAirpodsColor(e.target.value)} placeholder="Enter the device's actual color"/></label>}
           {airpodsCondition==="Used" && <><label>Battery health (%)<input type="number" min="1" max="100" value={airpodsBattery} onChange={e=>setAirpodsBattery(e.target.value)} placeholder="e.g. 90"/></label><label>Grade<CustomSelect value={airpodsGrade} onChange={e=>setAirpodsGrade(e.target.value)}>{["Like New","Excellent","Good","Fair"].map(v=><option key={v}>{v}</option>)}</CustomSelect></label><label className="field-wide">Defects / repairs / notes<input value={airpodsNotes} onChange={e=>setAirpodsNotes(e.target.value)} placeholder="Battery, case, replaced parts…"/></label></>}
           <label>Selling price (EGP)<input type="number" min="0" step="0.01" required value={airpodsPrice} onChange={e=>setAirpodsPrice(e.target.value)}/></label><label>SKU (optional)<input value={airpodsSku} onChange={e=>setAirpodsSku(e.target.value)}/></label><label>Visibility<CustomSelect value={form.visibility} onChange={e=>setForm(f=>({...f,visibility:e.target.value}))}><option value="draft">Draft</option><option value="published">Published</option><option value="hidden">Hidden</option></CustomSelect></label>
           <label className="field-wide">Product description<textarea rows={3} value={form.tagline} onChange={e=>setForm(f=>({...f,tagline:e.target.value}))} placeholder="Describe the sound, comfort, noise cancellation and everyday experience…"/></label>
