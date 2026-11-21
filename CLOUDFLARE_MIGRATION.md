@@ -39,4 +39,4 @@ The existing Admin session cookies use `SameSite=Strict`. Therefore the browser 
 
 ## Current status
 
-This branch contains the Pages proxy and project configuration only. The Neon Function API adapter, Cloudflare account connection, Pages projects, environment variables, and end-to-end checks are still pending. No production routing or data has been changed.
+This branch contains the Pages proxy and project configuration only. The user has confirmed that Cloudflare is already connected to GitHub. The actual Pages projects, Neon Function API adapter, environment variables, and end-to-end checks are still pending. GitHub Actions build/syntax/security checks passed for the current branch commit; this does not validate a Cloudflare deployment or the Neon API runtime. No production routing or data has been changed.
