@@ -474,7 +474,6 @@ function SectionHeading({ eyebrow, title, action, onAction }) {
    PRODUCT CARD
    ============================================================ */
 function ProductCard({ product, onOpen, onToggleCompare, isComparing, compareDisabled }) {
-  const price = priceFrom(product);
   const comparable = !["apple-accessory", "other-accessory"].includes(product.category);
   const badges = getBadges(product);
   const status = product.hasUnits ? "Certified pre-owned" : (badges[0] || null);
@@ -484,6 +483,8 @@ function ProductCard({ product, onOpen, onToggleCompare, isComparing, compareDis
     ? unitsFor(product.id).slice().sort((a, b) => b.battery - a.battery)[0]
     : null;
   const colorSiblings = product.modelGroupKey ? store.products.filter(p => p.modelGroupKey === product.modelGroupKey && isPublished(p)) : [];
+  const siblingPrices = colorSiblings.map(priceFrom).filter(value => value != null);
+  const price = siblingPrices.length ? Math.min(...siblingPrices) : priceFrom(product);
 
   return (
     // NOTE: this outer element is a div, not a button element, precisely so
@@ -510,7 +511,7 @@ function ProductCard({ product, onOpen, onToggleCompare, isComparing, compareDis
             </p>
           )}
           <p style={{ color: T.ink, fontVariantNumeric: "tabular-nums", fontWeight: 700, letterSpacing: "-0.005em" }} className="text-[15px] mt-2">
-            {price != null ? CURRENCY(price) : "—"}
+            {price != null ? (colorSiblings.length > 1 ? `From ${CURRENCY(price)}` : CURRENCY(price)) : "—"}
             {getSalesMode(product) === "reservation" && <span style={{ color: T.graphite, fontWeight: 400 }} className="text-xs ml-1.5">reserve</span>}
           </p>
         </div>
