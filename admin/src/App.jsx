@@ -20,7 +20,7 @@ function CustomModelField({label,value,onChange,options,placeholder}) {
 }
 
 const DEVICE_COLOR_HEX = {
-  "Black":"#252525","White":"#f4f2ed","Blue":"#4d78a8","Pink":"#e6a9b5","Green":"#6f8871","Yellow":"#e8cf65","Purple":"#a99ac8","Red":"#c93d43","Midnight":"#252936","Starlight":"#e8dfcf","Silver":"#c8c9c9","Space Gray":"#777a7d","Space Black":"#333333","Natural Titanium":"#a99f91","Desert Titanium":"#c7a58b","Black Titanium":"#393a3c","White Titanium":"#e3e0d9","Blue Titanium":"#596b80","Gold":"#c9ad7b","Rose Gold":"#d7b2a5","Jet Black":"#202020","Space Gray Aluminum":"#777a7d","Sky Blue":"#a8c8d8","Cosmic Orange":"#df713d","Deep Blue":"#334b70","Cloud White":"#f1eee8","Graphite":"#55585b","Stainless Steel":"#bfc2c4","Natural":"#b4a99a","Silver Aluminum":"#c9cacc"
+  "Black":"#252525","White":"#f4f2ed","Blue":"#4d78a8","Pink":"#e6a9b5","Green":"#6f8871","Yellow":"#e8cf65","Purple":"#a99ac8","Red":"#c93d43","Midnight":"#252936","Starlight":"#e8dfcf","Silver":"#c8c9c9","Space Gray":"#777a7d","Space Black":"#333333","Natural Titanium":"#a99f91","Desert Titanium":"#c7a58b","Black Titanium":"#393a3c","White Titanium":"#e3e0d9","Blue Titanium":"#596b80","Gold":"#c9ad7b","Rose Gold":"#d7b2a5","Jet Black":"#202020","Space Gray Aluminum":"#777a7d","Sky Blue":"#a8c8d8","Cosmic Orange":"#df713d","Deep Blue":"#334b70","Cloud White":"#f1eee8","Lavender":"#b9a6d5","Sage":"#a8b7a0","Mist Blue":"#a9c2d2","Light Gold":"#d6c6a3","Graphite":"#55585b","Stainless Steel":"#bfc2c4","Natural":"#b4a99a","Silver Aluminum":"#c9cacc"
 };
 const DEVICE_MODEL_COLORS = {
   iphone: {
@@ -31,7 +31,21 @@ const DEVICE_MODEL_COLORS = {
     "iPhone 14 Pro":["Space Black","Silver","Gold","Deep Purple"],
     "iPhone 14 Pro Max":["Space Black","Silver","Gold","Deep Purple"],
     "iPhone 13 Pro":["Graphite","Gold","Silver","Sierra Blue","Alpine Green"],
-    "iPhone 13 Pro Max":["Graphite","Gold","Silver","Sierra Blue","Alpine Green"]
+    "iPhone 13 Pro Max":["Graphite","Gold","Silver","Sierra Blue","Alpine Green"],
+    "iPhone 17 Pro":["Cosmic Orange","Deep Blue","Silver"],
+    "iPhone 17 Pro Max":["Cosmic Orange","Deep Blue","Silver"],
+    "iPhone Air":["Sky Blue","Light Gold","Cloud White"],
+    "iPhone 17":["Lavender","Sage","Mist Blue","White","Black"],
+    "iPhone 17e":["White","Black"],
+    "iPhone 16":["Ultramarine","Teal","Pink","White","Black"],
+    "iPhone 16 Plus":["Ultramarine","Teal","Pink","White","Black"],
+    "iPhone 16e":["White","Black"],
+    "iPhone 15":["Pink","Yellow","Green","Blue","Black"],
+    "iPhone 15 Plus":["Pink","Yellow","Green","Blue","Black"],
+    "iPhone 14":["Blue","Purple","Yellow","Midnight","Starlight","Product Red"],
+    "iPhone 14 Plus":["Blue","Purple","Yellow","Midnight","Starlight","Product Red"],
+    "iPhone 13":["Green","Pink","Blue","Midnight","Starlight","Product Red"],
+    "iPhone 13 mini":["Green","Pink","Blue","Midnight","Starlight","Product Red"]
   },
   ipad: {
     "iPad Pro 13-inch (M4)":["Space Black","Silver"],
@@ -40,6 +54,7 @@ const DEVICE_MODEL_COLORS = {
     "iPad Air 11-inch (M3)":["Space Gray","Starlight","Blue","Purple"],
     "iPad Air 13-inch (M2)":["Space Gray","Starlight","Blue","Purple"],
     "iPad Air 11-inch (M2)":["Space Gray","Starlight","Blue","Purple"],
+    "iPad mini (A20 Pro)":["Space Gray","Blue","Purple","Starlight"],
     "iPad mini (A17 Pro)":["Space Gray","Blue","Purple","Starlight"],
     "iPad (A16)":["Silver","Blue","Pink","Yellow"]
   },
@@ -52,12 +67,14 @@ const DEVICE_MODEL_COLORS = {
     "MacBook Air 15-inch (M3)":["Midnight","Starlight","Space Gray","Silver"]
   },
   airpods: {
+    "AirPods 5":["White"],
+    "AirPods 5 with Wireless Charging Case":["White"],
     "AirPods 4":["White"],
     "AirPods 4 with Active Noise Cancellation":["White"],
     "AirPods Pro 3":["White"],
     "AirPods Pro 2":["White"],
-    "AirPods Max (USB-C)":["Midnight","Starlight","Blue","Purple","Orange"],
-    "AirPods Max (Lightning)":["Space Gray","Silver","Green","Sky Blue","Pink"]
+    "AirPods Max 2":["Midnight","Starlight","Blue","Purple","Orange"],
+    "AirPods Max":["Midnight","Starlight","Blue","Purple","Orange"]
   }
 };
 function ColorPickerField({label,value,onChange,options=[],allowCustom=true}) {
@@ -82,13 +99,13 @@ const date = (value) => value ? new Date(value).toLocaleDateString("en-GB", {
 }) : "—";
 const titleCase = (value = "") => String(value).replaceAll("_", " ").replace(/\b\w/g, c => c.toUpperCase());
 const IPHONE_MODELS = ["iPhone X","iPhone XS","iPhone XS Max","iPhone XR","iPhone 11","iPhone 11 Pro","iPhone 11 Pro Max","iPhone SE (2nd generation)","iPhone 12 mini","iPhone 12","iPhone 12 Pro","iPhone 12 Pro Max","iPhone 13 mini","iPhone 13","iPhone 13 Pro","iPhone 13 Pro Max","iPhone SE (3rd generation)","iPhone 14","iPhone 14 Plus","iPhone 14 Pro","iPhone 14 Pro Max","iPhone 15","iPhone 15 Plus","iPhone 15 Pro","iPhone 15 Pro Max","iPhone 16","iPhone 16 Plus","iPhone 16 Pro","iPhone 16 Pro Max","iPhone 16e","iPhone 17","iPhone 17 Pro","iPhone 17 Pro Max","iPhone Air","iPhone 17e","iPhone 18 Pro","iPhone 18 Pro Max","iPhone Duo"];
-const IPAD_MODELS = ["iPad Pro 13-inch (M5)","iPad Pro 11-inch (M5)","iPad Air 13-inch (M4)","iPad Air 11-inch (M4)","iPad (A16)","iPad mini (A17 Pro)","iPad Pro 13-inch (M4)","iPad Pro 11-inch (M4)","iPad Air 13-inch (M3)","iPad Air 11-inch (M3)","iPad Air 13-inch (M2)","iPad Air 11-inch (M2)","iPad Pro 12.9-inch (6th generation)","iPad Pro 11-inch (4th generation)","iPad (10th generation)","iPad Air (5th generation)","iPad mini (6th generation)","iPad Pro 12.9-inch (5th generation)","iPad Pro 11-inch (3rd generation)","iPad Air (4th generation)","iPad (9th generation)","iPad mini (5th generation)","iPad Pro 12.9-inch (4th generation)","iPad Pro 11-inch (2nd generation)","iPad Air (3rd generation)","iPad (8th generation)","iPad mini 4","iPad Pro 12.9-inch (3rd generation)","iPad Pro 11-inch (1st generation)","iPad (7th generation)","iPad Air 2","iPad Pro 10.5-inch","iPad Pro 9.7-inch"];
-const MAC_MODELS = ["MacBook Neo","MacBook Air 13-inch (M5)","MacBook Air 15-inch (M5)","MacBook Pro 14-inch (M5 Pro)","MacBook Pro 14-inch (M5 Max)","MacBook Pro 16-inch (M5 Pro)","MacBook Pro 16-inch (M5 Max)","MacBook Air 13-inch (M4)","MacBook Air 15-inch (M4)","MacBook Pro 14-inch (M4)","MacBook Pro 16-inch (M4)","MacBook Air 13-inch (M3)","MacBook Air 15-inch (M3)","MacBook Pro 14-inch (M3)","MacBook Pro 16-inch (M3)","MacBook Air 13-inch (M2)","MacBook Air 15-inch (M2)","MacBook Pro 13-inch (M2)","MacBook Pro 14-inch (M2 Pro)","MacBook Pro 16-inch (M2 Pro)","MacBook Air 13-inch (M1)","MacBook Pro 13-inch (M1)","MacBook Pro 14-inch (M1 Pro)","MacBook Pro 16-inch (M1 Pro)","iMac 24-inch","Mac mini","Mac Studio","Mac Pro"];
+const IPAD_MODELS = ["iPad Pro 13-inch (M5)","iPad Pro 11-inch (M5)","iPad Air 13-inch (M4)","iPad Air 11-inch (M4)","iPad (A16)","iPad mini (A20 Pro)","iPad mini (A17 Pro)","iPad Pro 13-inch (M4)","iPad Pro 11-inch (M4)","iPad Air 13-inch (M3)","iPad Air 11-inch (M3)","iPad Air 13-inch (M2)","iPad Air 11-inch (M2)","iPad Pro 12.9-inch (6th generation)","iPad Pro 11-inch (4th generation)","iPad (10th generation)","iPad Air (5th generation)","iPad mini (6th generation)","iPad Pro 12.9-inch (5th generation)","iPad Pro 11-inch (3rd generation)","iPad Air (4th generation)","iPad (9th generation)","iPad mini (5th generation)","iPad Pro 12.9-inch (4th generation)","iPad Pro 11-inch (2nd generation)","iPad Air (3rd generation)","iPad (8th generation)","iPad mini 4","iPad Pro 12.9-inch (3rd generation)","iPad Pro 11-inch (1st generation)","iPad (7th generation)","iPad Air 2","iPad Pro 10.5-inch","iPad Pro 9.7-inch"];
+const MAC_MODELS = ["MacBook Neo","MacBook Air 13-inch (M5)","MacBook Air 15-inch (M5)","MacBook Pro 14-inch (M5)","MacBook Pro 14-inch (M5 Pro)","MacBook Pro 14-inch (M5 Max)","MacBook Pro 16-inch (M5 Pro)","MacBook Pro 16-inch (M5 Max)","iMac 24-inch (M6, two ports)","iMac 24-inch (M6, four ports)","Mac mini (M6)","Mac mini (M5 Pro)","Mac Studio (M5 Max)","Mac Studio (M5 Ultra)","MacBook Air 13-inch (M4)","MacBook Air 15-inch (M4)","MacBook Pro 14-inch (M4)","MacBook Pro 16-inch (M4)","MacBook Air 13-inch (M3)","MacBook Air 15-inch (M3)","MacBook Pro 14-inch (M3)","MacBook Pro 16-inch (M3)","MacBook Air 13-inch (M2)","MacBook Air 15-inch (M2)","MacBook Pro 13-inch (M2)","MacBook Pro 14-inch (M2 Pro)","MacBook Pro 16-inch (M2 Pro)","MacBook Air 13-inch (M1)","MacBook Pro 13-inch (M1)","MacBook Pro 14-inch (M1 Pro)","MacBook Pro 16-inch (M1 Pro)","iMac 24-inch","Mac mini","Mac Studio","Mac Pro"];
 const IPAD_SCREEN_SIZES = ["7.9-inch","8.3-inch","8.5-inch","9.7-inch","10.2-inch","10.5-inch","10.9-inch","11-inch","12.9-inch","13-inch"];
 const IPAD_STORAGE = ["16GB","32GB","64GB","128GB","256GB","512GB","1TB","2TB"];
 const MAC_STORAGE = ["128GB","256GB","512GB","1TB","2TB","4TB","8TB"];
 const MAC_MEMORY = ["8GB","12GB","16GB","18GB","24GB","32GB","36GB","48GB","64GB","96GB","128GB","192GB","256GB","Other / custom"];
-const AIRPODS_MODELS = ["AirPods 4","AirPods 4 with Active Noise Cancellation","AirPods Pro 3","AirPods Pro 2","AirPods Pro (1st generation)","AirPods (3rd generation)","AirPods (2nd generation)","AirPods Max (USB-C)","AirPods Max (Lightning)"];
+const AIRPODS_MODELS = ["AirPods 5","AirPods 5 with Wireless Charging Case","AirPods 4","AirPods 4 with Active Noise Cancellation","AirPods Pro 3","AirPods Pro 2","AirPods Max 2","AirPods Max","AirPods (3rd generation) with MagSafe Charging Case","AirPods (3rd generation) with Lightning Charging Case","AirPods (2nd generation)"];
 
 const OTHER_DEVICE_FIELD_SETS = {
   smartphone: [{key:"brand",label:"Brand"},{key:"model",label:"Model"},{key:"ram",label:"RAM"},{key:"network",label:"Network / SIM support"},{key:"color",label:"Color (optional)"}],
@@ -452,7 +469,7 @@ function Products({ onError }) {
   const [localImagePreviews, setLocalImagePreviews] = useState([]);
   const [primaryImageMediaId, setPrimaryImageMediaId] = useState("");
   const [galleryMediaIds, setGalleryMediaIds] = useState([]);
-  const empty = { name: "", categoryKey: "iphone", productType: "smartphone", tagline: "", visibility: "draft", salesMode: "for_sale", availability: "in_stock", variants: [{ storage: "", color: "", price: "", stockQty: "" }] };
+  const empty = { name: "", modelGroupKey: "", categoryKey: "iphone", productType: "smartphone", tagline: "", visibility: "draft", salesMode: "for_sale", availability: "in_stock", variants: [{ storage: "", color: "", price: "", stockQty: "" }] };
   const [form, setForm] = useState(empty);
   const [iphoneModel, setIphoneModel] = useState("");
   const [iphoneCondition, setIphoneCondition] = useState("New");
@@ -527,7 +544,7 @@ function Products({ onError }) {
       await loadMedia();
       setPrimaryImageMediaId(d.primaryImage?.id || ""); setGalleryMediaIds(d.gallery.map(x => x.id));
       setCollectionIds(d.collectionIds || []);
-      setForm({ name: p.name || "", slug: p.slug || "", categoryKey: p.category_key, productType: p.product_type, tagline: p.tagline || "", visibility: p.visibility, salesMode: p.sales_mode, availability: p.availability, variants: d.variants.length ? d.variants.map(v => ({ storage: v.storage || "", color: v.color || "", price: String(Number(v.price_cents) / 100), stockQty: v.stock_qty == null ? "" : String(v.stock_qty) })) : [{ storage: "", color: "", price: "", stockQty: "" }] });
+      setForm({ name: p.name || "", slug: p.slug || "", modelGroupKey: p.model_group_key || "", categoryKey: p.category_key, productType: p.product_type, tagline: p.tagline || "", visibility: p.visibility, salesMode: p.sales_mode, availability: p.availability, variants: d.variants.length ? d.variants.map(v => ({ storage: v.storage || "", color: v.color || "", price: String(Number(v.price_cents) / 100), stockQty: v.stock_qty == null ? "" : String(v.stock_qty) })) : [{ storage: "", color: "", price: "", stockQty: "" }] });
       setEditing(id);
     } catch (e) { onError(e.message); }
   }
@@ -580,7 +597,7 @@ function Products({ onError }) {
         if (!watchSpec) { onError("Choose a valid Apple Watch model from the catalog."); return; }
         const created = await request("/products", { method: "POST", body: JSON.stringify({
           name, categoryKey: "watch", productType: "smartwatch", tagline: form.tagline || null,
-          specs: { Model: name, "Model number": watchModelNumber || "Not recorded", Collection: watchEdition, "Release year": String(watchSpec.year), "Case size": watchSize, Connectivity: watchConnectivity, "Case material": watchMaterial, Color: watchColor, Display: watchTech.displayType || watchSpec.display, "Peak brightness": watchTech.brightness || "Not specified", Resolution: watchTech.resolution?.[watchSize] || "See exact model number", "Display area": watchTech.displayArea?.[watchSize] || null, Chip: watchSpec.chip, Capacity: watchSpec.capacity, Battery: watchTech.battery || "See exact model", Charging: watchTech.charging || null, "Water resistance": watchTech.water || "Check exact model", "Dust resistance": watchTech.dust || "Not specified", Glass: watchTech.glass || "Varies by case material", Weight: watchTech.weight?.[watchSize] || null, "Wrist fit": watchTech.wristFit?.[watchSize] || null, Dimensions: watchTech.dimensionsByMaterial?.[watchMaterial]?.[watchSize] || watchTech.dimensions?.[watchSize] || null, GPS: watchTech.gps || "GPS / GPS + Cellular by variant", Wireless: watchTech.wireless || "See exact model", Compatibility: watchTech.compatibility || null, Audio: watchTech.audio || null, Sensors: watchTech.sensors || "See exact model", "Key features": watchTech.features || null, ...(watchBand ? { "Band style": watchBand } : {}), ...parseCustomSpecs() },
+          specs: { Model: name, Condition: watchCondition, "Model number": watchModelNumber || "Not recorded", Collection: watchEdition, "Release year": String(watchSpec.year), "Case size": watchSize, Connectivity: watchConnectivity, "Case material": watchMaterial, Color: watchColor, Display: watchTech.displayType || watchSpec.display, "Peak brightness": watchTech.brightness || "Not specified", Resolution: watchTech.resolution?.[watchSize] || "See exact model number", "Display area": watchTech.displayArea?.[watchSize] || null, Chip: watchSpec.chip, Capacity: watchSpec.capacity, Battery: watchTech.battery || "See exact model", Charging: watchTech.charging || null, "Water resistance": watchTech.water || "Check exact model", "Dust resistance": watchTech.dust || "Not specified", Glass: watchTech.glass || "Varies by case material", Weight: watchTech.weight?.[watchSize] || null, "Wrist fit": watchTech.wristFit?.[watchSize] || null, Dimensions: watchTech.dimensionsByMaterial?.[watchMaterial]?.[watchSize] || watchTech.dimensions?.[watchSize] || null, GPS: watchTech.gps || "GPS / GPS + Cellular by variant", Wireless: watchTech.wireless || "See exact model", Compatibility: watchTech.compatibility || null, Audio: watchTech.audio || null, Sensors: watchTech.sensors || "See exact model", "Key features": watchTech.features || null, ...(watchBand ? { "Band style": watchBand } : {}), ...parseCustomSpecs() },
           storageOptions: [watchSize], colors: [watchColor], meta: { modelName: name, modelNumber: watchModelNumber || null, bandCollection: watchEdition, releaseYear: watchSpec.year, caseSize: watchSize, connectivity: watchConnectivity, caseMaterial: watchMaterial, color: watchColor, display: watchTech.displayType || watchSpec.display, brightness: watchTech.brightness || null, resolution: watchTech.resolution?.[watchSize] || null, chip: watchSpec.chip, capacity: watchSpec.capacity, waterResistance: watchTech.water || null, dustResistance: watchTech.dust || null, batteryLife: watchTech.battery || null, glass: watchTech.glass || null, gps: watchTech.gps || null, wireless: watchTech.wireless || null, sensors: watchTech.sensors || null, dimensions: watchTech.dimensionsByMaterial?.[watchMaterial]?.[watchSize] || watchTech.dimensions?.[watchSize] || null, displayArea: watchTech.displayArea?.[watchSize] || null, weight: watchTech.weight?.[watchSize] || null, wristFit: watchTech.wristFit?.[watchSize] || null, charging: watchTech.charging || null, compatibility: watchTech.compatibility || null, audio: watchTech.audio || null, features: watchTech.features || null, ...(watchBand ? { bandStyle: watchBand } : {}) },
           hasUnits: true, visibility: form.visibility, salesMode: form.salesMode, availability: "in_stock",
           variants: [], primaryImageMediaId: primaryImageMediaId || null, galleryMediaIds, collectionIds
@@ -600,7 +617,7 @@ function Products({ onError }) {
       if (!ipadModel || !ipadPrice) { onError("Choose an iPad model and enter its selling price."); return; }
       if (ipadCondition==="Used" && ipadBattery!=="" && (Number(ipadBattery)<1 || Number(ipadBattery)>100)) { onError("Battery health must be between 1 and 100."); return; }
       setSaving(true); try {
-        const created=await request("/products",{method:"POST",body:JSON.stringify({name:ipadModel,categoryKey:"ipad",productType:"tablet",tagline:form.tagline||null,specs:{Model:ipadModel,"Display size":ipadScreen,Chip:ipadChip||"Not recorded",Storage:ipadStorage,Connectivity:ipadConnectivity,Color:ipadColor||"Not specified","Apple Pencil":ipadPencil||"Not specified",Keyboard:ipadKeyboard||"Not specified",...parseCustomSpecs()},storageOptions:[ipadStorage],colors:ipadColor?[ipadColor]:[],meta:{modelName:ipadModel,screenSize:ipadScreen,chip:ipadChip||null,connectivity:ipadConnectivity,color:ipadColor||null,pencilSupport:ipadPencil||null,keyboard:ipadKeyboard||null},hasUnits:true,visibility:form.visibility,salesMode:form.salesMode,availability:"in_stock",variants:[],primaryImageMediaId:primaryImageMediaId||null,galleryMediaIds,collectionIds})});
+        const created=await request("/products",{method:"POST",body:JSON.stringify({name:ipadModel,categoryKey:"ipad",productType:"tablet",tagline:form.tagline||null,specs:{Model:ipadModel,Condition:ipadCondition,"Display size":ipadScreen,Chip:ipadChip||"Not recorded",Storage:ipadStorage,Connectivity:ipadConnectivity,Color:ipadColor||"Not specified","Apple Pencil":ipadPencil||"Not specified",Keyboard:ipadKeyboard||"Not specified",...parseCustomSpecs()},storageOptions:[ipadStorage],colors:ipadColor?[ipadColor]:[],meta:{modelName:ipadModel,screenSize:ipadScreen,chip:ipadChip||null,connectivity:ipadConnectivity,color:ipadColor||null,pencilSupport:ipadPencil||null,keyboard:ipadKeyboard||null},hasUnits:true,visibility:form.visibility,salesMode:form.salesMode,availability:"in_stock",variants:[],primaryImageMediaId:primaryImageMediaId||null,galleryMediaIds,collectionIds})});
         await request("/products/"+created.product.id+"/units",{method:"POST",body:JSON.stringify({storage:ipadStorage,color:[ipadColor,ipadConnectivity].filter(Boolean).join(" · "),batteryPct:ipadCondition==="New"||ipadBattery===""?null:Number(ipadBattery),condition:ipadCondition==="New"?"New":ipadGrade,sku:ipadSku||null,priceCents:Math.round(Number(ipadPrice)*100),warranty:null,notes:[ipadPencil?"Pencil: "+ipadPencil:null,ipadKeyboard?"Keyboard: "+ipadKeyboard:null,ipadCondition==="Used"?ipadNotes:null].filter(Boolean).join(" · ")||null})});
         setEditing(null);setRefresh(v=>v+1);
       } catch(e){onError(e.message);} finally{setSaving(false);} return;
@@ -610,7 +627,7 @@ function Products({ onError }) {
       if (macCondition==="Used" && macBattery!=="" && (Number(macBattery)<1 || Number(macBattery)>100)) { onError("Battery health must be between 1 and 100."); return; }
       setSaving(true); try {
         const desktop=/^(iMac|Mac mini|Mac Studio|Mac Pro)/.test(macModel);
-        const created=await request("/products",{method:"POST",body:JSON.stringify({name:macModel,categoryKey:"mac",productType:desktop?"desktop-computer":"laptop",tagline:form.tagline||null,specs:{Model:macModel,"Display size":macScreen||"Not applicable / not recorded",Chip:macChip||"Not recorded",CPU:macCpu||"Not recorded",GPU:macGpu||"Not recorded",Memory:macMemory,Storage:macStorage,Color:macColor||"Not specified","Keyboard layout":macKeyboard,"Battery cycles":macCycles||"Not recorded",...parseCustomSpecs()},storageOptions:[macStorage],colors:macColor?[macColor]:[],meta:{modelName:macModel,screenSize:macScreen||null,chip:macChip||null,cpu:macCpu||null,gpu:macGpu||null,unifiedMemory:macMemory,storage:macStorage,color:macColor||null,keyboardLayout:macKeyboard,batteryCycles:macCycles||null},hasUnits:true,visibility:form.visibility,salesMode:form.salesMode,availability:"in_stock",variants:[],primaryImageMediaId:primaryImageMediaId||null,galleryMediaIds,collectionIds})});
+        const created=await request("/products",{method:"POST",body:JSON.stringify({name:macModel,categoryKey:"mac",productType:desktop?"desktop-computer":"laptop",tagline:form.tagline||null,specs:{Model:macModel,Condition:macCondition,"Display size":macScreen||"Not applicable / not recorded",Chip:macChip||"Not recorded",CPU:macCpu||"Not recorded",GPU:macGpu||"Not recorded",Memory:macMemory,Storage:macStorage,Color:macColor||"Not specified","Keyboard layout":macKeyboard,"Battery cycles":macCycles||"Not recorded",...parseCustomSpecs()},storageOptions:[macStorage],colors:macColor?[macColor]:[],meta:{modelName:macModel,screenSize:macScreen||null,chip:macChip||null,cpu:macCpu||null,gpu:macGpu||null,unifiedMemory:macMemory,storage:macStorage,color:macColor||null,keyboardLayout:macKeyboard,batteryCycles:macCycles||null},hasUnits:true,visibility:form.visibility,salesMode:form.salesMode,availability:"in_stock",variants:[],primaryImageMediaId:primaryImageMediaId||null,galleryMediaIds,collectionIds})});
         await request("/products/"+created.product.id+"/units",{method:"POST",body:JSON.stringify({storage:macStorage,color:macColor||null,batteryPct:macCondition==="New"||macBattery===""?null:Number(macBattery),condition:macCondition==="New"?"New":macGrade,sku:macSku||null,priceCents:Math.round(Number(macPrice)*100),warranty:null,notes:[macChip?"Chip: "+macChip:null,macMemory?"Memory: "+macMemory:null,macCycles?"Battery cycles: "+macCycles:null,macCondition==="Used"?macNotes:null].filter(Boolean).join(" · ")||null})});
         setEditing(null);setRefresh(v=>v+1);
       } catch(e){onError(e.message);} finally{setSaving(false);} return;
@@ -620,7 +637,7 @@ function Products({ onError }) {
       if (airpodsCondition === "Used" && airpodsBattery !== "" && (Number(airpodsBattery)<1 || Number(airpodsBattery)>100)) { onError("Battery health must be between 1 and 100."); return; }
       setSaving(true); try {
         const name=airpodsModel.trim();
-        const created=await request("/products",{method:"POST",body:JSON.stringify({name,categoryKey:"airpods",productType:"wireless-earbuds",tagline:form.tagline||null,specs:{Model:name,Generation:airpodsGeneration||"Not specified",Connectivity:airpodsConnectivity,"Charging case":airpodsCase,Color:airpodsColor,...parseCustomSpecs()},storageOptions:[],colors:airpodsColor?[airpodsColor]:[],meta:{modelName:name,generation:airpodsGeneration||null,connectivity:airpodsConnectivity,chargingCase:airpodsCase,color:airpodsColor},hasUnits:true,visibility:form.visibility,salesMode:form.salesMode,availability:"in_stock",variants:[],primaryImageMediaId:primaryImageMediaId||null,galleryMediaIds,collectionIds})});
+        const created=await request("/products",{method:"POST",body:JSON.stringify({name,categoryKey:"airpods",productType:"wireless-earbuds",tagline:form.tagline||null,specs:{Model:name,Condition:airpodsCondition,Generation:airpodsGeneration||"Not specified",Connectivity:airpodsConnectivity,"Charging case":airpodsCase,Color:airpodsColor,...parseCustomSpecs()},storageOptions:[],colors:airpodsColor?[airpodsColor]:[],meta:{modelName:name,generation:airpodsGeneration||null,connectivity:airpodsConnectivity,chargingCase:airpodsCase,color:airpodsColor},hasUnits:true,visibility:form.visibility,salesMode:form.salesMode,availability:"in_stock",variants:[],primaryImageMediaId:primaryImageMediaId||null,galleryMediaIds,collectionIds})});
         await request("/products/"+created.product.id+"/units",{method:"POST",body:JSON.stringify({storage:airpodsGeneration||null,color:airpodsColor||null,batteryPct:airpodsCondition==="New"||airpodsBattery===""?null:Number(airpodsBattery),condition:airpodsCondition==="New"?"New":airpodsGrade,sku:airpodsSku||null,priceCents:Math.round(Number(airpodsPrice)*100),warranty:null,notes:[airpodsConnectivity,airpodsCase,airpodsCondition==="Used"?airpodsNotes:null].filter(Boolean).join(" · ")||null})});
         setEditing(null);setRefresh(v=>v+1);
       } catch(e){onError(e.message);} finally{setSaving(false);} return;
@@ -631,7 +648,7 @@ function Products({ onError }) {
       try {
         const created = await request("/products", { method: "POST", body: JSON.stringify({
           name: iphoneModel, categoryKey: "iphone", productType: "smartphone", tagline: form.tagline || null,
-          specs: { Model: iphoneModel, ...(iphoneRegion ? { "Regional version": iphoneRegion } : {}), "SIM configuration": iphoneSim, ...parseCustomSpecs() },
+          specs: { Model: iphoneModel, Condition: iphoneCondition, ...(iphoneCondition === "Used" ? { "Condition grade": iphoneGrade } : {}), ...(iphoneRegion ? { "Regional version": iphoneRegion } : {}), "SIM configuration": iphoneSim, ...parseCustomSpecs() },
           storageOptions: [iphoneStorage], colors: iphoneColor ? [iphoneColor] : [],
           meta: { modelName: iphoneModel, ...(iphoneRegion ? { regionalVersion: iphoneRegion } : {}), simConfiguration: iphoneSim },
           hasUnits: true, visibility: form.visibility, salesMode: form.salesMode, availability: "in_stock",
@@ -657,7 +674,7 @@ function Products({ onError }) {
       otherDeviceSpecs["Condition grade"] = otherDeviceGrade;
       otherDeviceSpecs["Defects / repairs / usage notes"] = otherDeviceUsageNotes || "None reported";
     }
-    const payload = { primaryImageMediaId: primaryImageMediaId || null, galleryMediaIds, collectionIds, specs: { ...parseCustomSpecs(), ...(isOtherDevicesCategory ? { Condition: otherDeviceCondition, ...otherDeviceSpecs, ...(otherDeviceSubcategory ? { "Product subcategory": otherDeviceSubcategory } : {}) } : {}) }, name: form.name.trim(), categoryKey: form.categoryKey, productType: form.productType.trim(), tagline: form.tagline || null, visibility: form.visibility, salesMode: form.salesMode, availability: form.availability, variants };
+    const payload = { modelGroupKey: form.modelGroupKey?.trim() || null, primaryImageMediaId: primaryImageMediaId || null, galleryMediaIds, collectionIds, specs: { ...parseCustomSpecs(), ...(isOtherDevicesCategory ? { Condition: otherDeviceCondition, ...otherDeviceSpecs, ...(otherDeviceSubcategory ? { "Product subcategory": otherDeviceSubcategory } : {}) } : {}) }, name: form.name.trim(), categoryKey: form.categoryKey, productType: form.productType.trim(), tagline: form.tagline || null, visibility: form.visibility, salesMode: form.salesMode, availability: form.availability, variants };
     if (form.slug) payload.slug = form.slug;
     try {
       await request(editing === "new" ? "/products" : `/products/${editing}`, { method: editing === "new" ? "POST" : "PATCH", body: JSON.stringify(payload) });
@@ -757,6 +774,7 @@ function Products({ onError }) {
       </section>}
       {!(editing === "new" && ["iphone","watch","ipad","mac","airpods"].includes(form.categoryKey)) && <div className="editor-grid">
         <label className="field-wide">Product name<input required value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))}/></label>
+        <label className="field-wide">Color group key (optional)<input value={form.modelGroupKey || ""} onChange={e => setForm(f => ({ ...f, modelGroupKey: e.target.value }))} placeholder="Example: iphone-17-pro-256gb-new"/><small className="muted">Use the exact same key for separate product records that are identical except for color. Each record keeps its own price, stock, and image gallery.</small></label>
         {editing !== "new" && <label>Category<select value={form.categoryKey} onChange={e => setForm(f => ({ ...f, categoryKey: e.target.value }))}>{["iphone","watch","ipad","mac","airpods","apple-accessory","other-accessory","other-devices"].map(k => <option key={k} value={k}>{titleCase(k)}</option>)}</select></label>}
         {isOtherDevicesCategory ? <section className="field-wide other-device-builder"><div className="eyebrow">OTHER DEVICES</div><h3>Choose device category</h3><p className="muted">Choose the product branch, then select whether the item is new or used. You can add any technical details below.</p><label>Device branch<CustomSelect value={form.productType} onChange={e => { setForm(f => ({ ...f, productType: e.target.value, variants: [{storage:"",color:"",price:"",stockQty:""}] })); setOtherDeviceSubcategory(""); setOtherDeviceAnswers({}); }}><option value="smartphone">Smartphones</option><option value="smartwatch">Smart Watches</option><option value="tablet">Tablets</option><option value="speakers">Speakers</option><option value="headphones">Headphones</option><option value="other-electronics">Other Electronics</option></CustomSelect></label>{form.productType === "other-electronics" && <label>Electronics type<CustomSelect value={otherDeviceSubcategory} onChange={e => setOtherDeviceSubcategory(e.target.value)}><option value="">Choose a subcategory</option><option value="other-electronics">Other Electronics</option></CustomSelect></label>}<label>Condition<CustomSelect value={otherDeviceCondition} onChange={e=>{setOtherDeviceCondition(e.target.value);setOtherDeviceBattery("");setOtherDeviceGrade("Like New");setOtherDeviceUsageNotes("");}}><option value="New">New</option><option value="Used">Used</option></CustomSelect></label><p className="muted">The questions below adapt automatically to the selected device branch.</p></section> : <label>Product type<input required value={form.productType} onChange={e => setForm(f => ({ ...f, productType: e.target.value }))}/></label>}
         <label className="field-wide">Description{isOtherDevicesCategory ? <textarea rows={2} value={form.tagline} onChange={e => setForm(f => ({ ...f, tagline: e.target.value }))} placeholder="Write a short description of this product…"/> : <input value={form.tagline} onChange={e => setForm(f => ({ ...f, tagline: e.target.value }))}/>}</label>

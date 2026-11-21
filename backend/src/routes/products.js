@@ -16,6 +16,7 @@ function slugify(name) {
 const productSchema = z.object({
   slug: z.string().regex(/^[a-z0-9-]+$/).max(80).optional().nullable(),
   meta: z.record(z.any()).default({}),
+  modelGroupKey: z.string().max(120).optional().nullable(),
   categoryKey: z.string().min(1),
   productType: z.string().min(1),
   name: z.string().min(1).max(200),
@@ -101,12 +102,12 @@ productsRouter.post("/", requirePermission("products.write"), validateBody(produ
     const product = await withTransaction(async (client) => {
       const { rows } = await client.query(
         `INSERT INTO products
-           (slug, meta, category_key, product_type, name, tagline, specs, storage_options, colors,
+           (slug, meta, model_group_key, category_key, product_type, name, tagline, specs, storage_options, colors,
             sales_mode, availability, reservation_cfg, badges, has_units, visibility,
             primary_image_media_id, gallery_media_ids)
-         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18)
          RETURNING *`,
-        [b.slug || `${slugify(b.name)}-${Math.random().toString(36).slice(2, 6)}`, b.meta, b.categoryKey, b.productType, b.name, b.tagline ?? null, b.specs, b.storageOptions, b.colors,
+        [b.slug || `${slugify(b.name)}-${Math.random().toString(36).slice(2, 6)}`, b.meta, b.modelGroupKey?.trim() || null, b.categoryKey, b.productType, b.name, b.tagline ?? null, b.specs, b.storageOptions, b.colors,
          b.salesMode, b.availability, b.reservationCfg ?? null, b.badges, b.hasUnits, b.visibility,
          b.primaryImageMediaId ?? null, b.galleryMediaIds]
       );
@@ -142,7 +143,7 @@ productsRouter.patch("/:id", requirePermission("products.write"), validateBody(p
 
     const b = req.body;
     const fields = {
-      slug: b.slug, meta: b.meta, category_key: b.categoryKey, product_type: b.productType, name: b.name, tagline: b.tagline,
+      slug: b.slug, meta: b.meta, model_group_key: b.modelGroupKey, category_key: b.categoryKey, product_type: b.productType, name: b.name, tagline: b.tagline,
       specs: b.specs, storage_options: b.storageOptions, colors: b.colors, sales_mode: b.salesMode,
       availability: b.availability, reservation_cfg: b.reservationCfg, badges: b.badges,
       has_units: b.hasUnits, visibility: b.visibility, primary_image_media_id: b.primaryImageMediaId,
