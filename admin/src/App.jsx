@@ -459,6 +459,7 @@ function Dashboard({ stats, loading, onRefresh, onNavigate, permissions = {} }) 
 function Products({ onError }) {
   const [storeCategories,setStoreCategories]=useState([]);
   const [items, setItems] = useState([]);
+  const [groupCandidates, setGroupCandidates] = useState([]);
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState("");
   const [visibility, setVisibility] = useState("all");
@@ -533,6 +534,7 @@ function Products({ onError }) {
     return () => { active = false; };
   }, [query, visibility, refresh, onError]);
   function startNew() {
+    request("/products").then(d => setGroupCandidates(d.products || [])).catch(e => onError(e.message));
     setEditing("new"); setForm(empty); setPrimaryImageMediaId(""); setGalleryMediaIds([]); setCollectionIds([]);
     setIphoneModel(""); setIphoneCondition("New"); setIphoneStorage("128GB"); setIphoneColor("");
     setIphoneRegion(""); setIphoneSim("Physical SIM + eSIM"); setIphoneBattery("");
@@ -545,7 +547,9 @@ function Products({ onError }) {
   }
   async function startEdit(id) {
     try {
-      const d = await request(`/products/${id}`), p = d.product;
+      const [d, catalog] = await Promise.all([request(`/products/${id}`), request("/products")]);
+      const p = d.product;
+      setGroupCandidates(catalog.products || []);
       await loadMedia();
       setPrimaryImageMediaId(d.primaryImage?.id || ""); setGalleryMediaIds(d.gallery.map(x => x.id));
       setCollectionIds(d.collectionIds || []);
@@ -779,7 +783,8 @@ function Products({ onError }) {
       </section>}
       {!(editing === "new" && ["iphone","watch","ipad","mac","airpods"].includes(form.categoryKey)) && <div className="editor-grid">
         <label className="field-wide">Product name<input required value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))}/></label>
-        <label className="field-wide">Color group key (optional)<input value={form.modelGroupKey || ""} onChange={e => setForm(f => ({ ...f, modelGroupKey: e.target.value }))} placeholder="Example: iphone-17-pro-256gb-new"/><small className="muted">Use the exact same key for separate product records that are identical except for color. Each record keeps its own price, stock, and image gallery.</small></label>
+        <label className="field-wide">Link to an existing color family<select value={form.modelGroupKey || ""} onChange={e => setForm(f => ({ ...f, modelGroupKey: e.target.value }))}><option value="">No manual link / use automatic grouping</option>{groupCandidates.filter(p => p.id !== editing && p.category_key === form.categoryKey && p.model_group_key).filter((p, i, all) => all.findIndex(x => x.model_group_key === p.model_group_key) === i).map(p => <option key={p.model_group_key} value={p.model_group_key}>{p.name} · {p.specs?.Color || p.specs?.Colour || p.colors?.[0] || "Color family"}</option>)}</select><small className="muted">Choose an existing product family to link this separate color record. Its own price, stock, SKU and images remain independent.</small></label>
+        <label className="field-wide">Color group key (optional)<input value={form.modelGroupKey || ""} onChange={e => setForm(f => ({ ...f, modelGroupKey: e.target.value }))} placeholder="Example: apple-iphone-17-pro-new"/><small className="muted">Use the same key for products of the same model in different colors. The storefront will show one card with color swatches.</small></label>
         {editing !== "new" && <label>Category<select value={form.categoryKey} onChange={e => setForm(f => ({ ...f, categoryKey: e.target.value }))}>{["iphone","watch","ipad","mac","airpods","apple-accessory","other-accessory","other-devices"].map(k => <option key={k} value={k}>{titleCase(k)}</option>)}</select></label>}
         {isOtherDevicesCategory ? <section className="field-wide other-device-builder"><div className="eyebrow">OTHER DEVICES</div><h3>Choose device category</h3><p className="muted">Choose the product branch, then select whether the item is new or used. You can add any technical details below.</p><label>Device branch<CustomSelect value={form.productType} onChange={e => { setForm(f => ({ ...f, productType: e.target.value, variants: [{storage:"",color:"",price:"",stockQty:""}] })); setOtherDeviceSubcategory(""); setOtherDeviceAnswers({}); }}><option value="smartphone">Smartphones</option><option value="smartwatch">Smart Watches</option><option value="tablet">Tablets</option><option value="speakers">Speakers</option><option value="headphones">Headphones</option><option value="other-electronics">Other Electronics</option></CustomSelect></label>{form.productType === "other-electronics" && <label>Electronics type<CustomSelect value={otherDeviceSubcategory} onChange={e => setOtherDeviceSubcategory(e.target.value)}><option value="">Choose a subcategory</option><option value="other-electronics">Other Electronics</option></CustomSelect></label>}<label>Condition<CustomSelect value={otherDeviceCondition} onChange={e=>{setOtherDeviceCondition(e.target.value);setOtherDeviceBattery("");setOtherDeviceGrade("Like New");setOtherDeviceUsageNotes("");}}><option value="New">New</option><option value="Used">Used</option></CustomSelect></label><p className="muted">The questions below adapt automatically to the selected device branch.</p></section> : <label>Product type<input required value={form.productType} onChange={e => setForm(f => ({ ...f, productType: e.target.value }))}/></label>}
         <label className="field-wide">Description{isOtherDevicesCategory ? <textarea rows={2} value={form.tagline} onChange={e => setForm(f => ({ ...f, tagline: e.target.value }))} placeholder="Write a short description of this product…"/> : <input value={form.tagline} onChange={e => setForm(f => ({ ...f, tagline: e.target.value }))}/>}</label>
