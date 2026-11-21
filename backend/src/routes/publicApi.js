@@ -107,7 +107,7 @@ publicRouter.get("/catalog", async (req, res, next) => {
 
     const deviceUnits = units.rows.map((u) => ({
       id: u.id, productId: u.product_id, storage: u.storage, color: u.color, battery: u.battery_pct,
-      condition: u.condition, price: egp(u.price_cents), sku: u.sku, warranty: u.warranty,
+      condition: u.condition, price: egp(u.price_cents), sku: u.sku, warranty: u.warranty, conditionDescription: u.condition_description || null,
       conditionReport: u.condition_report || {}, availability: "available", photo: u.photo_url || null,
     }));
 

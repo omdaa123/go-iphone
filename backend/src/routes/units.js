@@ -18,6 +18,7 @@ const unitSchema = z.object({
   priceCents: z.number().int().nonnegative(),
   warranty: z.string().optional().nullable(),
   notes: z.string().optional().nullable(),
+  conditionDescription: z.string().max(1200).optional().nullable(),
   photoMediaId: z.string().uuid().optional().nullable(),
   conditionReport: z.record(z.any()).optional().default({}),
 });
@@ -36,10 +37,10 @@ unitsRouter.post("/", requirePermission("products.write"), validateBody(unitSche
   try {
     const b = req.body;
     const { rows } = await pool.query(
-      `INSERT INTO inventory_units (product_id, storage, color, battery_pct, condition, price_cents, warranty, notes, photo_media_id, sku, condition_report)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) RETURNING *`,
+      `INSERT INTO inventory_units (product_id, storage, color, battery_pct, condition, price_cents, warranty, notes, condition_description, photo_media_id, sku, condition_report)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12) RETURNING *`,
       [req.params.productId, b.storage ?? null, b.color ?? null, b.batteryPct ?? null, b.condition ?? null,
-       b.priceCents, b.warranty ?? null, b.notes ?? null, b.photoMediaId ?? null, b.sku ?? null, b.conditionReport ?? {}]
+       b.priceCents, b.warranty ?? null, b.notes ?? null, b.conditionDescription ?? null, b.photoMediaId ?? null, b.sku ?? null, b.conditionReport ?? {}]
     );
     await logAudit({ adminUserId: req.admin.id, action: "unit.create", resourceType: "inventory_unit", resourceId: rows[0].id, after: rows[0], ip: req.ip });
     res.status(201).json({ unit: rows[0] });
@@ -54,7 +55,7 @@ unitsRouter.patch("/:unitId", requirePermission("inventory.write"), validateBody
     const b = req.body;
     const fields = {
       storage: b.storage, color: b.color, battery_pct: b.batteryPct, condition: b.condition,
-      price_cents: b.priceCents, sku: b.sku, warranty: b.warranty, notes: b.notes, photo_media_id: b.photoMediaId,
+      price_cents: b.priceCents, sku: b.sku, warranty: b.warranty, notes: b.notes, condition_description: b.conditionDescription, photo_media_id: b.photoMediaId,
       condition_report: b.conditionReport,
     };
     const sets = []; const params = [];
