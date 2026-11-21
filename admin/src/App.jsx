@@ -20,7 +20,7 @@ function CustomModelField({label,value,onChange,options,placeholder}) {
 }
 
 const DEVICE_COLOR_HEX = {
-  "Black":"#252525","White":"#f4f2ed","Blue":"#4d78a8","Pink":"#e6a9b5","Green":"#6f8871","Yellow":"#e8cf65","Purple":"#a99ac8","Red":"#c93d43","Midnight":"#252936","Starlight":"#e8dfcf","Silver":"#c8c9c9","Space Gray":"#777a7d","Space Grey":"#777a7d","Space Black":"#333333","Natural Titanium":"#a99f91","Desert Titanium":"#c7a58b","Black Titanium":"#393a3c","White Titanium":"#e3e0d9","Blue Titanium":"#596b80","Gold":"#c9ad7b","Rose Gold":"#d7b2a5","Jet Black":"#202020","Sky Blue":"#a8c8d8","Cosmic Orange":"#df713d","Deep Blue":"#334b70","Cloud White":"#f1eee8","Lavender":"#b9a6d5","Sage":"#a8b7a0","Mist Blue":"#a9c2d2","Light Gold":"#d6c6a3","Graphite":"#55585b","Stainless Steel":"#bfc2c4","Natural":"#b4a99a","Silver Aluminum":"#c9cacc","Ultramarine":"#4e5eb8","Teal":"#5c9a91","Coral":"#f18d78","Product Red":"#c93d43","(PRODUCT)RED":"#c93d43","Midnight Green":"#40564b","Pacific Blue":"#4b718d","Sierra Blue":"#9bbbd3","Alpine Green":"#526b58","Deep Purple":"#59456e","Gold Stainless Steel":"#c9ad7b","Silver Stainless Steel":"#c8c9c9","Graphite Stainless Steel":"#55585b","Orange":"#df713d","Indigo":"#40558a","Blush":"#dca7a4","Citrus":"#d4c76d"
+  "Black":"#252525","White":"#f4f2ed","Blue":"#4d78a8","Pink":"#e6a9b5","Green":"#6f8871","Yellow":"#e8cf65","Purple":"#a99ac8","Red":"#c93d43","Midnight":"#252936","Starlight":"#e8dfcf","Silver":"#c8c9c9","Space Gray":"#777a7d","Space Grey":"#777a7d","Space Black":"#333333","Natural Titanium":"#a99f91","Desert Titanium":"#c7a58b","Black Titanium":"#393a3c","White Titanium":"#e3e0d9","Blue Titanium":"#596b80","Gold":"#c9ad7b","Rose Gold":"#d7b2a5","Jet Black":"#202020","Sky Blue":"#a8c8d8","Cosmic Orange":"#df713d","Deep Blue":"#334b70","Cloud White":"#f1eee8","Lavender":"#b9a6d5","Sage":"#a8b7a0","Mist Blue":"#a9c2d2","Light Gold":"#d6c6a3","Graphite":"#55585b","Stainless Steel":"#bfc2c4","Natural":"#b4a99a","Silver Aluminum":"#c9cacc","Ultramarine":"#4e5eb8","Teal":"#5c9a91","Coral":"#f18d78","Product Red":"#c93d43","(PRODUCT)RED":"#c93d43","Midnight Green":"#40564b","Pacific Blue":"#4b718d","Sierra Blue":"#9bbbd3","Alpine Green":"#526b58","Deep Purple":"#59456e","Gold Stainless Steel":"#c9ad7b","Silver Stainless Steel":"#c8c9c9","Graphite Stainless Steel":"#55585b","Orange":"#df713d","Indigo":"#40558a","Blush":"#dca7a4","Citrus":"#d4c76d","Glacier":"#b8c8d5","Burgundy":"#6d2638","Night Sky":"#26364a","Star White":"#f3f0e9","Soft Pink":"#e8b8bd"
 };
 const DEVICE_MODEL_COLORS = {
   iphone: {
@@ -42,7 +42,7 @@ const DEVICE_MODEL_COLORS = {
     "iPhone 16 Pro":["Black Titanium","White Titanium","Natural Titanium","Desert Titanium"],"iPhone 16 Pro Max":["Black Titanium","White Titanium","Natural Titanium","Desert Titanium"],
     "iPhone 16e":["Black","White"],"iPhone 17":["Black","White","Mist Blue","Sage","Lavender"],
     "iPhone 17 Pro":["Silver","Cosmic Orange","Deep Blue"],"iPhone 17 Pro Max":["Silver","Cosmic Orange","Deep Blue"],
-    "iPhone Air":["Sky Blue","Light Gold","Cloud White","Space Black"],"iPhone 17e":["Black","White"]
+    "iPhone Air":["Sky Blue","Light Gold","Cloud White","Space Black"],"iPhone 17e":["Black","White","Soft Pink"],"iPhone 18 Pro":["Black","Silver","Glacier","Burgundy"],"iPhone 18 Pro Max":["Black","Silver","Glacier","Burgundy"],"iPhone Duo":["Night Sky","Star White"]
   },
   ipad: {
     "iPad Pro 13-inch (M5)":["Space Black","Silver"],"iPad Pro 11-inch (M5)":["Space Black","Silver"],
@@ -54,7 +54,7 @@ const DEVICE_MODEL_COLORS = {
     "iPad (A16)":["Silver","Blue","Pink","Yellow"],"iPad (10th generation)":["Silver","Blue","Pink","Yellow"],
     "iPad Air (5th generation)":["Space Gray","Starlight","Pink","Purple","Blue"],"iPad mini (6th generation)":["Space Gray","Pink","Purple","Starlight"],
     "iPad Air (4th generation)":["Space Gray","Silver","Rose Gold","Green","Sky Blue"],"iPad (9th generation)":["Space Gray","Silver"],
-    "iPad mini (5th generation)":["Space Gray","Silver","Gold"],"iPad Pro 12.9-inch (6th generation)":["Space Gray","Silver"],"iPad Pro 11-inch (4th generation)":["Space Gray","Silver"]
+    "iPad mini (5th generation)":["Space Gray","Silver","Gold"],"iPad Pro 12.9-inch (6th generation)":["Space Gray","Silver"],"iPad Pro 11-inch (4th generation)":["Space Gray","Silver"],"iPad Pro 12.9-inch (5th generation)":["Space Gray","Silver"],"iPad Pro 11-inch (3rd generation)":["Space Gray","Silver"],"iPad Pro 12.9-inch (4th generation)":["Space Gray","Silver"],"iPad Pro 11-inch (2nd generation)":["Space Gray","Silver"],"iPad Air (3rd generation)":["Silver","Space Gray","Gold"],"iPad (8th generation)":["Silver","Space Gray","Gold"],"iPad mini 4":["Silver","Space Gray","Gold"],"iPad Pro 12.9-inch (3rd generation)":["Space Gray","Silver"],"iPad Pro 11-inch (1st generation)":["Space Gray","Silver"],"iPad (7th generation)":["Silver","Space Gray","Gold"],"iPad Air 2":["Silver","Space Gray","Gold"],"iPad Pro 10.5-inch":["Silver","Space Gray","Gold","Rose Gold"],"iPad Pro 9.7-inch":["Silver","Space Gray","Gold","Rose Gold"]
   },
   mac: {
     "MacBook Neo":["Indigo","Blush","Citrus","Silver"],
@@ -67,7 +67,7 @@ const DEVICE_MODEL_COLORS = {
     "MacBook Pro 16-inch (M5 Pro)":["Space Black","Silver"],"MacBook Pro 16-inch (M5 Max)":["Space Black","Silver"],
     "MacBook Pro 14-inch (M4)":["Space Black","Silver"],"MacBook Pro 16-inch (M4)":["Space Black","Silver"],
     "MacBook Pro 14-inch (M3)":["Space Black","Silver"],"MacBook Pro 16-inch (M3)":["Space Black","Silver"],
-    "MacBook Pro 14-inch (M2 Pro)":["Space Gray","Silver"],"MacBook Pro 16-inch (M2 Pro)":["Space Gray","Silver"]
+    "MacBook Pro 14-inch (M2 Pro)":["Space Gray","Silver"],"MacBook Pro 16-inch (M2 Pro)":["Space Gray","Silver"],"MacBook Pro 13-inch (M2)":["Space Gray","Silver"],"MacBook Pro 13-inch (M1)":["Space Gray","Silver"],"MacBook Pro 14-inch (M1 Pro)":["Space Gray","Silver"],"MacBook Pro 16-inch (M1 Pro)":["Space Gray","Silver"],"iMac 24-inch (M6, two ports)":["Blue","Purple","Pink","Orange","Yellow","Green","Silver"],"iMac 24-inch (M6, four ports)":["Blue","Purple","Pink","Orange","Yellow","Green","Silver"],"iMac 24-inch":["Blue","Purple","Pink","Orange","Yellow","Green","Silver"],"Mac mini (M6)":["Silver"],"Mac mini (M5 Pro)":["Silver"],"Mac mini":["Silver"],"Mac Studio (M5 Max)":["Silver"],"Mac Studio (M5 Ultra)":["Silver"],"Mac Studio":["Silver"],"Mac Pro":["Silver"]
   },
   airpods: {
     "AirPods 5":["White"],"AirPods 5 with Wireless Charging Case":["White"],"AirPods 4":["White"],"AirPods 4 with Active Noise Cancellation":["White"],
