@@ -69,12 +69,12 @@ app.use(cookieParser());
 
 function guardLocalAdminWrites(req, res, next) {
   if (["GET", "HEAD", "OPTIONS"].includes(req.method) || req.path.startsWith("/auth/")) return next();
-  const catalogWritePath = req.path === "/products" || /^\\/products\\/[^/]+$/.test(req.path) ||
-    /^\\/products\\/[^/]+\\/units(?:\\/[^/]+)?$/.test(req.path) ||
+  const catalogWritePath = req.path === "/products" || /^\/products\/[^/]+$/.test(req.path) ||
+    /^\/products\/[^/]+\/units(?:\/[^/]+)?$/.test(req.path) ||
     ["/categories", "/collections", "/hero-slides", "/site-content", "/media"].some((base) => req.path === base || req.path.startsWith(base + "/"));
   if (catalogWritePath && process.env.ENABLE_CATALOG_WRITES === "true") return next();
-  if (/^\\/orders(?:\\/|$)/.test(req.path) && process.env.ENABLE_ORDER_WRITES === "true") return next();
-  if (/^\\/reservations(?:\\/|$)/.test(req.path) && process.env.ENABLE_RESERVATION_WRITES === "true") return next();
+  if (/^\/orders(?:\/|$)/.test(req.path) && process.env.ENABLE_ORDER_WRITES === "true") return next();
+  if (/^\/reservations(?:\/|$)/.test(req.path) && process.env.ENABLE_RESERVATION_WRITES === "true") return next();
   if (process.env.ENABLE_ADMIN_WRITES === "true") return next();
   return res.status(503).json({ error: "Writes are disabled for this admin area." });
 }
