@@ -3,6 +3,7 @@ import express from "express";
 import helmet from "helmet";
 import cors from "cors";
 import cookieParser from "cookie-parser";
+import { timingSafeEqual } from "node:crypto";
 
 import { authRouter } from "./routes/auth.js";
 import { productsRouter } from "./routes/products.js";
@@ -23,25 +24,30 @@ import { errorHandler, notFoundHandler } from "./middleware/errorHandler.js";
 import { pool } from "./db.js";
 
 const app = express();
-
-// Trust the first proxy hop (needed on Render/Railway/Fly/etc. so req.ip and
-// the `secure` cookie flag behave correctly behind their load balancer).
 app.set("trust proxy", 1);
-
 app.use(helmet());
 
+// Neon Functions are public HTTPS endpoints. Only the two Cloudflare Pages
+// server-side proxies know this secret; browser requests never receive it.
+if (process.env.NEON_FUNCTION === "true") {
+  const expected = process.env.CLOUDFLARE_ORIGIN_SECRET || "";
+  if (expected.length < 32) throw new Error("CLOUDFLARE_ORIGIN_SECRET must be configured with at least 32 characters.");
+  app.use((req, res, next) => {
+    const supplied = req.get("x-go-iphone-origin-secret") || "";
+    const a = Buffer.from(supplied);
+    const b = Buffer.from(expected);
+    if (a.length !== b.length || !timingSafeEqual(a, b)) {
+      return res.status(404).json({ error: "Not found." });
+    }
+    next();
+  });
+}
+
 const ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGINS || "")
-  .split(",")
-  .map((value) => value.trim())
-  .filter(Boolean)
-  .map((value) => {
+  .split(",").map((value) => value.trim()).filter(Boolean).map((value) => {
     if (value === "*") throw new Error("ALLOWED_ORIGINS must never contain a wildcard.");
     let parsed;
-    try {
-      parsed = new URL(value);
-    } catch {
-      throw new Error(`Invalid ALLOWED_ORIGINS entry: ${value}`);
-    }
+    try { parsed = new URL(value); } catch { throw new Error(`Invalid ALLOWED_ORIGINS entry: ${value}`); }
     if (!["http:", "https:"].includes(parsed.protocol) || parsed.pathname !== "/" || parsed.search || parsed.hash) {
       throw new Error(`ALLOWED_ORIGINS entries must be origins only (scheme + host): ${value}`);
     }
@@ -51,55 +57,29 @@ const ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGINS || "")
 if (process.env.NODE_ENV === "production" && ALLOWED_ORIGINS.length === 0) {
   console.warn("ALLOWED_ORIGINS is empty: browser requests from the deployed storefront/admin will be blocked until their exact HTTPS origins are configured.");
 }
-
 app.use(cors({
   origin(origin, callback) {
-    // Allow server-to-server/tooling requests with no Origin header, but
-    // only allow browser origins that are explicitly on the allow-list —
-    // never reflect an arbitrary Origin back.
     if (!origin || ALLOWED_ORIGINS.includes(origin)) return callback(null, true);
-    const err = new Error("Origin not allowed.");
-    err.statusCode = 403;
-    callback(err);
+    const err = new Error("Origin not allowed."); err.statusCode = 403; callback(err);
   },
   credentials: true,
 }));
-
-app.use(express.json({ limit: "10mb" })); // generous enough for a compressed image data URL
+app.use(express.json({ limit: "10mb" }));
 app.use(cookieParser());
 
-// Fail closed for business/admin writes unless explicitly enabled. This prevents
-// local previews or misconfigured deployments from mutating the database by accident.
-// Enable the flags only after verifying the intended database and environment.
 function guardLocalAdminWrites(req, res, next) {
   if (["GET", "HEAD", "OPTIONS"].includes(req.method) || req.path.startsWith("/auth/")) return next();
-  // Narrow catalog/CMS write gate. This deliberately excludes orders,
-  // reservations, customers, admin users, settings, and other sensitive routes.
-  const catalogWritePath =
-    req.path === "/products" ||
-    /^\/products\/[^/]+$/.test(req.path) ||
-    /^\/products\/[^/]+\/units(?:\/[^/]+)?$/.test(req.path) ||
-    ["/categories", "/collections", "/hero-slides", "/site-content", "/media"].some(
-      (base) => req.path === base || req.path.startsWith(base + "/")
-    );
+  const catalogWritePath = req.path === "/products" || /^\\/products\\/[^/]+$/.test(req.path) ||
+    /^\\/products\\/[^/]+\\/units(?:\\/[^/]+)?$/.test(req.path) ||
+    ["/categories", "/collections", "/hero-slides", "/site-content", "/media"].some((base) => req.path === base || req.path.startsWith(base + "/"));
   if (catalogWritePath && process.env.ENABLE_CATALOG_WRITES === "true") return next();
-
-  // Commerce administration is enabled independently from catalog/CMS writes.
-  // This avoids opening user management, settings, or other sensitive admin
-  // mutations just to let staff process orders and reservations.
-  if (/^\/orders(?:\/|$)/.test(req.path) && process.env.ENABLE_ORDER_WRITES === "true") return next();
-  if (/^\/reservations(?:\/|$)/.test(req.path) && process.env.ENABLE_RESERVATION_WRITES === "true") return next();
-
+  if (/^\\/orders(?:\\/|$)/.test(req.path) && process.env.ENABLE_ORDER_WRITES === "true") return next();
+  if (/^\\/reservations(?:\\/|$)/.test(req.path) && process.env.ENABLE_RESERVATION_WRITES === "true") return next();
   if (process.env.ENABLE_ADMIN_WRITES === "true") return next();
   return res.status(503).json({ error: "Writes are disabled for this admin area." });
 }
 app.use("/admin", guardLocalAdminWrites);
-
-// ----- Public, unauthenticated API (storefront) -----
 app.use("/api", publicRouter);
-
-// ----- Admin API (every route below requires a valid session; most also
-// require a specific permission — see each router) -----
 app.use("/admin/auth", authRouter);
 app.use("/admin/products", productsRouter);
 app.use("/admin/products/:productId/units", unitsRouter);
@@ -112,33 +92,22 @@ app.use("/admin/site-content", siteContentRouter);
 app.use("/admin/settings", settingsRouter);
 app.use("/admin/media", mediaRouter);
 app.use("/admin/stats", statsRouter);
-app.use("/admin", auditRouter); // /admin/audit-logs, /admin/login-events (OWNER only)
-app.use("/admin/users", adminUsersRouter); // OWNER only, enforced inside the router itself
+app.use("/admin", auditRouter);
+app.use("/admin/users", adminUsersRouter);
 app.use("/admin/customers", customersRouter);
-
-// Local-dev only: serve files saved by the local-disk storage adapter.
-// In production, media lives in object storage/CDN and this is unused.
 app.use("/uploads", express.static(process.env.LOCAL_UPLOAD_DIR || "./uploads", {
   setHeaders: (res) => res.setHeader("Cross-Origin-Resource-Policy", "cross-origin"),
 }));
-
-// Liveness check: confirms the API process is running without depending on
-// external services. Use /ready to verify the database before enabling writes.
 app.get("/health", (req, res) => res.json({ ok: true }));
-
 app.get("/ready", async (req, res) => {
-  try {
-    await pool.query("SELECT 1");
-    return res.json({ ok: true, database: "connected" });
-  } catch {
-    return res.status(503).json({ ok: false, database: "unavailable" });
-  }
+  try { await pool.query("SELECT 1"); return res.json({ ok: true, database: "connected" }); }
+  catch { return res.status(503).json({ ok: false, database: "unavailable" }); }
 });
-
 app.use(notFoundHandler);
 app.use(errorHandler);
 
-const port = process.env.PORT || 4000;
-app.listen(port, () => {
-  console.log(`Go iPhone API listening on :${port}`);
-});
+export { app };
+if (process.env.NEON_FUNCTION !== "true") {
+  const port = process.env.PORT || 4000;
+  app.listen(port, () => console.log(`Go iPhone API listening on :${port}`));
+}
